@@ -1,7 +1,8 @@
 import { NativeModules, Platform } from "react-native";
 
-import type { GateSummary } from "./utils";
+import { getGateRuleSummaries, getGateSummary } from "./utils";
 import type { GateConfig } from "./types";
+import type { FocusFlowData } from "./types";
 
 type LaunchableApp = { packageName: string; label: string };
 
@@ -18,10 +19,12 @@ function nativeModule() {
 
 export function isNativeGateAvailable() { return Boolean(nativeModule()); }
 
-export async function syncAndroidGate(config: GateConfig, summary: GateSummary) {
+export async function syncAndroidGate(data: FocusFlowData) {
   const module = nativeModule();
   if (!module) return;
-  await module.saveGateState(JSON.stringify({ active: config.enabled && config.blockedPackages.length > 0 && summary.pendingCount > 0, blockedPackages: config.blockedPackages, schedules: config.schedules, pendingCount: summary.pendingCount, pendingTodos: summary.pendingTodos, pendingHabits: summary.pendingHabits, message: summary.message }));
+  const summary = getGateSummary(data);
+  const rules = getGateRuleSummaries(data);
+  await module.saveGateState(JSON.stringify({ active: data.gateConfig.enabled, pendingCount: summary.pendingCount, pendingTodos: summary.pendingTodos, pendingHabits: summary.pendingHabits, message: summary.message, rules }));
 }
 
 export async function getAccessibilityStatus() { return (await nativeModule()?.getAccessibilityStatus()) ?? false; }

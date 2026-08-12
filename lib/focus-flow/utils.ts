@@ -95,14 +95,38 @@ export function daysBetween(a: string, b: string) {
 
 export type GateSummary = { pendingTodos: number; pendingHabits: number; pendingCount: number; message: string };
 
-export function getGateSummary(data: FocusFlowData, base = new Date()): GateSummary {
-  const requiredTodos = data.gateConfig.requiredTodoIds.length ? data.todos.filter((todo) => data.gateConfig.requiredTodoIds.includes(todo.id)) : data.todos;
-  const requiredHabits = data.gateConfig.requiredHabitIds.length ? data.habits.filter((habit) => data.gateConfig.requiredHabitIds.includes(habit.id)) : data.habits;
-  const pendingTodos = requiredTodos.filter((todo) => !todo.completed).length;
-  const pendingHabits = requiredHabits.filter((habit) => !isHabitCompleteOn(habit, dayKey(base))).length;
+export type GateRuleSummary = GateSummary & { id: string; label: string; isActive: boolean; blockedPackages: string[]; requiredTodoIds: string[]; requiredHabitIds: string[]; pendingTodoIds: string[]; pendingHabitIds: string[]; schedule?: GateSchedule };
+
+function getRuleSummary(data: FocusFlowData, schedule: GateSchedule | undefined, base: Date): GateRuleSummary {
+  const explicitTodoIds = schedule?.requiredTodoIds;
+  const explicitHabitIds = schedule?.requiredHabitIds;
+  const todoIds = explicitTodoIds ?? data.gateConfig.requiredTodoIds;
+  const habitIds = explicitHabitIds ?? data.gateConfig.requiredHabitIds;
+  const requiredTodos = todoIds.length ? data.todos.filter((todo) => todoIds.includes(todo.id)) : explicitTodoIds ? [] : data.todos;
+  const requiredHabits = habitIds.length ? data.habits.filter((habit) => habitIds.includes(habit.id)) : explicitHabitIds ? [] : data.habits;
+  const pendingTodoIds = requiredTodos.filter((todo) => !todo.completed).map((todo) => todo.id);
+  const pendingHabitIds = requiredHabits.filter((habit) => !isHabitCompleteOn(habit, dayKey(base))).map((habit) => habit.id);
+  const pendingTodos = pendingTodoIds.length;
+  const pendingHabits = pendingHabitIds.length;
   const pendingCount = pendingTodos + pendingHabits;
   const fragments = [pendingTodos ? `Todo ${pendingTodos}件` : "", pendingHabits ? `習慣 ${pendingHabits}件` : ""].filter(Boolean);
-  return { pendingTodos, pendingHabits, pendingCount, message: pendingCount ? `必須項目が未完了です：${fragments.join("・")}` : "今日の必須項目を完了しました" };
+  return { id: schedule?.id ?? "always", label: schedule?.label ?? "常時の集中ルール", isActive: schedule ? isScheduleActive(schedule, base) : true, blockedPackages: schedule?.blockedPackages ?? data.gateConfig.blockedPackages, requiredTodoIds: requiredTodos.map((todo) => todo.id), requiredHabitIds: requiredHabits.map((habit) => habit.id), pendingTodoIds, pendingHabitIds, pendingTodos, pendingHabits, pendingCount, schedule, message: pendingCount ? `未完了：${fragments.join("・")}` : "このルールの必須項目を完了しました" };
+}
+
+export function getGateRuleSummaries(data: FocusFlowData, base = new Date()) {
+  const schedules = data.gateConfig.schedules.length ? data.gateConfig.schedules : [undefined];
+  return schedules.map((schedule) => getRuleSummary(data, schedule, base));
+}
+
+export function getGateSummary(data: FocusFlowData, base = new Date()): GateSummary {
+  const activeRules = getGateRuleSummaries(data, base).filter((rule) => rule.isActive);
+  const todoIds = new Set(activeRules.flatMap((rule) => rule.pendingTodoIds));
+  const habitIds = new Set(activeRules.flatMap((rule) => rule.pendingHabitIds));
+  const pendingTodos = todoIds.size;
+  const pendingHabits = habitIds.size;
+  const pendingCount = pendingTodos + pendingHabits;
+  const fragments = [pendingTodos ? `Todo ${pendingTodos}件` : "", pendingHabits ? `習慣 ${pendingHabits}件` : ""].filter(Boolean);
+  return { pendingTodos, pendingHabits, pendingCount, message: pendingCount ? `必須項目が未完了です：${fragments.join("・")}` : activeRules.length ? "この時間帯の必須項目を完了しました" : "現在は制限時間外です" };
 }
 
 function timeToMinutes(value: string) {

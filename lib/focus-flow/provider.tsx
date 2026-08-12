@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-import { getGateSummary, createId, dayKey } from "./utils";
+import { createId, dayKey } from "./utils";
 import { syncAndroidGate } from "./android-gate";
 import { DEFAULT_DISPLAY_SETTINGS, DEFAULT_GATE_CONFIG, DisplaySettings, EMPTY_FOCUS_FLOW_DATA, FocusFlowData, GateConfig, Habit, Priority, Todo } from "./types";
 
@@ -177,7 +177,7 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    if (isReady) void syncAndroidGate(data.gateConfig, getGateSummary(data));
+    if (isReady) void syncAndroidGate(data);
   }, [data, isReady]);
 
   const value = useMemo(

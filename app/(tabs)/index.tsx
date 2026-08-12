@@ -7,7 +7,7 @@ import { TaskForm } from "@/components/focus-flow/task-form";
 import { COLORS, IconButton, LoadingScreen, safeHaptic } from "@/components/focus-flow/ui";
 import { ScreenContainer } from "@/components/screen-container";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
-import { dayKey, getGateSummary, isGateTimeActive, isHabitCompleteOn } from "@/lib/focus-flow/utils";
+import { dayKey, getGateRuleSummaries, getGateSummary, isGateTimeActive, isHabitCompleteOn } from "@/lib/focus-flow/utils";
 
 export default function TodayScreen() {
   const router = useRouter();
@@ -15,9 +15,12 @@ export default function TodayScreen() {
   const [taskFormOpen, setTaskFormOpen] = useState(false);
   const today = dayKey();
   const gateSummary = useMemo(() => getGateSummary({ todos, habits, focusSessions, gateConfig, displaySettings }), [todos, habits, focusSessions, gateConfig, displaySettings]);
+  const activeRules = useMemo(() => getGateRuleSummaries({ todos, habits, focusSessions, gateConfig, displaySettings }).filter((rule) => rule.isActive), [todos, habits, focusSessions, gateConfig, displaySettings]);
   const timeActive = isGateTimeActive(gateConfig);
-  const requiredTodos = gateConfig.requiredTodoIds.length ? todos.filter((todo) => gateConfig.requiredTodoIds.includes(todo.id)) : todos;
-  const requiredHabits = gateConfig.requiredHabitIds.length ? habits.filter((habit) => gateConfig.requiredHabitIds.includes(habit.id)) : habits;
+  const requiredTodoIds = new Set(activeRules.flatMap((rule) => rule.requiredTodoIds));
+  const requiredHabitIds = new Set(activeRules.flatMap((rule) => rule.requiredHabitIds));
+  const requiredTodos = todos.filter((todo) => requiredTodoIds.has(todo.id));
+  const requiredHabits = habits.filter((habit) => requiredHabitIds.has(habit.id));
   const openTodos = requiredTodos.filter((todo) => !todo.completed);
   const completeHabits = requiredHabits.filter((habit) => isHabitCompleteOn(habit, today)).length;
   const totalRequired = requiredTodos.length + requiredHabits.length;
@@ -25,7 +28,8 @@ export default function TodayScreen() {
   const progress = totalRequired ? Math.round((doneRequired / totalRequired) * 100) : 0;
   const gateLocked = gateConfig.enabled && timeActive && gateSummary.pendingCount > 0;
   const gateTitle = !gateConfig.enabled ? "集中ルールはオフです" : !timeActive ? "この時間帯は制限を休止しています" : gateLocked ? "他のアプリを制限中です" : "今日の必須項目を完了しました";
-  const gateDescription = !gateConfig.enabled ? "設定から集中ルールをオンにすると、選択アプリを制限できます。" : !timeActive ? "次の設定済み時間帯になると、未完了の必須項目に対して制限を開始します。" : gateLocked ? gateSummary.message : "選択したアプリへのアクセスは解除されています。";
+  const activeRuleNames = activeRules.map((rule) => rule.label).join("・");
+  const gateDescription = !gateConfig.enabled ? "設定から集中ルールをオンにすると、選択アプリを制限できます。" : !timeActive ? "次の設定済み時間帯になると、未完了の必須項目に対して制限を開始します。" : gateLocked ? `${activeRuleNames}：${gateSummary.message}` : activeRules.length ? `${activeRuleNames}の解除条件を完了しました。` : "選択したアプリへのアクセスは解除されています。";
   const greeting = new Date().getHours() < 12 ? "おはようございます" : new Date().getHours() < 18 ? "今日の必須項目を進めましょう" : "一日をやさしく締めくくりましょう";
 
   if (!isReady) return <ScreenContainer><LoadingScreen /></ScreenContainer>;

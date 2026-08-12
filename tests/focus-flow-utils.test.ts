@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { FocusFlowData, GateSchedule, Habit } from "../lib/focus-flow/types";
-import { dayKey, getGateSummary, habitStreak, isScheduleActive, weeklyHabitProgress, weeklyFocusMinutes } from "../lib/focus-flow/utils";
+import { dayKey, getGateRuleSummaries, getGateSummary, habitStreak, isScheduleActive, weeklyHabitProgress, weeklyFocusMinutes } from "../lib/focus-flow/utils";
 
 const base = new Date(2026, 7, 13, 12, 0, 0);
 
@@ -57,5 +57,30 @@ describe("Focus Flowの日付・習慣計算", () => {
     expect(isScheduleActive(schedule, new Date(2026, 7, 10, 23, 0, 0))).toBe(true);
     expect(isScheduleActive(schedule, new Date(2026, 7, 11, 5, 30, 0))).toBe(true);
     expect(isScheduleActive(schedule, new Date(2026, 7, 11, 6, 0, 0))).toBe(false);
+  });
+
+  it("時間帯ごとに異なるTodo・習慣を解除条件として扱う", () => {
+    const data: FocusFlowData = {
+      todos: [
+        { id: "t-morning", title: "朝のTodo", priority: "high", completed: false, createdAt: "2026-08-10T00:00:00.000Z" },
+        { id: "t-work", title: "日中のTodo", priority: "medium", completed: false, createdAt: "2026-08-10T00:00:00.000Z" },
+      ],
+      habits: [{ id: "h-morning", title: "朝の習慣", color: "#246B5A", goalPerWeek: 5, createdAt: "2026-08-10T00:00:00.000Z", completedDates: [] }],
+      focusSessions: [],
+      gateConfig: {
+        enabled: true, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [],
+        schedules: [
+          { id: "morning", label: "朝の準備", enabled: true, days: [1], startTime: "06:00", endTime: "09:00", requiredTodoIds: ["t-morning"], requiredHabitIds: ["h-morning"], blockedPackages: ["com.example.news"] },
+          { id: "work", label: "日中の作業", enabled: true, days: [1], startTime: "09:00", endTime: "18:00", requiredTodoIds: ["t-work"], requiredHabitIds: [], blockedPackages: ["com.example.video"] },
+        ],
+      },
+      displaySettings: { fontScale: "standard", theme: "mist", cardOpacity: "solid" },
+    };
+    const morning = new Date(2026, 7, 10, 7, 30, 0);
+    expect(getGateSummary(data, morning)).toMatchObject({ pendingTodos: 1, pendingHabits: 1, pendingCount: 2 });
+    expect(getGateRuleSummaries(data, morning).filter((rule) => rule.isActive)[0]).toMatchObject({ label: "朝の準備", blockedPackages: ["com.example.news"] });
+    const daytime = new Date(2026, 7, 10, 10, 0, 0);
+    expect(getGateSummary(data, daytime)).toMatchObject({ pendingTodos: 1, pendingHabits: 0, pendingCount: 1 });
+    expect(getGateRuleSummaries(data, daytime).filter((rule) => rule.isActive)[0]).toMatchObject({ label: "日中の作業", blockedPackages: ["com.example.video"] });
   });
 });

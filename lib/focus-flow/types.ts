@@ -41,6 +41,9 @@ export type GateSchedule = {
   days: number[];
   startTime: string;
   endTime: string;
+  requiredTodoIds?: string[];
+  requiredHabitIds?: string[];
+  blockedPackages?: string[];
 };
 
 export type DisplaySettings = {
