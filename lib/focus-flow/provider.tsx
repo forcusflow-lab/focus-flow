@@ -1,0 +1,176 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
+
+import { createId, dayKey } from "./utils";
+import { EMPTY_FOCUS_FLOW_DATA, FocusFlowData, Habit, Priority, Todo } from "./types";
+
+const STORAGE_KEY = "@focus-flow/data-v1";
+
+type FocusFlowContextValue = FocusFlowData & {
+  isReady: boolean;
+  addTodo: (input: { title: string; priority: Priority; dueDate?: string }) => void;
+  updateTodo: (id: string, input: { title: string; priority: Priority; dueDate?: string }) => void;
+  toggleTodo: (id: string) => void;
+  deleteTodo: (id: string) => void;
+  addHabit: (input: { title: string; color: string; goalPerWeek: number }) => void;
+  updateHabit: (id: string, input: { title: string; color: string; goalPerWeek: number }) => void;
+  toggleHabit: (id: string, date?: string) => void;
+  deleteHabit: (id: string) => void;
+  addFocusSession: (durationMinutes: number) => void;
+};
+
+const FocusFlowContext = createContext<FocusFlowContextValue | null>(null);
+
+function normalizeData(value: unknown): FocusFlowData {
+  if (!value || typeof value !== "object") return EMPTY_FOCUS_FLOW_DATA;
+  const candidate = value as Partial<FocusFlowData>;
+  return {
+    todos: Array.isArray(candidate.todos) ? candidate.todos : [],
+    habits: Array.isArray(candidate.habits) ? candidate.habits : [],
+    focusSessions: Array.isArray(candidate.focusSessions) ? candidate.focusSessions : [],
+  };
+}
+
+export function FocusFlowProvider({ children }: { children: ReactNode }) {
+  const [data, setData] = useState<FocusFlowData>(EMPTY_FOCUS_FLOW_DATA);
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    AsyncStorage.getItem(STORAGE_KEY)
+      .then((serialized) => {
+        if (active && serialized) setData(normalizeData(JSON.parse(serialized)));
+      })
+      .catch(() => {
+        if (active) setData(EMPTY_FOCUS_FLOW_DATA);
+      })
+      .finally(() => {
+        if (active) setIsReady(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const commit = useCallback((updater: (current: FocusFlowData) => FocusFlowData) => {
+    setData((current) => {
+      const next = updater(current);
+      void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const addTodo = useCallback(
+    ({ title, priority, dueDate }: { title: string; priority: Priority; dueDate?: string }) => {
+      const trimmed = title.trim();
+      if (!trimmed) return;
+      const todo: Todo = { id: createId("todo"), title: trimmed, priority, dueDate, completed: false, createdAt: new Date().toISOString() };
+      commit((current) => ({ ...current, todos: [todo, ...current.todos] }));
+    },
+    [commit],
+  );
+
+  const updateTodo = useCallback(
+    (id: string, { title, priority, dueDate }: { title: string; priority: Priority; dueDate?: string }) => {
+      const trimmed = title.trim();
+      if (!trimmed) return;
+      commit((current) => ({
+        ...current,
+        todos: current.todos.map((todo) => (todo.id === id ? { ...todo, title: trimmed, priority, dueDate } : todo)),
+      }));
+    },
+    [commit],
+  );
+
+  const toggleTodo = useCallback(
+    (id: string) => {
+      commit((current) => ({
+        ...current,
+        todos: current.todos.map((todo) =>
+          todo.id === id
+            ? { ...todo, completed: !todo.completed, completedAt: !todo.completed ? new Date().toISOString() : undefined }
+            : todo,
+        ),
+      }));
+    },
+    [commit],
+  );
+
+  const deleteTodo = useCallback((id: string) => commit((current) => ({ ...current, todos: current.todos.filter((todo) => todo.id !== id) })), [commit]);
+
+  const addHabit = useCallback(
+    ({ title, color, goalPerWeek }: { title: string; color: string; goalPerWeek: number }) => {
+      const trimmed = title.trim();
+      if (!trimmed) return;
+      const habit: Habit = {
+        id: createId("habit"),
+        title: trimmed,
+        color,
+        goalPerWeek: Math.min(Math.max(goalPerWeek, 1), 7),
+        completedDates: [],
+        createdAt: new Date().toISOString(),
+      };
+      commit((current) => ({ ...current, habits: [habit, ...current.habits] }));
+    },
+    [commit],
+  );
+
+  const updateHabit = useCallback(
+    (id: string, { title, color, goalPerWeek }: { title: string; color: string; goalPerWeek: number }) => {
+      const trimmed = title.trim();
+      if (!trimmed) return;
+      commit((current) => ({
+        ...current,
+        habits: current.habits.map((habit) =>
+          habit.id === id ? { ...habit, title: trimmed, color, goalPerWeek: Math.min(Math.max(goalPerWeek, 1), 7) } : habit,
+        ),
+      }));
+    },
+    [commit],
+  );
+
+  const toggleHabit = useCallback(
+    (id: string, date = dayKey()) => {
+      commit((current) => ({
+        ...current,
+        habits: current.habits.map((habit) => {
+          if (habit.id !== id) return habit;
+          const completedDates = habit.completedDates.includes(date)
+            ? habit.completedDates.filter((item) => item !== date)
+            : [...habit.completedDates, date].sort();
+          return { ...habit, completedDates };
+        }),
+      }));
+    },
+    [commit],
+  );
+
+  const deleteHabit = useCallback((id: string) => commit((current) => ({ ...current, habits: current.habits.filter((habit) => habit.id !== id) })), [commit]);
+
+  const addFocusSession = useCallback(
+    (durationMinutes: number) => {
+      if (durationMinutes <= 0) return;
+      commit((current) => ({
+        ...current,
+        focusSessions: [
+          { id: createId("focus"), startedAt: new Date().toISOString(), durationMinutes, completed: true },
+          ...current.focusSessions,
+        ],
+      }));
+    },
+    [commit],
+  );
+
+  const value = useMemo(
+    () => ({ ...data, isReady, addTodo, updateTodo, toggleTodo, deleteTodo, addHabit, updateHabit, toggleHabit, deleteHabit, addFocusSession }),
+    [data, isReady, addTodo, updateTodo, toggleTodo, deleteTodo, addHabit, updateHabit, toggleHabit, deleteHabit, addFocusSession],
+  );
+
+  return <FocusFlowContext.Provider value={value}>{children}</FocusFlowContext.Provider>;
+}
+
+export function useFocusFlow() {
+  const context = useContext(FocusFlowContext);
+  if (!context) throw new Error("useFocusFlow must be used within FocusFlowProvider");
+  return context;
+}
