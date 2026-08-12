@@ -21,7 +21,7 @@ export function isNativeGateAvailable() { return Boolean(nativeModule()); }
 export async function syncAndroidGate(config: GateConfig, summary: GateSummary) {
   const module = nativeModule();
   if (!module) return;
-  await module.saveGateState(JSON.stringify({ active: config.enabled && config.blockedPackages.length > 0 && summary.pendingCount > 0, blockedPackages: config.blockedPackages, pendingCount: summary.pendingCount, pendingTodos: summary.pendingTodos, pendingHabits: summary.pendingHabits, message: summary.message }));
+  await module.saveGateState(JSON.stringify({ active: config.enabled && config.blockedPackages.length > 0 && summary.pendingCount > 0, blockedPackages: config.blockedPackages, schedules: config.schedules, pendingCount: summary.pendingCount, pendingTodos: summary.pendingTodos, pendingHabits: summary.pendingHabits, message: summary.message }));
 }
 
 export async function getAccessibilityStatus() { return (await nativeModule()?.getAccessibilityStatus()) ?? false; }

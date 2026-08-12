@@ -31,6 +31,16 @@ export type GateConfig = {
   blockedPackages: string[];
   requiredTodoIds: string[];
   requiredHabitIds: string[];
+  schedules: GateSchedule[];
+};
+
+export type GateSchedule = {
+  id: string;
+  label: string;
+  enabled: boolean;
+  days: number[];
+  startTime: string;
+  endTime: string;
 };
 
 export type DisplaySettings = {
@@ -39,12 +49,7 @@ export type DisplaySettings = {
   cardOpacity: "solid" | "soft" | "glass";
 };
 
-export const DEFAULT_GATE_CONFIG: GateConfig = {
-  enabled: false,
-  blockedPackages: [],
-  requiredTodoIds: [],
-  requiredHabitIds: [],
-};
+export const DEFAULT_GATE_CONFIG: GateConfig = { enabled: false, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], schedules: [] };
 
 export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   fontScale: "standard",

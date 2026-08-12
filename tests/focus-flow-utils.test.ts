@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import type { FocusFlowData, Habit } from "../lib/focus-flow/types";
-import { dayKey, getGateSummary, habitStreak, weeklyHabitProgress, weeklyFocusMinutes } from "../lib/focus-flow/utils";
+import type { FocusFlowData, GateSchedule, Habit } from "../lib/focus-flow/types";
+import { dayKey, getGateSummary, habitStreak, isScheduleActive, weeklyHabitProgress, weeklyFocusMinutes } from "../lib/focus-flow/utils";
 
 const base = new Date(2026, 7, 13, 12, 0, 0);
 
@@ -39,9 +39,23 @@ describe("Focus Flowの日付・習慣計算", () => {
         { id: "h-optional", title: "任意習慣", color: "#315B8C", goalPerWeek: 3, createdAt: "2026-08-10T00:00:00.000Z", completedDates: ["2026-08-13"] },
       ],
       focusSessions: [],
-      gateConfig: { enabled: true, blockedPackages: ["com.example.video"], requiredTodoIds: ["t-required"], requiredHabitIds: ["h-required"] },
+      gateConfig: { enabled: true, blockedPackages: ["com.example.video"], requiredTodoIds: ["t-required"], requiredHabitIds: ["h-required"], schedules: [] },
       displaySettings: { fontScale: "standard", theme: "mist", cardOpacity: "solid" },
     };
     expect(getGateSummary(data, base)).toMatchObject({ pendingTodos: 1, pendingHabits: 1, pendingCount: 2 });
+  });
+
+  it("曜日と開始・終了時刻に応じて集中ルールを有効にする", () => {
+    const schedule: GateSchedule = { id: "weekday", label: "平日", enabled: true, days: [1, 2, 3, 4, 5], startTime: "09:00", endTime: "18:00" };
+    expect(isScheduleActive(schedule, new Date(2026, 7, 10, 10, 0, 0))).toBe(true);
+    expect(isScheduleActive(schedule, new Date(2026, 7, 10, 18, 0, 0))).toBe(false);
+    expect(isScheduleActive(schedule, new Date(2026, 7, 9, 10, 0, 0))).toBe(false);
+  });
+
+  it("日をまたぐ時間帯は翌日未明まで有効にする", () => {
+    const schedule: GateSchedule = { id: "night", label: "夜", enabled: true, days: [1], startTime: "22:00", endTime: "06:00" };
+    expect(isScheduleActive(schedule, new Date(2026, 7, 10, 23, 0, 0))).toBe(true);
+    expect(isScheduleActive(schedule, new Date(2026, 7, 11, 5, 30, 0))).toBe(true);
+    expect(isScheduleActive(schedule, new Date(2026, 7, 11, 6, 0, 0))).toBe(false);
   });
 });

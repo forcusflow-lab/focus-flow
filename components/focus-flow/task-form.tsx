@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import type { Priority, Todo } from "@/lib/focus-flow/types";
+import { formatJapaneseDate } from "@/lib/focus-flow/utils";
+import { DatePicker } from "./date-picker";
 import { COLORS, safeHaptic } from "./ui";
 
 const PRIORITIES: { key: Priority; label: string; color: string }[] = [
@@ -22,6 +24,7 @@ export function TaskForm({ visible, todo, onClose, onSave }: TaskFormProps) {
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<Priority>("medium");
   const [dueDate, setDueDate] = useState("");
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -32,10 +35,9 @@ export function TaskForm({ visible, todo, onClose, onSave }: TaskFormProps) {
   }, [todo, visible]);
 
   const save = () => {
-    const normalizedDate = /^\d{4}-\d{2}-\d{2}$/.test(dueDate.trim()) ? dueDate.trim() : undefined;
     if (!title.trim()) return;
     safeHaptic("light");
-    onSave({ title: title.trim(), priority, dueDate: normalizedDate });
+    onSave({ title: title.trim(), priority, dueDate: dueDate || undefined });
     onClose();
   };
 
@@ -62,12 +64,13 @@ export function TaskForm({ visible, todo, onClose, onSave }: TaskFormProps) {
             ))}
           </View>
           <Text style={styles.label}>期限（任意）</Text>
-          <TextInput value={dueDate} onChangeText={setDueDate} placeholder="YYYY-MM-DD" placeholderTextColor="#94A19A" style={styles.input} keyboardType="numbers-and-punctuation" returnKeyType="done" onSubmitEditing={save} />
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="期限をカレンダーから選択" onPress={() => setDatePickerOpen(true)} style={styles.dateButton}><MaterialIcons name="calendar-today" size={18} color={COLORS.forest} /><Text style={[styles.dateText, !dueDate && styles.datePlaceholder]}>{dueDate ? formatJapaneseDate(dueDate) : "カレンダーから選択"}</Text><MaterialIcons name="chevron-right" size={20} color={COLORS.muted} /></TouchableOpacity>
           <TouchableOpacity accessibilityRole="button" onPress={save} activeOpacity={0.8} style={[styles.saveButton, !title.trim() && styles.saveButtonDisabled]} disabled={!title.trim()}>
             <Text style={styles.saveText}>{todo ? "変更を保存" : "Todoを作成"}</Text>
           </TouchableOpacity>
         </Pressable>
       </Pressable>
+      <DatePicker visible={datePickerOpen} value={dueDate || undefined} onClose={() => setDatePickerOpen(false)} onSelect={(value) => setDueDate(value ?? "")} />
     </Modal>
   );
 }
@@ -81,6 +84,9 @@ const styles = StyleSheet.create({
   closeButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: 14, backgroundColor: "#EDF1EE" },
   label: { color: COLORS.text, fontSize: 13, fontWeight: "800", marginBottom: 8, marginTop: 2 },
   input: { minHeight: 50, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white, color: COLORS.text, fontSize: 16, paddingHorizontal: 14, marginBottom: 18 },
+  dateButton: { minHeight: 50, flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white, paddingHorizontal: 14, marginBottom: 18 },
+  dateText: { color: COLORS.text, flex: 1, fontSize: 15, fontWeight: "700" },
+  datePlaceholder: { color: "#94A19A", fontWeight: "600" },
   priorityRow: { flexDirection: "row", gap: 8, marginBottom: 18 },
   priorityButton: { flex: 1, minHeight: 46, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 13, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white },
   priorityDot: { width: 8, height: 8, borderRadius: 4 },

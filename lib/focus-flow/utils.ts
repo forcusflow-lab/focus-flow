@@ -1,4 +1,4 @@
-import type { FocusFlowData, FocusSession, Habit, Todo } from "./types";
+import type { FocusFlowData, FocusSession, GateConfig, GateSchedule, Habit, Todo } from "./types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -103,4 +103,25 @@ export function getGateSummary(data: FocusFlowData, base = new Date()): GateSumm
   const pendingCount = pendingTodos + pendingHabits;
   const fragments = [pendingTodos ? `Todo ${pendingTodos}件` : "", pendingHabits ? `習慣 ${pendingHabits}件` : ""].filter(Boolean);
   return { pendingTodos, pendingHabits, pendingCount, message: pendingCount ? `必須項目が未完了です：${fragments.join("・")}` : "今日の必須項目を完了しました" };
+}
+
+function timeToMinutes(value: string) {
+  const [hours, minutes] = value.split(":").map(Number);
+  return Math.min(Math.max((Number.isFinite(hours) ? hours : 0) * 60 + (Number.isFinite(minutes) ? minutes : 0), 0), 1439);
+}
+
+export function isScheduleActive(schedule: GateSchedule, base = new Date()) {
+  if (!schedule.enabled || !schedule.days.length) return false;
+  const minutes = base.getHours() * 60 + base.getMinutes();
+  const today = base.getDay();
+  const yesterday = (today + 6) % 7;
+  const start = timeToMinutes(schedule.startTime);
+  const end = timeToMinutes(schedule.endTime);
+  if (start === end) return schedule.days.includes(today);
+  if (start < end) return schedule.days.includes(today) && minutes >= start && minutes < end;
+  return (schedule.days.includes(today) && minutes >= start) || (schedule.days.includes(yesterday) && minutes < end);
+}
+
+export function isGateTimeActive(config: GateConfig, base = new Date()) {
+  return config.schedules.length === 0 || config.schedules.some((schedule) => isScheduleActive(schedule, base));
 }
