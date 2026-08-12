@@ -17,7 +17,7 @@ type TaskFormProps = {
   visible: boolean;
   todo?: Todo;
   onClose: () => void;
-  onSave: (input: { title: string; priority: Priority; dueDate?: string }) => void;
+  onSave: (input: { title: string; priority: Priority; dueDate?: string; isRequired: boolean }) => void;
 };
 
 export function TaskForm({ visible, todo, onClose, onSave }: TaskFormProps) {
@@ -25,19 +25,21 @@ export function TaskForm({ visible, todo, onClose, onSave }: TaskFormProps) {
   const [priority, setPriority] = useState<Priority>("medium");
   const [dueDate, setDueDate] = useState("");
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [isRequired, setIsRequired] = useState(false);
 
   useEffect(() => {
     if (visible) {
       setTitle(todo?.title ?? "");
       setPriority(todo?.priority ?? "medium");
       setDueDate(todo?.dueDate ?? "");
+      setIsRequired(todo?.isRequired ?? false);
     }
   }, [todo, visible]);
 
   const save = () => {
     if (!title.trim()) return;
     safeHaptic("light");
-    onSave({ title: title.trim(), priority, dueDate: dueDate || undefined });
+    onSave({ title: title.trim(), priority, dueDate: dueDate || undefined, isRequired });
     onClose();
   };
 
@@ -65,6 +67,8 @@ export function TaskForm({ visible, todo, onClose, onSave }: TaskFormProps) {
           </View>
           <Text style={styles.label}>期限（任意）</Text>
           <TouchableOpacity accessibilityRole="button" accessibilityLabel="期限をカレンダーから選択" onPress={() => setDatePickerOpen(true)} style={styles.dateButton}><MaterialIcons name="calendar-today" size={18} color={COLORS.forest} /><Text style={[styles.dateText, !dueDate && styles.datePlaceholder]}>{dueDate ? formatJapaneseDate(dueDate) : "カレンダーから選択"}</Text><MaterialIcons name="chevron-right" size={20} color={COLORS.muted} /></TouchableOpacity>
+          <Text style={styles.label}>アプリ制限との関係</Text>
+          <View style={styles.requiredChoice}><TouchableOpacity onPress={() => setIsRequired(true)} style={[styles.requiredOption, isRequired && styles.requiredOptionSelected]}><MaterialIcons name="lock" size={18} color={isRequired ? COLORS.forest : COLORS.muted} /><View style={styles.requiredCopy}><Text style={[styles.requiredTitle, isRequired && { color: COLORS.forest }]}>必須</Text><Text style={styles.requiredDetail}>集中ルール中の基本解除条件にする</Text></View>{isRequired ? <MaterialIcons name="check-circle" size={20} color={COLORS.forest} /> : null}</TouchableOpacity><TouchableOpacity onPress={() => setIsRequired(false)} style={[styles.requiredOption, !isRequired && styles.requiredOptionSelected]}><MaterialIcons name="check-circle-outline" size={18} color={!isRequired ? COLORS.blue : COLORS.muted} /><View style={styles.requiredCopy}><Text style={[styles.requiredTitle, !isRequired && { color: COLORS.blue }]}>任意</Text><Text style={styles.requiredDetail}>日課ルールで選んだ時だけ解除条件にする</Text></View>{!isRequired ? <MaterialIcons name="check-circle" size={20} color={COLORS.blue} /> : null}</TouchableOpacity></View>
           <TouchableOpacity accessibilityRole="button" onPress={save} activeOpacity={0.8} style={[styles.saveButton, !title.trim() && styles.saveButtonDisabled]} disabled={!title.trim()}>
             <Text style={styles.saveText}>{todo ? "変更を保存" : "Todoを作成"}</Text>
           </TouchableOpacity>
@@ -87,6 +91,12 @@ const styles = StyleSheet.create({
   dateButton: { minHeight: 50, flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white, paddingHorizontal: 14, marginBottom: 18 },
   dateText: { color: COLORS.text, flex: 1, fontSize: 15, fontWeight: "700" },
   datePlaceholder: { color: "#94A19A", fontWeight: "600" },
+  requiredChoice: { gap: 8, marginBottom: 18 },
+  requiredOption: { minHeight: 58, flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white, paddingHorizontal: 13 },
+  requiredOptionSelected: { borderColor: COLORS.forest, backgroundColor: "#EEF6F1" },
+  requiredCopy: { flex: 1 },
+  requiredTitle: { color: COLORS.text, fontSize: 14, fontWeight: "800" },
+  requiredDetail: { color: COLORS.muted, fontSize: 11, lineHeight: 16, marginTop: 2 },
   priorityRow: { flexDirection: "row", gap: 8, marginBottom: 18 },
   priorityButton: { flex: 1, minHeight: 46, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 13, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white },
   priorityDot: { width: 8, height: 8, borderRadius: 4 },

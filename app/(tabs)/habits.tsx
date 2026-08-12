@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { Alert, FlatList, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { HabitForm } from "@/components/focus-flow/habit-form";
-import { COLORS, EmptyState, IconButton, LoadingScreen, safeHaptic, ScreenHeading } from "@/components/focus-flow/ui";
+import { COLORS, EmptyState, IconButton, LoadingScreen, Pill, safeHaptic, ScreenHeading } from "@/components/focus-flow/ui";
 import { ScreenContainer } from "@/components/screen-container";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
 import type { Habit } from "@/lib/focus-flow/types";
@@ -29,8 +29,8 @@ export default function HabitsScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        ListHeaderComponent={<ScreenHeading eyebrow="続ける仕組み" title="習慣" action={<IconButton icon="add" label="習慣を追加" onPress={() => openForm()} variant="filled" />} />}
-        ListEmptyComponent={<EmptyState icon="repeat" title="続けたいことを決めましょう" description="小さな行動を週の目標にすると、無理なく継続を育てられます。" actionLabel="習慣を作る" onAction={() => openForm()} />}
+        ListHeaderComponent={<><ScreenHeading eyebrow="続ける仕組み" title="習慣" action={<IconButton icon="add" label="習慣を追加" onPress={() => openForm()} variant="filled" />} /><View style={styles.explainer}><MaterialIcons name="lock-outline" size={17} color={COLORS.forest} /><Text style={styles.explainerText}>必須 {habits.filter((habit) => habit.isRequired).length}件は、集中ルール中の基本解除条件です。</Text></View></>}
+        ListEmptyComponent={<EmptyState icon="repeat" title="最初の習慣を作りましょう" description="登録時に「必須の習慣」を選ぶと、毎日のアプリ制限の解除条件にできます。" actionLabel="習慣を作る" onAction={() => openForm()} />}
         renderItem={({ item }) => {
           const progress = weeklyHabitProgress(item);
           const todayDone = isHabitCompleteOn(item, dayKey());
@@ -39,7 +39,7 @@ export default function HabitsScreen() {
               <View style={styles.cardTop}>
                 <TouchableOpacity onPress={() => openForm(item)} activeOpacity={0.72} style={styles.habitTitleArea}>
                   <View style={[styles.habitMark, { backgroundColor: `${item.color}18` }]}><MaterialIcons name="auto-awesome" size={18} color={item.color} /></View>
-                  <View style={styles.habitTitleCopy}><Text style={styles.habitTitle}>{item.title}</Text><Text style={styles.habitMeta}>今週 {progress.completed}/{progress.target}日 ・ {habitStreak(item)}日連続</Text></View>
+                  <View style={styles.habitTitleCopy}><Text style={styles.habitTitle}>{item.title}</Text><View style={styles.habitMetaRow}><Pill label={item.isRequired ? "必須" : "任意"} color={item.isRequired ? COLORS.forest : COLORS.muted} muted={!item.isRequired} /><Text style={styles.habitMeta}>今週 {progress.completed}/{progress.target}日 ・ {habitStreak(item)}日連続</Text></View></View>
                 </TouchableOpacity>
                 <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: todayDone }} accessibilityLabel="今日の習慣を記録" onPress={() => { safeHaptic(todayDone ? "light" : "success"); toggleHabit(item.id); }} style={[styles.todayCheck, todayDone && { backgroundColor: item.color, borderColor: item.color }]}>
                   {todayDone ? <MaterialIcons name="check" size={19} color={COLORS.white} /> : <Text style={[styles.todayCheckText, { color: item.color }]}>今日</Text>}
@@ -76,7 +76,10 @@ const styles = StyleSheet.create({
   habitMark: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 13, marginRight: 11 },
   habitTitleCopy: { flex: 1, minWidth: 0 },
   habitTitle: { color: COLORS.text, fontSize: 16, lineHeight: 21, fontWeight: "800" },
+  habitMetaRow: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 3 },
   habitMeta: { color: COLORS.muted, fontSize: 12, lineHeight: 17, fontWeight: "600", marginTop: 2 },
+  explainer: { flexDirection: "row", alignItems: "center", gap: 7, backgroundColor: "#EAF3EE", borderRadius: 12, paddingHorizontal: 11, paddingVertical: 9, marginTop: -8, marginBottom: 14 },
+  explainerText: { color: "#416558", flex: 1, fontSize: 11, lineHeight: 16, fontWeight: "700" },
   todayCheck: { minWidth: 50, height: 38, borderRadius: 13, borderWidth: 1, borderColor: COLORS.border, alignItems: "center", justifyContent: "center", paddingHorizontal: 8 },
   todayCheckText: { fontSize: 12, fontWeight: "800" },
   daysRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 18 },

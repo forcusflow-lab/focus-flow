@@ -9,26 +9,28 @@ type HabitFormProps = {
   visible: boolean;
   habit?: Habit;
   onClose: () => void;
-  onSave: (input: { title: string; color: string; goalPerWeek: number }) => void;
+  onSave: (input: { title: string; color: string; goalPerWeek: number; isRequired: boolean }) => void;
 };
 
 export function HabitForm({ visible, habit, onClose, onSave }: HabitFormProps) {
   const [title, setTitle] = useState("");
   const [color, setColor] = useState(HABIT_COLORS[0]);
   const [goal, setGoal] = useState(5);
+  const [isRequired, setIsRequired] = useState(false);
 
   useEffect(() => {
     if (visible) {
       setTitle(habit?.title ?? "");
       setColor(habit?.color ?? HABIT_COLORS[0]);
       setGoal(habit?.goalPerWeek ?? 5);
+      setIsRequired(habit?.isRequired ?? false);
     }
   }, [habit, visible]);
 
   const save = () => {
     if (!title.trim()) return;
     safeHaptic("light");
-    onSave({ title: title.trim(), color, goalPerWeek: goal });
+    onSave({ title: title.trim(), color, goalPerWeek: goal, isRequired });
     onClose();
   };
 
@@ -61,6 +63,8 @@ export function HabitForm({ visible, habit, onClose, onSave }: HabitFormProps) {
               </TouchableOpacity>
             ))}
           </View>
+          <Text style={styles.label}>アプリ制限との関係</Text>
+          <View style={styles.requiredChoice}><TouchableOpacity onPress={() => setIsRequired(true)} style={[styles.requiredOption, isRequired && styles.requiredOptionSelected]}><MaterialIcons name="lock" size={18} color={isRequired ? COLORS.forest : COLORS.muted} /><View style={styles.requiredCopy}><Text style={[styles.requiredTitle, isRequired && { color: COLORS.forest }]}>必須の習慣</Text><Text style={styles.requiredDetail}>集中ルール中の基本解除条件にする</Text></View>{isRequired ? <MaterialIcons name="check-circle" size={20} color={COLORS.forest} /> : null}</TouchableOpacity><TouchableOpacity onPress={() => setIsRequired(false)} style={[styles.requiredOption, !isRequired && styles.requiredOptionSelected]}><MaterialIcons name="check-circle-outline" size={18} color={!isRequired ? COLORS.blue : COLORS.muted} /><View style={styles.requiredCopy}><Text style={[styles.requiredTitle, !isRequired && { color: COLORS.blue }]}>任意の習慣</Text><Text style={styles.requiredDetail}>日課ルールで選んだ時だけ解除条件にする</Text></View>{!isRequired ? <MaterialIcons name="check-circle" size={20} color={COLORS.blue} /> : null}</TouchableOpacity></View>
           <TouchableOpacity accessibilityRole="button" onPress={save} activeOpacity={0.8} style={[styles.saveButton, !title.trim() && styles.saveButtonDisabled]} disabled={!title.trim()}>
             <Text style={styles.saveText}>{habit ? "変更を保存" : "習慣を作成"}</Text>
           </TouchableOpacity>
@@ -84,9 +88,15 @@ const styles = StyleSheet.create({
   goalButtonSelected: { borderColor: COLORS.forest, backgroundColor: "#E8F0EC" },
   goalText: { color: COLORS.muted, fontSize: 14, fontWeight: "800" },
   goalTextSelected: { color: COLORS.forest },
-  colorRow: { flexDirection: "row", gap: 12, marginBottom: 24 },
+  colorRow: { flexDirection: "row", gap: 12, marginBottom: 18 },
   colorButton: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
   colorButtonSelected: { borderWidth: 3, borderColor: COLORS.white, outlineWidth: 2, outlineColor: COLORS.forest },
+  requiredChoice: { gap: 8, marginBottom: 20 },
+  requiredOption: { minHeight: 58, flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white, paddingHorizontal: 13 },
+  requiredOptionSelected: { borderColor: COLORS.forest, backgroundColor: "#EEF6F1" },
+  requiredCopy: { flex: 1 },
+  requiredTitle: { color: COLORS.text, fontSize: 14, fontWeight: "800" },
+  requiredDetail: { color: COLORS.muted, fontSize: 11, lineHeight: 16, marginTop: 2 },
   saveButton: { minHeight: 52, alignItems: "center", justifyContent: "center", borderRadius: 16, backgroundColor: COLORS.forest },
   saveButtonDisabled: { backgroundColor: "#AAB8B0" },
   saveText: { color: COLORS.white, fontSize: 16, fontWeight: "800" },

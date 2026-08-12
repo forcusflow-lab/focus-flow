@@ -11,12 +11,12 @@ describe("Focus Flowの日付・習慣計算", () => {
   });
 
   it("連続した習慣記録からストリークを返す", () => {
-    const habit: Habit = { id: "h-1", title: "読書", color: "#246B5A", goalPerWeek: 5, createdAt: "2026-08-10T00:00:00.000Z", completedDates: ["2026-08-11", "2026-08-12", "2026-08-13"] };
+    const habit: Habit = { id: "h-1", title: "読書", color: "#246B5A", goalPerWeek: 5, isRequired: false, createdAt: "2026-08-10T00:00:00.000Z", completedDates: ["2026-08-11", "2026-08-12", "2026-08-13"] };
     expect(habitStreak(habit, base)).toBe(3);
   });
 
   it("週目標に対する達成率を上限1で計算する", () => {
-    const habit: Habit = { id: "h-1", title: "読書", color: "#246B5A", goalPerWeek: 3, createdAt: "2026-08-10T00:00:00.000Z", completedDates: ["2026-08-09", "2026-08-10", "2026-08-11", "2026-08-12", "2026-08-13"] };
+    const habit: Habit = { id: "h-1", title: "読書", color: "#246B5A", goalPerWeek: 3, isRequired: false, createdAt: "2026-08-10T00:00:00.000Z", completedDates: ["2026-08-09", "2026-08-10", "2026-08-11", "2026-08-12", "2026-08-13"] };
     expect(weeklyHabitProgress(habit, base)).toEqual({ completed: 5, target: 3, ratio: 1 });
   });
 
@@ -31,12 +31,12 @@ describe("Focus Flowの日付・習慣計算", () => {
   it("選択した必須Todo・習慣だけを集中制限の未完了数へ反映する", () => {
     const data: FocusFlowData = {
       todos: [
-        { id: "t-required", title: "必須Todo", priority: "high", completed: false, createdAt: "2026-08-13T00:00:00.000Z" },
-        { id: "t-optional", title: "任意Todo", priority: "low", completed: false, createdAt: "2026-08-13T00:00:00.000Z" },
+        { id: "t-required", title: "必須Todo", priority: "high", isRequired: false, completed: false, createdAt: "2026-08-13T00:00:00.000Z" },
+        { id: "t-optional", title: "任意Todo", priority: "low", isRequired: false, completed: false, createdAt: "2026-08-13T00:00:00.000Z" },
       ],
       habits: [
-        { id: "h-required", title: "必須習慣", color: "#246B5A", goalPerWeek: 5, createdAt: "2026-08-10T00:00:00.000Z", completedDates: [] },
-        { id: "h-optional", title: "任意習慣", color: "#315B8C", goalPerWeek: 3, createdAt: "2026-08-10T00:00:00.000Z", completedDates: ["2026-08-13"] },
+        { id: "h-required", title: "必須習慣", color: "#246B5A", goalPerWeek: 5, isRequired: false, createdAt: "2026-08-10T00:00:00.000Z", completedDates: [] },
+        { id: "h-optional", title: "任意習慣", color: "#315B8C", goalPerWeek: 3, isRequired: false, createdAt: "2026-08-10T00:00:00.000Z", completedDates: ["2026-08-13"] },
       ],
       focusSessions: [],
       gateConfig: { enabled: true, blockedPackages: ["com.example.video"], requiredTodoIds: ["t-required"], requiredHabitIds: ["h-required"], schedules: [] },
@@ -62,10 +62,10 @@ describe("Focus Flowの日付・習慣計算", () => {
   it("時間帯ごとに異なるTodo・習慣を解除条件として扱う", () => {
     const data: FocusFlowData = {
       todos: [
-        { id: "t-morning", title: "朝のTodo", priority: "high", completed: false, createdAt: "2026-08-10T00:00:00.000Z" },
-        { id: "t-work", title: "日中のTodo", priority: "medium", completed: false, createdAt: "2026-08-10T00:00:00.000Z" },
+        { id: "t-morning", title: "朝のTodo", priority: "high", isRequired: false, completed: false, createdAt: "2026-08-10T00:00:00.000Z" },
+        { id: "t-work", title: "日中のTodo", priority: "medium", isRequired: false, completed: false, createdAt: "2026-08-10T00:00:00.000Z" },
       ],
-      habits: [{ id: "h-morning", title: "朝の習慣", color: "#246B5A", goalPerWeek: 5, createdAt: "2026-08-10T00:00:00.000Z", completedDates: [] }],
+      habits: [{ id: "h-morning", title: "朝の習慣", color: "#246B5A", goalPerWeek: 5, isRequired: false, createdAt: "2026-08-10T00:00:00.000Z", completedDates: [] }],
       focusSessions: [],
       gateConfig: {
         enabled: true, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [],
@@ -82,5 +82,16 @@ describe("Focus Flowの日付・習慣計算", () => {
     const daytime = new Date(2026, 7, 10, 10, 0, 0);
     expect(getGateSummary(data, daytime)).toMatchObject({ pendingTodos: 1, pendingHabits: 0, pendingCount: 1 });
     expect(getGateRuleSummaries(data, daytime).filter((rule) => rule.isActive)[0]).toMatchObject({ label: "日中の作業", blockedPackages: ["com.example.video"] });
+  });
+
+  it("登録時に必須にしたTodo・習慣は日課ルールに追加しなくても基本解除条件になる", () => {
+    const data: FocusFlowData = {
+      todos: [{ id: "t-core", title: "薬を飲む", priority: "high", isRequired: true, completed: false, createdAt: "2026-08-13T00:00:00.000Z" }],
+      habits: [{ id: "h-optional", title: "散歩", color: "#246B5A", goalPerWeek: 3, isRequired: false, createdAt: "2026-08-10T00:00:00.000Z", completedDates: [] }],
+      focusSessions: [],
+      gateConfig: { enabled: true, blockedPackages: ["com.example.video"], requiredTodoIds: [], requiredHabitIds: [], schedules: [] },
+      displaySettings: { fontScale: "standard", theme: "mist", cardOpacity: "solid" },
+    };
+    expect(getGateSummary(data, base)).toMatchObject({ pendingTodos: 1, pendingHabits: 0, pendingCount: 1 });
   });
 });

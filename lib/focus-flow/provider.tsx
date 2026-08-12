@@ -9,12 +9,12 @@ const STORAGE_KEY = "@focus-flow/data-v1";
 
 type FocusFlowContextValue = FocusFlowData & {
   isReady: boolean;
-  addTodo: (input: { title: string; priority: Priority; dueDate?: string }) => void;
-  updateTodo: (id: string, input: { title: string; priority: Priority; dueDate?: string }) => void;
+  addTodo: (input: { title: string; priority: Priority; dueDate?: string; isRequired: boolean }) => void;
+  updateTodo: (id: string, input: { title: string; priority: Priority; dueDate?: string; isRequired: boolean }) => void;
   toggleTodo: (id: string) => void;
   deleteTodo: (id: string) => void;
-  addHabit: (input: { title: string; color: string; goalPerWeek: number }) => void;
-  updateHabit: (id: string, input: { title: string; color: string; goalPerWeek: number }) => void;
+  addHabit: (input: { title: string; color: string; goalPerWeek: number; isRequired: boolean }) => void;
+  updateHabit: (id: string, input: { title: string; color: string; goalPerWeek: number; isRequired: boolean }) => void;
   toggleHabit: (id: string, date?: string) => void;
   deleteHabit: (id: string) => void;
   addFocusSession: (durationMinutes: number) => void;
@@ -28,8 +28,8 @@ function normalizeData(value: unknown): FocusFlowData {
   if (!value || typeof value !== "object") return EMPTY_FOCUS_FLOW_DATA;
   const candidate = value as Partial<FocusFlowData>;
   return {
-    todos: Array.isArray(candidate.todos) ? candidate.todos : [],
-    habits: Array.isArray(candidate.habits) ? candidate.habits : [],
+    todos: Array.isArray(candidate.todos) ? candidate.todos.map((todo) => ({ ...todo, isRequired: todo.isRequired ?? false })) : [],
+    habits: Array.isArray(candidate.habits) ? candidate.habits.map((habit) => ({ ...habit, isRequired: habit.isRequired ?? false })) : [],
     focusSessions: Array.isArray(candidate.focusSessions) ? candidate.focusSessions : [],
     gateConfig: { ...DEFAULT_GATE_CONFIG, ...(candidate.gateConfig ?? {}) },
     displaySettings: { ...DEFAULT_DISPLAY_SETTINGS, ...(candidate.displaySettings ?? {}) },
@@ -66,22 +66,22 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addTodo = useCallback(
-    ({ title, priority, dueDate }: { title: string; priority: Priority; dueDate?: string }) => {
+    ({ title, priority, dueDate, isRequired }: { title: string; priority: Priority; dueDate?: string; isRequired: boolean }) => {
       const trimmed = title.trim();
       if (!trimmed) return;
-      const todo: Todo = { id: createId("todo"), title: trimmed, priority, dueDate, completed: false, createdAt: new Date().toISOString() };
+      const todo: Todo = { id: createId("todo"), title: trimmed, priority, dueDate, isRequired, completed: false, createdAt: new Date().toISOString() };
       commit((current) => ({ ...current, todos: [todo, ...current.todos] }));
     },
     [commit],
   );
 
   const updateTodo = useCallback(
-    (id: string, { title, priority, dueDate }: { title: string; priority: Priority; dueDate?: string }) => {
+    (id: string, { title, priority, dueDate, isRequired }: { title: string; priority: Priority; dueDate?: string; isRequired: boolean }) => {
       const trimmed = title.trim();
       if (!trimmed) return;
       commit((current) => ({
         ...current,
-        todos: current.todos.map((todo) => (todo.id === id ? { ...todo, title: trimmed, priority, dueDate } : todo)),
+        todos: current.todos.map((todo) => (todo.id === id ? { ...todo, title: trimmed, priority, dueDate, isRequired } : todo)),
       }));
     },
     [commit],
@@ -104,7 +104,7 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
   const deleteTodo = useCallback((id: string) => commit((current) => ({ ...current, todos: current.todos.filter((todo) => todo.id !== id) })), [commit]);
 
   const addHabit = useCallback(
-    ({ title, color, goalPerWeek }: { title: string; color: string; goalPerWeek: number }) => {
+    ({ title, color, goalPerWeek, isRequired }: { title: string; color: string; goalPerWeek: number; isRequired: boolean }) => {
       const trimmed = title.trim();
       if (!trimmed) return;
       const habit: Habit = {
@@ -112,6 +112,7 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
         title: trimmed,
         color,
         goalPerWeek: Math.min(Math.max(goalPerWeek, 1), 7),
+        isRequired,
         completedDates: [],
         createdAt: new Date().toISOString(),
       };
@@ -121,13 +122,13 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
   );
 
   const updateHabit = useCallback(
-    (id: string, { title, color, goalPerWeek }: { title: string; color: string; goalPerWeek: number }) => {
+    (id: string, { title, color, goalPerWeek, isRequired }: { title: string; color: string; goalPerWeek: number; isRequired: boolean }) => {
       const trimmed = title.trim();
       if (!trimmed) return;
       commit((current) => ({
         ...current,
         habits: current.habits.map((habit) =>
-          habit.id === id ? { ...habit, title: trimmed, color, goalPerWeek: Math.min(Math.max(goalPerWeek, 1), 7) } : habit,
+          habit.id === id ? { ...habit, title: trimmed, color, goalPerWeek: Math.min(Math.max(goalPerWeek, 1), 7), isRequired } : habit,
         ),
       }));
     },

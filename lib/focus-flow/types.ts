@@ -5,6 +5,7 @@ export type Todo = {
   title: string;
   priority: Priority;
   dueDate?: string;
+  isRequired: boolean;
   completed: boolean;
   completedAt?: string;
   createdAt: string;
@@ -15,6 +16,7 @@ export type Habit = {
   title: string;
   color: string;
   goalPerWeek: number;
+  isRequired: boolean;
   completedDates: string[];
   createdAt: string;
 };

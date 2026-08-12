@@ -100,10 +100,12 @@ export type GateRuleSummary = GateSummary & { id: string; label: string; isActiv
 function getRuleSummary(data: FocusFlowData, schedule: GateSchedule | undefined, base: Date): GateRuleSummary {
   const explicitTodoIds = schedule?.requiredTodoIds;
   const explicitHabitIds = schedule?.requiredHabitIds;
-  const todoIds = explicitTodoIds ?? data.gateConfig.requiredTodoIds;
-  const habitIds = explicitHabitIds ?? data.gateConfig.requiredHabitIds;
-  const requiredTodos = todoIds.length ? data.todos.filter((todo) => todoIds.includes(todo.id)) : explicitTodoIds ? [] : data.todos;
-  const requiredHabits = habitIds.length ? data.habits.filter((habit) => habitIds.includes(habit.id)) : explicitHabitIds ? [] : data.habits;
+  const baseTodoIds = data.todos.filter((todo) => todo.isRequired).map((todo) => todo.id);
+  const baseHabitIds = data.habits.filter((habit) => habit.isRequired).map((habit) => habit.id);
+  const todoIds = Array.from(new Set([...baseTodoIds, ...(explicitTodoIds ?? data.gateConfig.requiredTodoIds)]));
+  const habitIds = Array.from(new Set([...baseHabitIds, ...(explicitHabitIds ?? data.gateConfig.requiredHabitIds)]));
+  const requiredTodos = data.todos.filter((todo) => todoIds.includes(todo.id));
+  const requiredHabits = data.habits.filter((habit) => habitIds.includes(habit.id));
   const pendingTodoIds = requiredTodos.filter((todo) => !todo.completed).map((todo) => todo.id);
   const pendingHabitIds = requiredHabits.filter((habit) => !isHabitCompleteOn(habit, dayKey(base))).map((habit) => habit.id);
   const pendingTodos = pendingTodoIds.length;

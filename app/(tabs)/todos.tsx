@@ -45,9 +45,10 @@ export default function TodosScreen() {
               <TouchableOpacity onPress={() => setFilter("open")} style={[styles.filter, filter === "open" && styles.filterActive]}><Text style={[styles.filterText, filter === "open" && styles.filterTextActive]}>未完了 {todos.filter((todo) => !todo.completed).length}</Text></TouchableOpacity>
               <TouchableOpacity onPress={() => setFilter("done")} style={[styles.filter, filter === "done" && styles.filterActive]}><Text style={[styles.filterText, filter === "done" && styles.filterTextActive]}>完了 {todos.filter((todo) => todo.completed).length}</Text></TouchableOpacity>
             </View>
+            <View style={styles.explainer}><MaterialIcons name="lock-outline" size={17} color={COLORS.forest} /><Text style={styles.explainerText}>必須 {todos.filter((todo) => todo.isRequired).length}件は、集中ルール中の基本解除条件です。</Text></View>
           </>
         }
-        ListEmptyComponent={<EmptyState icon="playlist-add" title={filter === "open" ? "次の一歩を追加しましょう" : "完了したTodoはまだありません"} description={filter === "open" ? "小さく具体的な行動から始めると、今日の進み方が明確になります。" : "完了したTodoはここで振り返れます。"} actionLabel={filter === "open" ? "Todoを追加" : "未完了を表示"} onAction={() => (filter === "open" ? openForm() : setFilter("open"))} />}
+        ListEmptyComponent={<EmptyState icon="playlist-add" title={filter === "open" ? "最初のTodoを追加しましょう" : "完了したTodoはまだありません"} description={filter === "open" ? "追加時に「必須」を選ぶと、日課ルールに含めなくてもアプリ制限の解除条件になります。" : "完了したTodoはここで振り返れます。"} actionLabel={filter === "open" ? "Todoを追加" : "未完了を表示"} onAction={() => (filter === "open" ? openForm() : setFilter("open"))} />}
         renderItem={({ item }) => {
           const priority = priorityMeta[item.priority];
           return (
@@ -57,7 +58,7 @@ export default function TodosScreen() {
               </TouchableOpacity>
               <TouchableOpacity accessibilityRole="button" onPress={() => openForm(item)} activeOpacity={0.72} style={styles.todoCopy}>
                 <Text style={[styles.todoTitle, item.completed && styles.todoTitleCompleted]} numberOfLines={2}>{item.title}</Text>
-                <View style={styles.metaRow}><Pill label={`${priority.label}優先`} color={priority.color} /><Text style={styles.dueText}>{formatJapaneseDate(item.dueDate)}</Text></View>
+                <View style={styles.metaRow}><Pill label={item.isRequired ? "必須" : "任意"} color={item.isRequired ? COLORS.forest : COLORS.muted} muted={!item.isRequired} /><Pill label={`${priority.label}優先`} color={priority.color} /><Text style={styles.dueText}>{formatJapaneseDate(item.dueDate)}</Text></View>
               </TouchableOpacity>
               <TouchableOpacity accessibilityLabel="Todoを削除" onPress={() => remove(item)} style={styles.deleteButton}><MaterialIcons name="more-horiz" size={22} color={COLORS.muted} /></TouchableOpacity>
             </View>
@@ -76,6 +77,8 @@ const styles = StyleSheet.create({
   filterActive: { backgroundColor: COLORS.forest },
   filterText: { color: COLORS.muted, fontSize: 13, fontWeight: "800" },
   filterTextActive: { color: COLORS.white },
+  explainer: { flexDirection: "row", alignItems: "center", gap: 7, backgroundColor: "#EAF3EE", borderRadius: 12, paddingHorizontal: 11, paddingVertical: 9, marginBottom: 14 },
+  explainerText: { color: "#416558", flex: 1, fontSize: 11, lineHeight: 16, fontWeight: "700" },
   todoCard: { flexDirection: "row", alignItems: "center", backgroundColor: COLORS.white, borderColor: COLORS.border, borderWidth: 1, borderRadius: 18, padding: 14, marginBottom: 10 },
   todoCardCompleted: { opacity: 0.7 },
   check: { width: 28, height: 28, alignItems: "center", justifyContent: "center", borderRadius: 10, borderWidth: 1.5, borderColor: "#AFC0B7", marginRight: 12 },
