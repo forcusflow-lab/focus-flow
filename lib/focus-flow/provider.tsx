@@ -27,11 +27,14 @@ const FocusFlowContext = createContext<FocusFlowContextValue | null>(null);
 function normalizeData(value: unknown): FocusFlowData {
   if (!value || typeof value !== "object") return EMPTY_FOCUS_FLOW_DATA;
   const candidate = value as Partial<FocusFlowData>;
+  const gateConfig = { ...DEFAULT_GATE_CONFIG, ...(candidate.gateConfig ?? {}) };
+  const legacyTodoIds = new Set([...(gateConfig.requiredTodoIds ?? []), ...gateConfig.schedules.flatMap((schedule) => schedule.requiredTodoIds ?? [])]);
+  const legacyHabitIds = new Set([...(gateConfig.requiredHabitIds ?? []), ...gateConfig.schedules.flatMap((schedule) => schedule.requiredHabitIds ?? [])]);
   return {
-    todos: Array.isArray(candidate.todos) ? candidate.todos.map((todo) => ({ ...todo, isRequired: todo.isRequired ?? false })) : [],
-    habits: Array.isArray(candidate.habits) ? candidate.habits.map((habit) => ({ ...habit, isRequired: habit.isRequired ?? false })) : [],
+    todos: Array.isArray(candidate.todos) ? candidate.todos.map((todo) => ({ ...todo, isRequired: Boolean(todo.isRequired || legacyTodoIds.has(todo.id)) })) : [],
+    habits: Array.isArray(candidate.habits) ? candidate.habits.map((habit) => ({ ...habit, isRequired: Boolean(habit.isRequired || legacyHabitIds.has(habit.id)) })) : [],
     focusSessions: Array.isArray(candidate.focusSessions) ? candidate.focusSessions : [],
-    gateConfig: { ...DEFAULT_GATE_CONFIG, ...(candidate.gateConfig ?? {}) },
+    gateConfig: { ...gateConfig, requiredTodoIds: [], requiredHabitIds: [], schedules: gateConfig.schedules.map((schedule) => ({ ...schedule, requiredTodoIds: [], requiredHabitIds: [] })) },
     displaySettings: { ...DEFAULT_DISPLAY_SETTINGS, ...(candidate.displaySettings ?? {}) },
   };
 }

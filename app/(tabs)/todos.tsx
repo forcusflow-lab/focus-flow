@@ -59,7 +59,7 @@ export default function TodosScreen() {
               </TouchableOpacity>
               <TouchableOpacity accessibilityRole="button" onPress={() => openForm(item)} activeOpacity={0.72} style={styles.todoCopy}>
                 <Text style={[styles.todoTitle, item.completed && styles.todoTitleCompleted]} numberOfLines={2}>{item.title}</Text>
-                <View style={styles.metaRow}><Pill label={item.isRequired ? "必須" : dueStatus === "today" ? "今日・自動必須" : "任意"} color={item.isRequired ? COLORS.forest : dueStatus === "today" ? COLORS.warning : COLORS.muted} muted={!item.isRequired && dueStatus !== "today"} /><Pill label={`${priority.label}優先`} color={priority.color} /><Text style={[styles.dueText, dueStatus === "today" && styles.dueToday, dueStatus === "overdue" && styles.dueOverdue]}>{dueStatus === "today" ? "今日が期限" : dueStatus === "overdue" ? `${formatJapaneseDate(item.dueDate)}・期限超過` : formatJapaneseDate(item.dueDate)}</Text></View>
+                <View style={styles.metaRow}>{item.isRequired ? <Pill label="必須・アプリ制限あり" color={COLORS.forest} /> : dueStatus === "today" ? <Pill label="今日・自動必須" color={COLORS.warning} /> : null}<Pill label={`${priority.label}優先`} color={priority.color} /><Text style={[styles.dueText, dueStatus === "today" && styles.dueToday, dueStatus === "overdue" && styles.dueOverdue]}>{dueStatus === "today" ? "今日が期限" : dueStatus === "overdue" ? `${formatJapaneseDate(item.dueDate)}・期限超過` : formatJapaneseDate(item.dueDate)}</Text></View>
               </TouchableOpacity>
               <TouchableOpacity accessibilityLabel="Todoを削除" onPress={() => remove(item)} style={styles.deleteButton}><MaterialIcons name="more-horiz" size={22} color={COLORS.muted} /></TouchableOpacity>
             </View>

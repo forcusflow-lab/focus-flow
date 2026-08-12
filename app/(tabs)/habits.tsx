@@ -39,7 +39,7 @@ export default function HabitsScreen() {
               <View style={styles.cardTop}>
                 <TouchableOpacity onPress={() => openForm(item)} activeOpacity={0.72} style={styles.habitTitleArea}>
                   <View style={[styles.habitMark, { backgroundColor: `${item.color}18` }]}><MaterialIcons name="auto-awesome" size={18} color={item.color} /></View>
-                  <View style={styles.habitTitleCopy}><Text style={styles.habitTitle}>{item.title}</Text><View style={styles.habitMetaRow}><Pill label={item.isRequired ? "必須" : "任意"} color={item.isRequired ? COLORS.forest : COLORS.muted} muted={!item.isRequired} /><Text style={styles.habitMeta}>今週 {progress.completed}/{progress.target}日 ・ {habitStreak(item)}日連続</Text></View></View>
+                  <View style={styles.habitTitleCopy}><Text style={styles.habitTitle}>{item.title}</Text><View style={styles.habitMetaRow}>{item.isRequired ? <Pill label="必須・アプリ制限あり" color={COLORS.forest} /> : null}<Text style={styles.habitMeta}>今週 {progress.completed}/{progress.target}日 ・ {habitStreak(item)}日連続</Text></View></View>
                 </TouchableOpacity>
                 <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: todayDone }} accessibilityLabel="今日の習慣を記録" onPress={() => { safeHaptic(todayDone ? "light" : "success"); toggleHabit(item.id); }} style={[styles.todayCheck, todayDone && { backgroundColor: item.color, borderColor: item.color }]}>
                   {todayDone ? <MaterialIcons name="check" size={19} color={COLORS.white} /> : <Text style={[styles.todayCheckText, { color: item.color }]}>今日</Text>}

@@ -28,18 +28,18 @@ describe("Focus Flowの日付・習慣計算", () => {
     expect(weeklyFocusMinutes(sessions, base).at(-1)).toEqual({ key: "2026-08-13", minutes: 25 });
   });
 
-  it("選択した必須Todo・習慣だけを集中制限の未完了数へ反映する", () => {
+  it("必須にしたTodo・習慣だけを集中制限の未完了数へ反映する", () => {
     const data: FocusFlowData = {
       todos: [
-        { id: "t-required", title: "必須Todo", priority: "high", isRequired: false, completed: false, createdAt: "2026-08-13T00:00:00.000Z" },
-        { id: "t-optional", title: "任意Todo", priority: "low", isRequired: false, completed: false, createdAt: "2026-08-13T00:00:00.000Z" },
+        { id: "t-required", title: "必須Todo", priority: "high", isRequired: true, completed: false, createdAt: "2026-08-13T00:00:00.000Z" },
+        { id: "t-normal", title: "通常Todo", priority: "low", isRequired: false, completed: false, createdAt: "2026-08-13T00:00:00.000Z" },
       ],
       habits: [
-        { id: "h-required", title: "必須習慣", color: "#246B5A", goalPerWeek: 5, isRequired: false, createdAt: "2026-08-10T00:00:00.000Z", completedDates: [] },
-        { id: "h-optional", title: "任意習慣", color: "#315B8C", goalPerWeek: 3, isRequired: false, createdAt: "2026-08-10T00:00:00.000Z", completedDates: ["2026-08-13"] },
+        { id: "h-required", title: "必須習慣", color: "#246B5A", goalPerWeek: 5, isRequired: true, createdAt: "2026-08-10T00:00:00.000Z", completedDates: [] },
+        { id: "h-normal", title: "通常習慣", color: "#315B8C", goalPerWeek: 3, isRequired: false, createdAt: "2026-08-10T00:00:00.000Z", completedDates: ["2026-08-13"] },
       ],
       focusSessions: [],
-      gateConfig: { enabled: true, blockedPackages: ["com.example.video"], requiredTodoIds: ["t-required"], requiredHabitIds: ["h-required"], autoRequireDueToday: true, schedules: [] },
+      gateConfig: { enabled: true, blockedPackages: ["com.example.video"], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, schedules: [] },
       displaySettings: { fontScale: "standard", theme: "mist", cardOpacity: "solid" },
     };
     expect(getGateSummary(data, base)).toMatchObject({ pendingTodos: 1, pendingHabits: 1, pendingCount: 2 });
@@ -59,18 +59,18 @@ describe("Focus Flowの日付・習慣計算", () => {
     expect(isScheduleActive(schedule, new Date(2026, 7, 11, 6, 0, 0))).toBe(false);
   });
 
-  it("時間帯ごとに異なるTodo・習慣を解除条件として扱う", () => {
+  it("時間帯ごとに制限アプリは変えられるが、解除条件は必須項目に統一する", () => {
     const data: FocusFlowData = {
       todos: [
-        { id: "t-morning", title: "朝のTodo", priority: "high", isRequired: false, completed: false, createdAt: "2026-08-10T00:00:00.000Z" },
-        { id: "t-work", title: "日中のTodo", priority: "medium", isRequired: false, completed: false, createdAt: "2026-08-10T00:00:00.000Z" },
+        { id: "t-morning", title: "必須Todo", priority: "high", isRequired: true, completed: false, createdAt: "2026-08-10T00:00:00.000Z" },
+        { id: "t-work", title: "通常Todo", priority: "medium", isRequired: false, completed: false, createdAt: "2026-08-10T00:00:00.000Z" },
       ],
-      habits: [{ id: "h-morning", title: "朝の習慣", color: "#246B5A", goalPerWeek: 5, isRequired: false, createdAt: "2026-08-10T00:00:00.000Z", completedDates: [] }],
+      habits: [{ id: "h-morning", title: "必須習慣", color: "#246B5A", goalPerWeek: 5, isRequired: true, createdAt: "2026-08-10T00:00:00.000Z", completedDates: [] }],
       focusSessions: [],
       gateConfig: {
         enabled: true, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true,
         schedules: [
-          { id: "morning", label: "朝の準備", enabled: true, days: [1], startTime: "06:00", endTime: "09:00", requiredTodoIds: ["t-morning"], requiredHabitIds: ["h-morning"], blockedPackages: ["com.example.news"] },
+          { id: "morning", label: "朝の準備", enabled: true, days: [1], startTime: "06:00", endTime: "09:00", requiredTodoIds: ["t-work"], requiredHabitIds: [], blockedPackages: ["com.example.news"] },
           { id: "work", label: "日中の作業", enabled: true, days: [1], startTime: "09:00", endTime: "18:00", requiredTodoIds: ["t-work"], requiredHabitIds: [], blockedPackages: ["com.example.video"] },
         ],
       },
@@ -80,7 +80,7 @@ describe("Focus Flowの日付・習慣計算", () => {
     expect(getGateSummary(data, morning)).toMatchObject({ pendingTodos: 1, pendingHabits: 1, pendingCount: 2 });
     expect(getGateRuleSummaries(data, morning).filter((rule) => rule.isActive)[0]).toMatchObject({ label: "朝の準備", blockedPackages: ["com.example.news"] });
     const daytime = new Date(2026, 7, 10, 10, 0, 0);
-    expect(getGateSummary(data, daytime)).toMatchObject({ pendingTodos: 1, pendingHabits: 0, pendingCount: 1 });
+    expect(getGateSummary(data, daytime)).toMatchObject({ pendingTodos: 1, pendingHabits: 1, pendingCount: 2 });
     expect(getGateRuleSummaries(data, daytime).filter((rule) => rule.isActive)[0]).toMatchObject({ label: "日中の作業", blockedPackages: ["com.example.video"] });
   });
 
