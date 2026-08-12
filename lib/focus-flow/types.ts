@@ -26,14 +26,44 @@ export type FocusSession = {
   completed: boolean;
 };
 
+export type GateConfig = {
+  enabled: boolean;
+  blockedPackages: string[];
+  requiredTodoIds: string[];
+  requiredHabitIds: string[];
+};
+
+export type DisplaySettings = {
+  fontScale: "compact" | "standard" | "large";
+  theme: "mist" | "slate";
+  cardOpacity: "solid" | "soft" | "glass";
+};
+
+export const DEFAULT_GATE_CONFIG: GateConfig = {
+  enabled: false,
+  blockedPackages: [],
+  requiredTodoIds: [],
+  requiredHabitIds: [],
+};
+
+export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
+  fontScale: "standard",
+  theme: "mist",
+  cardOpacity: "solid",
+};
+
 export type FocusFlowData = {
   todos: Todo[];
   habits: Habit[];
   focusSessions: FocusSession[];
+  gateConfig: GateConfig;
+  displaySettings: DisplaySettings;
 };
 
 export const EMPTY_FOCUS_FLOW_DATA: FocusFlowData = {
   todos: [],
   habits: [],
   focusSessions: [],
+  gateConfig: DEFAULT_GATE_CONFIG,
+  displaySettings: DEFAULT_DISPLAY_SETTINGS,
 };

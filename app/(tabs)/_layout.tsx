@@ -34,6 +34,7 @@ export default function TabLayout() {
       <Tabs.Screen name="todos" options={{ title: "Todo", tabBarIcon: ({ color }) => <IconSymbol size={25} name="checklist" color={color} /> }} />
       <Tabs.Screen name="habits" options={{ title: "習慣", tabBarIcon: ({ color }) => <IconSymbol size={25} name="repeat" color={color} /> }} />
       <Tabs.Screen name="insights" options={{ title: "振り返り", tabBarIcon: ({ color }) => <IconSymbol size={25} name="chart.bar.fill" color={color} /> }} />
+      <Tabs.Screen name="settings" options={{ title: "設定", tabBarIcon: ({ color }) => <IconSymbol size={24} name="gearshape.fill" color={color} /> }} />
     </Tabs>
     </FocusFlowProvider>
   );

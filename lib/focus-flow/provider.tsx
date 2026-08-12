@@ -1,8 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-import { createId, dayKey } from "./utils";
-import { EMPTY_FOCUS_FLOW_DATA, FocusFlowData, Habit, Priority, Todo } from "./types";
+import { getGateSummary, createId, dayKey } from "./utils";
+import { syncAndroidGate } from "./android-gate";
+import { DEFAULT_DISPLAY_SETTINGS, DEFAULT_GATE_CONFIG, DisplaySettings, EMPTY_FOCUS_FLOW_DATA, FocusFlowData, GateConfig, Habit, Priority, Todo } from "./types";
 
 const STORAGE_KEY = "@focus-flow/data-v1";
 
@@ -17,6 +18,8 @@ type FocusFlowContextValue = FocusFlowData & {
   toggleHabit: (id: string, date?: string) => void;
   deleteHabit: (id: string) => void;
   addFocusSession: (durationMinutes: number) => void;
+  setGateConfig: (input: Partial<GateConfig>) => void;
+  setDisplaySettings: (input: Partial<DisplaySettings>) => void;
 };
 
 const FocusFlowContext = createContext<FocusFlowContextValue | null>(null);
@@ -28,6 +31,8 @@ function normalizeData(value: unknown): FocusFlowData {
     todos: Array.isArray(candidate.todos) ? candidate.todos : [],
     habits: Array.isArray(candidate.habits) ? candidate.habits : [],
     focusSessions: Array.isArray(candidate.focusSessions) ? candidate.focusSessions : [],
+    gateConfig: { ...DEFAULT_GATE_CONFIG, ...(candidate.gateConfig ?? {}) },
+    displaySettings: { ...DEFAULT_DISPLAY_SETTINGS, ...(candidate.displaySettings ?? {}) },
   };
 }
 
@@ -161,9 +166,23 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
     [commit],
   );
 
+  const setGateConfig = useCallback(
+    (input: Partial<GateConfig>) => commit((current) => ({ ...current, gateConfig: { ...current.gateConfig, ...input } })),
+    [commit],
+  );
+
+  const setDisplaySettings = useCallback(
+    (input: Partial<DisplaySettings>) => commit((current) => ({ ...current, displaySettings: { ...current.displaySettings, ...input } })),
+    [commit],
+  );
+
+  useEffect(() => {
+    if (isReady) void syncAndroidGate(data.gateConfig, getGateSummary(data));
+  }, [data, isReady]);
+
   const value = useMemo(
-    () => ({ ...data, isReady, addTodo, updateTodo, toggleTodo, deleteTodo, addHabit, updateHabit, toggleHabit, deleteHabit, addFocusSession }),
-    [data, isReady, addTodo, updateTodo, toggleTodo, deleteTodo, addHabit, updateHabit, toggleHabit, deleteHabit, addFocusSession],
+    () => ({ ...data, isReady, addTodo, updateTodo, toggleTodo, deleteTodo, addHabit, updateHabit, toggleHabit, deleteHabit, addFocusSession, setGateConfig, setDisplaySettings }),
+    [data, isReady, addTodo, updateTodo, toggleTodo, deleteTodo, addHabit, updateHabit, toggleHabit, deleteHabit, addFocusSession, setGateConfig, setDisplaySettings],
   );
 
   return <FocusFlowContext.Provider value={value}>{children}</FocusFlowContext.Provider>;

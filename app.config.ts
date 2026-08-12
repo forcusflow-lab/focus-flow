@@ -83,6 +83,7 @@ const config: ExpoConfig = {
     favicon: "./assets/images/favicon.png",
   },
   plugins: [
+    "./plugins/with-focus-flow-android",
     "expo-router",
     [
       "expo-audio",

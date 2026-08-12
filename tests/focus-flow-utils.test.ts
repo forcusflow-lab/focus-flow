@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import type { Habit } from "../lib/focus-flow/types";
-import { dayKey, habitStreak, weeklyHabitProgress, weeklyFocusMinutes } from "../lib/focus-flow/utils";
+import type { FocusFlowData, Habit } from "../lib/focus-flow/types";
+import { dayKey, getGateSummary, habitStreak, weeklyHabitProgress, weeklyFocusMinutes } from "../lib/focus-flow/utils";
 
 const base = new Date(2026, 7, 13, 12, 0, 0);
 
@@ -26,5 +26,22 @@ describe("Focus Flowの日付・習慣計算", () => {
       { id: "f-2", startedAt: "2026-08-13T02:00:00.000Z", durationMinutes: 25, completed: false },
     ];
     expect(weeklyFocusMinutes(sessions, base).at(-1)).toEqual({ key: "2026-08-13", minutes: 25 });
+  });
+
+  it("選択した必須Todo・習慣だけを集中制限の未完了数へ反映する", () => {
+    const data: FocusFlowData = {
+      todos: [
+        { id: "t-required", title: "必須Todo", priority: "high", completed: false, createdAt: "2026-08-13T00:00:00.000Z" },
+        { id: "t-optional", title: "任意Todo", priority: "low", completed: false, createdAt: "2026-08-13T00:00:00.000Z" },
+      ],
+      habits: [
+        { id: "h-required", title: "必須習慣", color: "#246B5A", goalPerWeek: 5, createdAt: "2026-08-10T00:00:00.000Z", completedDates: [] },
+        { id: "h-optional", title: "任意習慣", color: "#315B8C", goalPerWeek: 3, createdAt: "2026-08-10T00:00:00.000Z", completedDates: ["2026-08-13"] },
+      ],
+      focusSessions: [],
+      gateConfig: { enabled: true, blockedPackages: ["com.example.video"], requiredTodoIds: ["t-required"], requiredHabitIds: ["h-required"] },
+      displaySettings: { fontScale: "standard", theme: "mist", cardOpacity: "solid" },
+    };
+    expect(getGateSummary(data, base)).toMatchObject({ pendingTodos: 1, pendingHabits: 1, pendingCount: 2 });
   });
 });

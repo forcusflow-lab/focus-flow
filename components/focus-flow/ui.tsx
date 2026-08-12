@@ -1,6 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ReactNode } from "react";
-import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Platform, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ScaledText } from "./scaled-text";
 
 type IconName = React.ComponentProps<typeof MaterialIcons>["name"];
 
@@ -23,8 +24,8 @@ export function ScreenHeading({ eyebrow, title, action }: { eyebrow?: string; ti
   return (
     <View style={styles.heading}>
       <View style={styles.headingCopy}>
-        {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
-        <Text style={styles.headingTitle}>{title}</Text>
+        {eyebrow ? <ScaledText style={styles.eyebrow}>{eyebrow}</ScaledText> : null}
+        <ScaledText style={styles.headingTitle}>{title}</ScaledText>
       </View>
       {action}
     </View>
@@ -49,7 +50,7 @@ export function LoadingScreen() {
   return (
     <View style={styles.loading}>
       <ActivityIndicator size="small" color={COLORS.forest} />
-      <Text style={styles.loadingText}>あなたの記録を読み込んでいます</Text>
+      <ScaledText style={styles.loadingText}>あなたの記録を読み込んでいます</ScaledText>
     </View>
   );
 }
@@ -60,10 +61,10 @@ export function EmptyState({ icon, title, description, actionLabel, onAction }: 
       <View style={styles.emptyIcon}>
         <MaterialIcons name={icon} size={28} color={COLORS.forest} />
       </View>
-      <Text style={styles.emptyTitle}>{title}</Text>
-      <Text style={styles.emptyDescription}>{description}</Text>
+      <ScaledText style={styles.emptyTitle}>{title}</ScaledText>
+      <ScaledText style={styles.emptyDescription}>{description}</ScaledText>
       <TouchableOpacity accessibilityRole="button" onPress={onAction} activeOpacity={0.8} style={styles.emptyAction}>
-        <Text style={styles.emptyActionText}>{actionLabel}</Text>
+        <ScaledText style={styles.emptyActionText}>{actionLabel}</ScaledText>
       </TouchableOpacity>
     </View>
   );
@@ -72,7 +73,7 @@ export function EmptyState({ icon, title, description, actionLabel, onAction }: 
 export function Pill({ label, color = COLORS.forest, muted = false }: { label: string; color?: string; muted?: boolean }) {
   return (
     <View style={[styles.pill, { backgroundColor: muted ? "#EEF2EF" : `${color}18` }]}>
-      <Text style={[styles.pillText, { color: muted ? COLORS.muted : color }]}>{label}</Text>
+      <ScaledText style={[styles.pillText, { color: muted ? COLORS.muted : color }]}>{label}</ScaledText>
     </View>
   );
 }

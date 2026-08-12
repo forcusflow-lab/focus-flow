@@ -2,6 +2,7 @@ import { View, type ViewProps } from "react-native";
 import { SafeAreaView, type Edge } from "react-native-safe-area-context";
 
 import { cn } from "@/lib/utils";
+import { useFocusFlow } from "@/lib/focus-flow/provider";
 
 export interface ScreenContainerProps extends ViewProps {
   /**
@@ -47,6 +48,8 @@ export function ScreenContainer({
   style,
   ...props
 }: ScreenContainerProps) {
+  const { displaySettings } = useFocusFlow();
+  const backgroundColor = displaySettings.theme === "slate" ? "#14231F" : "#F7F8F5";
   return (
     <View
       className={cn(
@@ -55,6 +58,7 @@ export function ScreenContainer({
         containerClassName
       )}
       {...props}
+      style={{ backgroundColor }}
     >
       <SafeAreaView
         edges={edges}

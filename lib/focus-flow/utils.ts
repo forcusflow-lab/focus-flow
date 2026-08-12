@@ -1,4 +1,4 @@
-import type { FocusSession, Habit, Todo } from "./types";
+import type { FocusFlowData, FocusSession, Habit, Todo } from "./types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -91,4 +91,16 @@ export function shortWeekday(key: string) {
 
 export function daysBetween(a: string, b: string) {
   return Math.round((dayKeyToDate(b).getTime() - dayKeyToDate(a).getTime()) / DAY_MS);
+}
+
+export type GateSummary = { pendingTodos: number; pendingHabits: number; pendingCount: number; message: string };
+
+export function getGateSummary(data: FocusFlowData, base = new Date()): GateSummary {
+  const requiredTodos = data.gateConfig.requiredTodoIds.length ? data.todos.filter((todo) => data.gateConfig.requiredTodoIds.includes(todo.id)) : data.todos;
+  const requiredHabits = data.gateConfig.requiredHabitIds.length ? data.habits.filter((habit) => data.gateConfig.requiredHabitIds.includes(habit.id)) : data.habits;
+  const pendingTodos = requiredTodos.filter((todo) => !todo.completed).length;
+  const pendingHabits = requiredHabits.filter((habit) => !isHabitCompleteOn(habit, dayKey(base))).length;
+  const pendingCount = pendingTodos + pendingHabits;
+  const fragments = [pendingTodos ? `Todo ${pendingTodos}件` : "", pendingHabits ? `習慣 ${pendingHabits}件` : ""].filter(Boolean);
+  return { pendingTodos, pendingHabits, pendingCount, message: pendingCount ? `必須項目が未完了です：${fragments.join("・")}` : "今日の必須項目を完了しました" };
 }

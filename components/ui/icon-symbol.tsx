@@ -18,6 +18,7 @@ const MAPPING = {
   "checklist": "checklist",
   "repeat": "repeat",
   "chart.bar.fill": "bar-chart",
+  "gearshape.fill": "settings",
   "paperplane.fill": "send",
   "chevron.left.forwardslash.chevron.right": "code",
   "chevron.right": "chevron-right",
