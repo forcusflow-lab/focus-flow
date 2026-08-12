@@ -29,6 +29,15 @@ export function formatJapaneseDate(value?: string) {
   return `${date.getMonth() + 1}月${date.getDate()}日`;
 }
 
+export type TodoDueStatus = "none" | "future" | "today" | "overdue";
+
+export function getTodoDueStatus(todo: Pick<Todo, "dueDate" | "completed">, base = new Date()): TodoDueStatus {
+  if (!todo.dueDate) return "none";
+  if (todo.dueDate === dayKey(base)) return todo.completed ? "none" : "today";
+  if (todo.dueDate < dayKey(base) && !todo.completed) return "overdue";
+  return "future";
+}
+
 export function isHabitCompleteOn(habit: Habit, value: string) {
   return habit.completedDates.includes(value);
 }
@@ -100,7 +109,7 @@ export type GateRuleSummary = GateSummary & { id: string; label: string; isActiv
 function getRuleSummary(data: FocusFlowData, schedule: GateSchedule | undefined, base: Date): GateRuleSummary {
   const explicitTodoIds = schedule?.requiredTodoIds;
   const explicitHabitIds = schedule?.requiredHabitIds;
-  const baseTodoIds = data.todos.filter((todo) => todo.isRequired).map((todo) => todo.id);
+  const baseTodoIds = data.todos.filter((todo) => todo.isRequired || (data.gateConfig.autoRequireDueToday && getTodoDueStatus(todo, base) === "today")).map((todo) => todo.id);
   const baseHabitIds = data.habits.filter((habit) => habit.isRequired).map((habit) => habit.id);
   const todoIds = Array.from(new Set([...baseTodoIds, ...(explicitTodoIds ?? data.gateConfig.requiredTodoIds)]));
   const habitIds = Array.from(new Set([...baseHabitIds, ...(explicitHabitIds ?? data.gateConfig.requiredHabitIds)]));

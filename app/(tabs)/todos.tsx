@@ -7,7 +7,7 @@ import { COLORS, EmptyState, IconButton, LoadingScreen, Pill, safeHaptic, Screen
 import { ScreenContainer } from "@/components/screen-container";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
 import type { Todo } from "@/lib/focus-flow/types";
-import { formatJapaneseDate } from "@/lib/focus-flow/utils";
+import { formatJapaneseDate, getTodoDueStatus } from "@/lib/focus-flow/utils";
 
 type Filter = "open" | "done";
 const priorityMeta = { high: { label: "高", color: COLORS.error }, medium: { label: "中", color: COLORS.warning }, low: { label: "低", color: COLORS.blue } };
@@ -51,6 +51,7 @@ export default function TodosScreen() {
         ListEmptyComponent={<EmptyState icon="playlist-add" title={filter === "open" ? "最初のTodoを追加しましょう" : "完了したTodoはまだありません"} description={filter === "open" ? "追加時に「必須」を選ぶと、日課ルールに含めなくてもアプリ制限の解除条件になります。" : "完了したTodoはここで振り返れます。"} actionLabel={filter === "open" ? "Todoを追加" : "未完了を表示"} onAction={() => (filter === "open" ? openForm() : setFilter("open"))} />}
         renderItem={({ item }) => {
           const priority = priorityMeta[item.priority];
+          const dueStatus = getTodoDueStatus(item);
           return (
             <View style={[styles.todoCard, item.completed && styles.todoCardCompleted]}>
               <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: item.completed }} onPress={() => { safeHaptic(item.completed ? "light" : "success"); toggleTodo(item.id); }} style={[styles.check, item.completed && styles.checkDone]}>
@@ -58,7 +59,7 @@ export default function TodosScreen() {
               </TouchableOpacity>
               <TouchableOpacity accessibilityRole="button" onPress={() => openForm(item)} activeOpacity={0.72} style={styles.todoCopy}>
                 <Text style={[styles.todoTitle, item.completed && styles.todoTitleCompleted]} numberOfLines={2}>{item.title}</Text>
-                <View style={styles.metaRow}><Pill label={item.isRequired ? "必須" : "任意"} color={item.isRequired ? COLORS.forest : COLORS.muted} muted={!item.isRequired} /><Pill label={`${priority.label}優先`} color={priority.color} /><Text style={styles.dueText}>{formatJapaneseDate(item.dueDate)}</Text></View>
+                <View style={styles.metaRow}><Pill label={item.isRequired ? "必須" : dueStatus === "today" ? "今日・自動必須" : "任意"} color={item.isRequired ? COLORS.forest : dueStatus === "today" ? COLORS.warning : COLORS.muted} muted={!item.isRequired && dueStatus !== "today"} /><Pill label={`${priority.label}優先`} color={priority.color} /><Text style={[styles.dueText, dueStatus === "today" && styles.dueToday, dueStatus === "overdue" && styles.dueOverdue]}>{dueStatus === "today" ? "今日が期限" : dueStatus === "overdue" ? `${formatJapaneseDate(item.dueDate)}・期限超過` : formatJapaneseDate(item.dueDate)}</Text></View>
               </TouchableOpacity>
               <TouchableOpacity accessibilityLabel="Todoを削除" onPress={() => remove(item)} style={styles.deleteButton}><MaterialIcons name="more-horiz" size={22} color={COLORS.muted} /></TouchableOpacity>
             </View>
@@ -88,5 +89,7 @@ const styles = StyleSheet.create({
   todoTitleCompleted: { color: COLORS.muted, textDecorationLine: "line-through" },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
   dueText: { color: COLORS.muted, fontSize: 12, fontWeight: "600" },
+  dueToday: { color: "#A96515", fontWeight: "800" },
+  dueOverdue: { color: COLORS.error, fontWeight: "800" },
   deleteButton: { width: 38, height: 38, alignItems: "center", justifyContent: "center", marginLeft: 4 },
 });
