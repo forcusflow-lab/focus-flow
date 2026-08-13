@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { FocusFlowData, GateSchedule, Habit } from "../lib/focus-flow/types";
-import { dayKey, getGateRuleSummaries, getGateSummary, habitStreak, isScheduleActive, isTodoAchieved, nextRecurringDueDate, weeklyHabitProgress, weeklyFocusMinutes } from "../lib/focus-flow/utils";
+import { dayKey, getGateRuleSummaries, getGateSummary, habitStreak, isScheduleActive, isTodoAchieved, nextRecurringDueDate, reorderSubtasks, weeklyHabitProgress, weeklyFocusMinutes } from "../lib/focus-flow/utils";
 
 const base = new Date(2026, 7, 13, 12, 0, 0);
 
@@ -138,5 +138,10 @@ describe("Focus Flowの日付・習慣計算", () => {
     expect(nextRecurringDueDate("2026-08-13", "daily", base)).toBe("2026-08-14");
     expect(nextRecurringDueDate("2026-08-13", "weekly", base)).toBe("2026-08-20");
     expect(nextRecurringDueDate("2026-08-10", "daily", base)).toBe("2026-08-14");
+  });
+
+  it("サブタスクの並べ替えは順序と完了状態を保持する", () => {
+    const source = [{ id: "one", title: "最初", completed: false }, { id: "two", title: "次", completed: true }, { id: "three", title: "最後", completed: false }];
+    expect(reorderSubtasks(source, 2, 0)).toEqual([{ id: "three", title: "最後", completed: false }, { id: "one", title: "最初", completed: false }, { id: "two", title: "次", completed: true }]);
   });
 });

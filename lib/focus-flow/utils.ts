@@ -1,4 +1,4 @@
-import type { FocusFlowData, FocusSession, GateConfig, GateSchedule, Habit, RepeatRule, Todo } from "./types";
+import type { FocusFlowData, FocusSession, GateConfig, GateSchedule, Habit, RepeatRule, Todo, TodoSubtask } from "./types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -201,4 +201,12 @@ export function isScheduleActive(schedule: GateSchedule, base = new Date()) {
 
 export function isGateTimeActive(config: GateConfig, base = new Date()) {
   return config.schedules.length === 0 || config.schedules.some((schedule) => isScheduleActive(schedule, base));
+}
+
+export function reorderSubtasks(items: TodoSubtask[], from: number, to: number) {
+  if (from === to || from < 0 || to < 0 || from >= items.length || to >= items.length) return items;
+  const next = [...items];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
 }
