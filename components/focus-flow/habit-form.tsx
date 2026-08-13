@@ -1,103 +1,19 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useEffect, useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
-import type { Habit } from "@/lib/focus-flow/types";
+import type { Habit, ProgressUnit } from "@/lib/focus-flow/types";
 import { COLORS, HABIT_COLORS, safeHaptic } from "./ui";
 
-type HabitFormProps = {
-  visible: boolean;
-  habit?: Habit;
-  onClose: () => void;
-  onSave: (input: { title: string; color: string; goalPerWeek: number; isRequired: boolean }) => void;
-};
+const UNITS: { key: ProgressUnit; label: string }[] = [{ key: "check", label: "完了チェック" }, { key: "count", label: "回数" }, { key: "minutes", label: "分" }];
+type HabitFormProps = { visible: boolean; habit?: Habit; onClose: () => void; onSave: (input: { title: string; color: string; goalPerWeek: number; isRequired: boolean; progressUnit: ProgressUnit; targetValue: number }) => void };
 
 export function HabitForm({ visible, habit, onClose, onSave }: HabitFormProps) {
-  const [title, setTitle] = useState("");
-  const [color, setColor] = useState(HABIT_COLORS[0]);
-  const [goal, setGoal] = useState(5);
-  const [isRequired, setIsRequired] = useState(false);
+  const [title, setTitle] = useState(""); const [color, setColor] = useState(HABIT_COLORS[0]); const [goal, setGoal] = useState(5); const [isRequired, setIsRequired] = useState(false); const [progressUnit, setProgressUnit] = useState<ProgressUnit>("check"); const [targetValue, setTargetValue] = useState("1"); const [detailsOpen, setDetailsOpen] = useState(false);
+  useEffect(() => { if (visible) { setTitle(habit?.title ?? ""); setColor(habit?.color ?? HABIT_COLORS[0]); setGoal(habit?.goalPerWeek ?? 5); setIsRequired(habit?.isRequired ?? false); setProgressUnit(habit?.progressUnit ?? "check"); setTargetValue(String(habit?.targetValue ?? 1)); setDetailsOpen(Boolean(habit?.progressUnit && habit.progressUnit !== "check")); } }, [habit, visible]);
+  const save = () => { if (!title.trim()) return; safeHaptic("light"); onSave({ title: title.trim(), color, goalPerWeek: goal, isRequired, progressUnit, targetValue: Math.max(Number(targetValue) || 1, 1) }); onClose(); };
 
-  useEffect(() => {
-    if (visible) {
-      setTitle(habit?.title ?? "");
-      setColor(habit?.color ?? HABIT_COLORS[0]);
-      setGoal(habit?.goalPerWeek ?? 5);
-      setIsRequired(habit?.isRequired ?? false);
-    }
-  }, [habit, visible]);
-
-  const save = () => {
-    if (!title.trim()) return;
-    safeHaptic("light");
-    onSave({ title: title.trim(), color, goalPerWeek: goal, isRequired });
-    onClose();
-  };
-
-  return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={() => undefined}>
-          <View style={styles.handle} />
-          <View style={styles.header}>
-            <Text style={styles.title}>{habit ? "習慣を編集" : "習慣を作る"}</Text>
-            <TouchableOpacity accessibilityLabel="閉じる" onPress={onClose} style={styles.closeButton}>
-              <MaterialIcons name="close" size={21} color={COLORS.muted} />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.label}>習慣の名前</Text>
-          <TextInput value={title} onChangeText={setTitle} autoFocus placeholder="たとえば、朝に10分読む" placeholderTextColor="#94A19A" style={styles.input} returnKeyType="done" onSubmitEditing={save} />
-          <Text style={styles.label}>週の目標日数</Text>
-          <View style={styles.goalRow}>
-            {[3, 5, 7].map((value) => (
-              <TouchableOpacity key={value} onPress={() => setGoal(value)} style={[styles.goalButton, goal === value && styles.goalButtonSelected]}>
-                <Text style={[styles.goalText, goal === value && styles.goalTextSelected]}>{value}日</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <Text style={styles.label}>色</Text>
-          <View style={styles.colorRow}>
-            {HABIT_COLORS.map((item) => (
-              <TouchableOpacity key={item} accessibilityLabel="習慣の色を選択" onPress={() => setColor(item)} style={[styles.colorButton, { backgroundColor: item }, color === item && styles.colorButtonSelected]}>
-                {color === item ? <MaterialIcons name="check" size={18} color={COLORS.white} /> : null}
-              </TouchableOpacity>
-            ))}
-          </View>
-          <Text style={styles.label}>アプリの制限</Text>
-          <View style={styles.requiredChoice}><TouchableOpacity onPress={() => setIsRequired(true)} style={[styles.requiredOption, isRequired && styles.requiredOptionSelected]}><MaterialIcons name="lock" size={18} color={isRequired ? COLORS.forest : COLORS.muted} /><View style={styles.requiredCopy}><Text style={[styles.requiredTitle, isRequired && { color: COLORS.forest }]}>必須習慣にする</Text><Text style={styles.requiredDetail}>今日の記録まで、選択したアプリを使えません</Text></View>{isRequired ? <MaterialIcons name="check-circle" size={20} color={COLORS.forest} /> : null}</TouchableOpacity><TouchableOpacity onPress={() => setIsRequired(false)} style={[styles.requiredOption, !isRequired && styles.requiredOptionSelected]}><MaterialIcons name="check-circle-outline" size={18} color={!isRequired ? COLORS.blue : COLORS.muted} /><View style={styles.requiredCopy}><Text style={[styles.requiredTitle, !isRequired && { color: COLORS.blue }]}>通常の習慣にする</Text><Text style={styles.requiredDetail}>アプリの制限には影響しません</Text></View>{!isRequired ? <MaterialIcons name="check-circle" size={20} color={COLORS.blue} /> : null}</TouchableOpacity></View>
-          <TouchableOpacity accessibilityRole="button" onPress={save} activeOpacity={0.8} style={[styles.saveButton, !title.trim() && styles.saveButtonDisabled]} disabled={!title.trim()}>
-            <Text style={styles.saveText}>{habit ? "変更を保存" : "習慣を作成"}</Text>
-          </TouchableOpacity>
-        </Pressable>
-      </Pressable>
-    </Modal>
-  );
+  return <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}><Pressable style={styles.backdrop} onPress={onClose}><Pressable style={styles.sheet} onPress={() => undefined}><View style={styles.handle} /><View style={styles.header}><Text style={styles.title}>{habit ? "習慣を編集" : "習慣を作る"}</Text><TouchableOpacity accessibilityLabel="閉じる" onPress={onClose} style={styles.closeButton}><MaterialIcons name="close" size={21} color={COLORS.muted} /></TouchableOpacity></View><ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}><Text style={styles.label}>習慣の名前</Text><TextInput value={title} onChangeText={setTitle} autoFocus placeholder="たとえば、朝に10分読む" placeholderTextColor="#94A19A" style={styles.input} returnKeyType="done" onSubmitEditing={save} /><Text style={styles.label}>週の目標日数</Text><View style={styles.optionRow}>{[3, 5, 7].map((value) => <TouchableOpacity key={value} onPress={() => setGoal(value)} style={[styles.smallOption, goal === value && styles.smallOptionSelected]}><Text style={[styles.smallOptionText, goal === value && styles.smallOptionTextSelected]}>{value}日</Text></TouchableOpacity>)}</View><Text style={styles.label}>色</Text><View style={styles.colorRow}>{HABIT_COLORS.map((item) => <TouchableOpacity key={item} accessibilityLabel="習慣の色を選択" onPress={() => setColor(item)} style={[styles.colorButton, { backgroundColor: item }, color === item && styles.colorButtonSelected]}>{color === item ? <MaterialIcons name="check" size={18} color={COLORS.white} /> : null}</TouchableOpacity>)}</View><Text style={styles.label}>アプリの制限</Text><View style={styles.requiredChoice}><TouchableOpacity onPress={() => setIsRequired(true)} style={[styles.requiredOption, isRequired && styles.requiredSelected]}><MaterialIcons name="lock" size={18} color={isRequired ? COLORS.forest : COLORS.muted} /><View style={styles.requiredCopy}><Text style={styles.requiredTitle}>必須にする</Text><Text style={styles.requiredDetail}>日次目標の達成まで対象アプリを制限</Text></View>{isRequired ? <MaterialIcons name="check-circle" size={20} color={COLORS.forest} /> : null}</TouchableOpacity><TouchableOpacity onPress={() => setIsRequired(false)} style={[styles.requiredOption, !isRequired && styles.normalSelected]}><MaterialIcons name="check-circle-outline" size={18} color={!isRequired ? COLORS.blue : COLORS.muted} /><View style={styles.requiredCopy}><Text style={styles.requiredTitle}>通常の習慣</Text><Text style={styles.requiredDetail}>アプリ制限には影響しません</Text></View>{!isRequired ? <MaterialIcons name="check-circle" size={20} color={COLORS.blue} /> : null}</TouchableOpacity></View><TouchableOpacity onPress={() => setDetailsOpen((value) => !value)} style={styles.detailsToggle}><MaterialIcons name={detailsOpen ? "expand-less" : "tune"} size={19} color={COLORS.forest} /><Text style={styles.detailsText}>{detailsOpen ? "数値目標を閉じる" : "回数・時間の目標を設定"}</Text><MaterialIcons name={detailsOpen ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={20} color={COLORS.muted} /></TouchableOpacity>{detailsOpen ? <View style={styles.details}><Text style={styles.label}>今日の達成基準</Text><View style={styles.segmentRow}>{UNITS.map((item) => <TouchableOpacity key={item.key} onPress={() => setProgressUnit(item.key)} style={[styles.segment, progressUnit === item.key && styles.segmentSelected]}><Text style={[styles.segmentText, progressUnit === item.key && styles.segmentTextSelected]}>{item.label}</Text></TouchableOpacity>)}</View>{progressUnit !== "check" ? <View style={styles.targetRow}><Text style={styles.targetText}>1日の目標</Text><TextInput value={targetValue} onChangeText={setTargetValue} keyboardType="number-pad" style={styles.targetInput} /><Text style={styles.targetText}>{progressUnit === "minutes" ? "分" : "回"}</Text></View> : null}</View> : null}<TouchableOpacity accessibilityRole="button" onPress={save} activeOpacity={0.8} style={[styles.saveButton, !title.trim() && styles.saveButtonDisabled]} disabled={!title.trim()}><Text style={styles.saveText}>{habit ? "変更を保存" : "習慣を作成"}</Text></TouchableOpacity></ScrollView></Pressable></Pressable></Modal>;
 }
 
-const styles = StyleSheet.create({
-  backdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(18, 42, 34, 0.38)" },
-  sheet: { backgroundColor: COLORS.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingBottom: 34 },
-  handle: { alignSelf: "center", width: 42, height: 5, borderRadius: 3, backgroundColor: "#C7D1CB", marginTop: 10, marginBottom: 16 },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 22 },
-  title: { color: COLORS.text, fontSize: 20, lineHeight: 27, fontWeight: "800" },
-  closeButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: 14, backgroundColor: "#EDF1EE" },
-  label: { color: COLORS.text, fontSize: 13, fontWeight: "800", marginBottom: 8, marginTop: 2 },
-  input: { minHeight: 50, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white, color: COLORS.text, fontSize: 16, paddingHorizontal: 14, marginBottom: 18 },
-  goalRow: { flexDirection: "row", gap: 8, marginBottom: 18 },
-  goalButton: { flex: 1, minHeight: 46, alignItems: "center", justifyContent: "center", borderRadius: 13, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white },
-  goalButtonSelected: { borderColor: COLORS.forest, backgroundColor: "#E8F0EC" },
-  goalText: { color: COLORS.muted, fontSize: 14, fontWeight: "800" },
-  goalTextSelected: { color: COLORS.forest },
-  colorRow: { flexDirection: "row", gap: 12, marginBottom: 18 },
-  colorButton: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
-  colorButtonSelected: { borderWidth: 3, borderColor: COLORS.white, outlineWidth: 2, outlineColor: COLORS.forest },
-  requiredChoice: { gap: 8, marginBottom: 20 },
-  requiredOption: { minHeight: 58, flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white, paddingHorizontal: 13 },
-  requiredOptionSelected: { borderColor: COLORS.forest, backgroundColor: "#EEF6F1" },
-  requiredCopy: { flex: 1 },
-  requiredTitle: { color: COLORS.text, fontSize: 14, fontWeight: "800" },
-  requiredDetail: { color: COLORS.muted, fontSize: 11, lineHeight: 16, marginTop: 2 },
-  saveButton: { minHeight: 52, alignItems: "center", justifyContent: "center", borderRadius: 16, backgroundColor: COLORS.forest },
-  saveButtonDisabled: { backgroundColor: "#AAB8B0" },
-  saveText: { color: COLORS.white, fontSize: 16, fontWeight: "800" },
-});
+const styles = StyleSheet.create({ backdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(18, 42, 34, 0.38)" }, sheet: { maxHeight: "94%", backgroundColor: COLORS.background, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingBottom: 24 }, handle: { alignSelf: "center", width: 42, height: 5, borderRadius: 3, backgroundColor: "#C7D1CB", marginTop: 10, marginBottom: 12 }, header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }, title: { color: COLORS.text, fontSize: 20, lineHeight: 27, fontWeight: "800" }, closeButton: { width: 42, height: 42, alignItems: "center", justifyContent: "center", borderRadius: 14, backgroundColor: "#EDF1EE" }, body: { paddingBottom: 8 }, label: { color: COLORS.text, fontSize: 13, fontWeight: "800", marginBottom: 8, marginTop: 2 }, input: { minHeight: 50, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white, color: COLORS.text, fontSize: 16, paddingHorizontal: 14, marginBottom: 16 }, optionRow: { flexDirection: "row", gap: 8, marginBottom: 16 }, smallOption: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: 13, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white }, smallOptionSelected: { borderColor: COLORS.forest, backgroundColor: "#E6F2EE" }, smallOptionText: { color: COLORS.muted, fontSize: 14, fontWeight: "800" }, smallOptionTextSelected: { color: COLORS.forest }, colorRow: { flexDirection: "row", gap: 12, marginBottom: 16 }, colorButton: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" }, colorButtonSelected: { borderWidth: 3, borderColor: COLORS.white, outlineWidth: 2, outlineColor: COLORS.forest }, requiredChoice: { gap: 7, marginBottom: 15 }, requiredOption: { minHeight: 54, flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.white, paddingHorizontal: 13 }, requiredSelected: { borderColor: COLORS.forest, backgroundColor: "#EEF6F1" }, normalSelected: { borderColor: COLORS.blue, backgroundColor: "#EFF5FA" }, requiredCopy: { flex: 1 }, requiredTitle: { color: COLORS.text, fontSize: 14, fontWeight: "800" }, requiredDetail: { color: COLORS.muted, fontSize: 11, lineHeight: 16, marginTop: 1 }, detailsToggle: { minHeight: 47, flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 14, backgroundColor: "#E8F3F0", paddingHorizontal: 13, marginBottom: 10 }, detailsText: { flex: 1, color: COLORS.forest, fontSize: 13, fontWeight: "800" }, details: { borderRadius: 16, backgroundColor: "#F2F6F8", padding: 12, marginBottom: 14 }, segmentRow: { flexDirection: "row", gap: 6, marginBottom: 12 }, segment: { flex: 1, minHeight: 40, alignItems: "center", justifyContent: "center", borderRadius: 11, borderWidth: 1, borderColor: "#D6E0E6", backgroundColor: COLORS.white, paddingHorizontal: 4 }, segmentSelected: { borderColor: COLORS.forest, backgroundColor: "#E6F2EE" }, segmentText: { color: COLORS.muted, fontSize: 11, fontWeight: "800" }, segmentTextSelected: { color: COLORS.forest }, targetRow: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: 8 }, targetText: { color: COLORS.text, fontSize: 13, fontWeight: "800" }, targetInput: { width: 70, minHeight: 40, borderRadius: 11, borderWidth: 1, borderColor: "#D6E0E6", backgroundColor: COLORS.white, paddingHorizontal: 10, color: COLORS.text, fontSize: 15, fontWeight: "700" }, saveButton: { minHeight: 52, alignItems: "center", justifyContent: "center", borderRadius: 16, backgroundColor: COLORS.forest, marginTop: 2 }, saveButtonDisabled: { backgroundColor: "#AAB8B0" }, saveText: { color: COLORS.white, fontSize: 16, fontWeight: "800" } });

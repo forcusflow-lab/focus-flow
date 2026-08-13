@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { FocusFlowData, GateSchedule, Habit } from "../lib/focus-flow/types";
-import { dayKey, getGateRuleSummaries, getGateSummary, habitStreak, isScheduleActive, weeklyHabitProgress, weeklyFocusMinutes } from "../lib/focus-flow/utils";
+import { dayKey, getGateRuleSummaries, getGateSummary, habitStreak, isScheduleActive, isTodoAchieved, nextRecurringDueDate, weeklyHabitProgress, weeklyFocusMinutes } from "../lib/focus-flow/utils";
 
 const base = new Date(2026, 7, 13, 12, 0, 0);
 
@@ -113,5 +113,30 @@ describe("Focus Flowの日付・習慣計算", () => {
     expect(getGateSummary(data, base)).toMatchObject({ pendingTodos: 1, pendingHabits: 0, pendingCount: 1 });
     data.gateConfig.autoRequireDueToday = false;
     expect(getGateSummary(data, base)).toMatchObject({ pendingTodos: 0, pendingHabits: 0, pendingCount: 0 });
+  });
+
+  it("必須Todoは時間目標とサブタスクの両方を満たすまで制限を解除しない", () => {
+    const todo = { id: "t-progress", title: "報告書", priority: "high" as const, isRequired: true, completed: false, progressUnit: "minutes" as const, targetValue: 20, progressValue: 20, repeatRule: "none" as const, subtasks: [{ id: "s-1", title: "下書き", completed: false }], createdAt: "2026-08-13T00:00:00.000Z" };
+    const data: FocusFlowData = { todos: [todo], habits: [], memos: [], focusSessions: [], gateConfig: { enabled: true, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, schedules: [] }, displaySettings: { fontScale: "standard", theme: "mist", cardOpacity: "solid" } };
+    expect(isTodoAchieved(todo)).toBe(false);
+    expect(getGateSummary(data, base).pendingCount).toBe(1);
+    todo.subtasks[0].completed = true;
+    todo.completed = true;
+    expect(isTodoAchieved(todo)).toBe(true);
+    expect(getGateSummary(data, base).pendingCount).toBe(0);
+  });
+
+  it("必須習慣は回数目標に到達するまで制限を解除しない", () => {
+    const habit: Habit = { id: "h-count", title: "水を飲む", color: "#246B5A", goalPerWeek: 5, isRequired: true, completedDates: [], progressUnit: "count", targetValue: 3, dailyProgress: { "2026-08-13": 2 }, createdAt: "2026-08-10T00:00:00.000Z" };
+    const data: FocusFlowData = { todos: [], habits: [habit], memos: [], focusSessions: [], gateConfig: { enabled: true, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, schedules: [] }, displaySettings: { fontScale: "standard", theme: "mist", cardOpacity: "solid" } };
+    expect(getGateSummary(data, base).pendingCount).toBe(1);
+    habit.dailyProgress!["2026-08-13"] = 3;
+    expect(getGateSummary(data, base).pendingCount).toBe(0);
+  });
+
+  it("毎日・毎週の反復Todoは完了後に次回の将来日へ進む", () => {
+    expect(nextRecurringDueDate("2026-08-13", "daily", base)).toBe("2026-08-14");
+    expect(nextRecurringDueDate("2026-08-13", "weekly", base)).toBe("2026-08-20");
+    expect(nextRecurringDueDate("2026-08-10", "daily", base)).toBe("2026-08-14");
   });
 });

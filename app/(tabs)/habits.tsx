@@ -8,10 +8,10 @@ import { COLORS, EmptyState, IconButton, LoadingScreen, Pill, safeHaptic, Screen
 import { ScreenContainer } from "@/components/screen-container";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
 import type { Habit } from "@/lib/focus-flow/types";
-import { dayKey, dayKeyOffset, habitStreak, isHabitCompleteOn, shortWeekday, weeklyHabitProgress } from "@/lib/focus-flow/utils";
+import { dayKey, dayKeyOffset, habitProgressLabel, habitStreak, isHabitCompleteOn, shortWeekday, weeklyHabitProgress } from "@/lib/focus-flow/utils";
 
 export default function HabitsScreen() {
-  const { habits, isReady, addHabit, updateHabit, toggleHabit, deleteHabit } = useFocusFlow();
+  const { habits, isReady, addHabit, updateHabit, toggleHabit, adjustHabitProgress, deleteHabit } = useFocusFlow();
   const [formOpen, setFormOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | undefined>();
   const week = useMemo(() => Array.from({ length: 7 }, (_, index) => dayKeyOffset(index - 6)), []);
@@ -35,6 +35,7 @@ export default function HabitsScreen() {
         renderItem={({ item }) => {
           const progress = weeklyHabitProgress(item);
           const todayDone = isHabitCompleteOn(item, dayKey());
+          const progressLabel = habitProgressLabel(item);
           return (
             <View style={styles.habitCard}>
               <View style={styles.cardTop}>
@@ -58,6 +59,7 @@ export default function HabitsScreen() {
                   );
                 })}
               </View>
+              {progressLabel ? <View style={[styles.dailyProgress, { backgroundColor: `${item.color}14` }]}><TouchableOpacity accessibilityLabel="今日の進捗を減らす" onPress={() => adjustHabitProgress(item.id, -1)} style={styles.progressButton}><MaterialIcons name="remove" size={16} color={item.color} /></TouchableOpacity><Text style={[styles.dailyProgressText, { color: item.color }]}>今日 {progressLabel}</Text><TouchableOpacity accessibilityLabel="今日の進捗を増やす" onPress={() => { safeHaptic("light"); adjustHabitProgress(item.id, 1); }} style={styles.progressButton}><MaterialIcons name="add" size={16} color={item.color} /></TouchableOpacity></View> : null}
               <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${Math.round(progress.ratio * 100)}%`, backgroundColor: item.color }]} /></View>
               <TouchableOpacity accessibilityLabel="習慣を削除" onPress={() => remove(item)} style={styles.removeLink}><Text style={styles.removeLinkText}>削除</Text></TouchableOpacity>
             </View>
@@ -87,6 +89,9 @@ const styles = StyleSheet.create({
   dayButton: { width: 30, alignItems: "center", gap: 6 },
   dayLabel: { color: COLORS.muted, fontSize: 11, lineHeight: 14, fontWeight: "800" },
   dayDot: { width: 26, height: 26, borderRadius: 13, borderWidth: 1, borderColor: "#CBD7D0", alignItems: "center", justifyContent: "center" },
+  dailyProgress: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 3, marginTop: 14 },
+  progressButton: { width: 28, height: 28, alignItems: "center", justifyContent: "center", borderRadius: 8, backgroundColor: COLORS.white },
+  dailyProgressText: { minWidth: 58, textAlign: "center", fontSize: 12, fontWeight: "800" },
   progressTrack: { height: 5, borderRadius: 3, backgroundColor: "#E7EEEA", overflow: "hidden", marginTop: 16 },
   progressFill: { height: "100%", borderRadius: 3 },
   removeLink: { minHeight: 30, alignSelf: "flex-end", justifyContent: "flex-end", marginTop: 4 },

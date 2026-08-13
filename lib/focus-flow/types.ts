@@ -1,4 +1,12 @@
 export type Priority = "high" | "medium" | "low";
+export type ProgressUnit = "check" | "count" | "minutes";
+export type RepeatRule = "none" | "daily" | "weekly";
+
+export type TodoSubtask = {
+  id: string;
+  title: string;
+  completed: boolean;
+};
 
 export type Todo = {
   id: string;
@@ -8,6 +16,11 @@ export type Todo = {
   isRequired: boolean;
   completed: boolean;
   completedAt?: string;
+  progressUnit?: ProgressUnit;
+  targetValue?: number;
+  progressValue?: number;
+  repeatRule?: RepeatRule;
+  subtasks?: TodoSubtask[];
   createdAt: string;
 };
 
@@ -18,6 +31,9 @@ export type Habit = {
   goalPerWeek: number;
   isRequired: boolean;
   completedDates: string[];
+  progressUnit?: ProgressUnit;
+  targetValue?: number;
+  dailyProgress?: Record<string, number>;
   createdAt: string;
 };
 

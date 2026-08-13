@@ -1,4 +1,4 @@
-import type { FocusFlowData, FocusSession, GateConfig, GateSchedule, Habit, Todo } from "./types";
+import type { FocusFlowData, FocusSession, GateConfig, GateSchedule, Habit, RepeatRule, Todo } from "./types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -38,8 +38,59 @@ export function getTodoDueStatus(todo: Pick<Todo, "dueDate" | "completed">, base
   return "future";
 }
 
+export function getTodoTarget(todo: Todo) {
+  return Math.max(todo.targetValue ?? 1, 1);
+}
+
+export function getTodoProgress(todo: Todo) {
+  return Math.max(todo.progressValue ?? 0, 0);
+}
+
+export function getTodoSubtasks(todo: Todo) {
+  return todo.subtasks ?? [];
+}
+
+export function isTodoAchieved(todo: Todo) {
+  const unit = todo.progressUnit ?? "check";
+  const progressMet = unit === "check" || getTodoProgress(todo) >= getTodoTarget(todo);
+  const subtasks = getTodoSubtasks(todo);
+  const subtasksMet = subtasks.length === 0 || subtasks.every((subtask) => subtask.completed);
+  return todo.completed && progressMet && subtasksMet;
+}
+
+export function todoProgressLabel(todo: Todo) {
+  const unit = todo.progressUnit ?? "check";
+  if (unit === "check") return null;
+  const suffix = unit === "minutes" ? "分" : "回";
+  return `${Math.min(getTodoProgress(todo), getTodoTarget(todo))}/${getTodoTarget(todo)}${suffix}`;
+}
+
+export function nextRecurringDueDate(currentDueDate: string | undefined, repeatRule: RepeatRule | undefined, base = new Date()) {
+  if (!repeatRule || repeatRule === "none") return currentDueDate;
+  const today = dayKey(base);
+  const anchor = currentDueDate && currentDueDate >= today ? dayKeyToDate(currentDueDate) : base;
+  return dayKeyOffset(repeatRule === "daily" ? 1 : 7, anchor);
+}
+
+export function isTodoRequiredForGate(todo: Todo, autoRequireDueToday: boolean, base = new Date()) {
+  const today = dayKey(base);
+  const repeatRule = todo.repeatRule ?? "none";
+  const repeatingInstanceIsDue = repeatRule === "none" || !todo.dueDate || todo.dueDate <= today;
+  return (todo.isRequired && repeatingInstanceIsDue) || (autoRequireDueToday && getTodoDueStatus(todo, base) === "today");
+}
+
 export function isHabitCompleteOn(habit: Habit, value: string) {
+  const unit = habit.progressUnit ?? "check";
+  if (unit !== "check") return (habit.dailyProgress?.[value] ?? 0) >= Math.max(habit.targetValue ?? 1, 1);
   return habit.completedDates.includes(value);
+}
+
+export function habitProgressLabel(habit: Habit, value = dayKey()) {
+  const unit = habit.progressUnit ?? "check";
+  if (unit === "check") return null;
+  const target = Math.max(habit.targetValue ?? 1, 1);
+  const suffix = unit === "minutes" ? "分" : "回";
+  return `${Math.min(habit.dailyProgress?.[value] ?? 0, target)}/${target}${suffix}`;
 }
 
 export function habitStreak(habit: Habit, base = new Date()) {
@@ -53,16 +104,12 @@ export function habitStreak(habit: Habit, base = new Date()) {
 }
 
 export function weeklyHabitProgress(habit: Habit, base = new Date()) {
-  const completed = Array.from({ length: 7 }, (_, index) => dayKeyOffset(index - 6, base)).filter((key) =>
-    isHabitCompleteOn(habit, key),
-  ).length;
+  const completed = Array.from({ length: 7 }, (_, index) => dayKeyOffset(index - 6, base)).filter((key) => isHabitCompleteOn(habit, key)).length;
   return { completed, target: habit.goalPerWeek, ratio: habit.goalPerWeek ? Math.min(completed / habit.goalPerWeek, 1) : 0 };
 }
 
 export function focusMinutesOnDay(sessions: FocusSession[], key: string) {
-  return sessions
-    .filter((session) => session.completed && dayKey(new Date(session.startedAt)) === key)
-    .reduce((total, session) => total + session.durationMinutes, 0);
+  return sessions.filter((session) => session.completed && dayKey(new Date(session.startedAt)) === key).reduce((total, session) => total + session.durationMinutes, 0);
 }
 
 export function weeklyFocusMinutes(sessions: FocusSession[], base = new Date()) {
@@ -103,15 +150,14 @@ export function daysBetween(a: string, b: string) {
 }
 
 export type GateSummary = { pendingTodos: number; pendingHabits: number; pendingCount: number; message: string };
-
 export type GateRuleSummary = GateSummary & { id: string; label: string; isActive: boolean; blockedPackages: string[]; requiredTodoIds: string[]; requiredHabitIds: string[]; pendingTodoIds: string[]; pendingHabitIds: string[]; schedule?: GateSchedule };
 
 function getRuleSummary(data: FocusFlowData, schedule: GateSchedule | undefined, base: Date): GateRuleSummary {
-  const baseTodoIds = data.todos.filter((todo) => todo.isRequired || (data.gateConfig.autoRequireDueToday && getTodoDueStatus(todo, base) === "today")).map((todo) => todo.id);
+  const baseTodoIds = data.todos.filter((todo) => isTodoRequiredForGate(todo, data.gateConfig.autoRequireDueToday, base)).map((todo) => todo.id);
   const baseHabitIds = data.habits.filter((habit) => habit.isRequired).map((habit) => habit.id);
   const requiredTodos = data.todos.filter((todo) => baseTodoIds.includes(todo.id));
   const requiredHabits = data.habits.filter((habit) => baseHabitIds.includes(habit.id));
-  const pendingTodoIds = requiredTodos.filter((todo) => !todo.completed).map((todo) => todo.id);
+  const pendingTodoIds = requiredTodos.filter((todo) => !isTodoAchieved(todo)).map((todo) => todo.id);
   const pendingHabitIds = requiredHabits.filter((habit) => !isHabitCompleteOn(habit, dayKey(base))).map((habit) => habit.id);
   const pendingTodos = pendingTodoIds.length;
   const pendingHabits = pendingHabitIds.length;
