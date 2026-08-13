@@ -17,6 +17,7 @@ const MAPPING = {
   "house.fill": "home",
   "checklist": "checklist",
   "repeat": "repeat",
+  "note.text": "sticky-note-2",
   "chart.bar.fill": "bar-chart",
   "gearshape.fill": "settings",
   "paperplane.fill": "send",

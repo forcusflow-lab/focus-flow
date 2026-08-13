@@ -6,7 +6,7 @@ import { useFocusFlow } from "@/lib/focus-flow/provider";
 import { dayKeyOffset, getGateSummary, isGateTimeActive, shortWeekday, weeklyCompletedTodos, weeklyHabitProgress } from "@/lib/focus-flow/utils";
 
 export default function InsightsScreen() {
-  const { todos, habits, focusSessions, gateConfig, displaySettings, isReady } = useFocusFlow();
+  const { todos, habits, memos, focusSessions, gateConfig, displaySettings, isReady } = useFocusFlow();
   if (!isReady) return <ScreenContainer><LoadingScreen /></ScreenContainer>;
 
   const completed = weeklyCompletedTodos(todos);
@@ -14,7 +14,7 @@ export default function InsightsScreen() {
   const habitCompletions = habits.reduce((sum, habit) => sum + weeklyHabitProgress(habit).completed, 0);
   const habitTargets = habits.reduce((sum, habit) => sum + habit.goalPerWeek, 0);
   const maxTodos = Math.max(...completed.map((item) => item.count), 1);
-  const gate = getGateSummary({ todos, habits, focusSessions, gateConfig, displaySettings });
+  const gate = getGateSummary({ todos, habits, memos, focusSessions, gateConfig, displaySettings });
   const timeActive = isGateTimeActive(gateConfig);
 
   return <ScreenContainer className="px-5" containerClassName="bg-background"><FlatList data={completed} keyExtractor={(item) => item.key} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}

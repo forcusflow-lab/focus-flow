@@ -21,6 +21,14 @@ export type Habit = {
   createdAt: string;
 };
 
+export type Memo = {
+  id: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type FocusSession = {
   id: string;
   startedAt: string;
@@ -66,6 +74,7 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
 export type FocusFlowData = {
   todos: Todo[];
   habits: Habit[];
+  memos: Memo[];
   focusSessions: FocusSession[];
   gateConfig: GateConfig;
   displaySettings: DisplaySettings;
@@ -74,6 +83,7 @@ export type FocusFlowData = {
 export const EMPTY_FOCUS_FLOW_DATA: FocusFlowData = {
   todos: [],
   habits: [],
+  memos: [],
   focusSessions: [],
   gateConfig: DEFAULT_GATE_CONFIG,
   displaySettings: DEFAULT_DISPLAY_SETTINGS,

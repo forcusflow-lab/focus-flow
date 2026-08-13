@@ -1,7 +1,7 @@
 import { type TextProps, Text, type TextStyle, StyleSheet } from "react-native";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
 
-const FACTORS = { compact: 0.9, standard: 1, large: 1.15 } as const;
+const FACTORS = { compact: 0.82, standard: 0.94, large: 1.06 } as const;
 
 export function ScaledText({ style, ...props }: TextProps) {
   const { displaySettings } = useFocusFlow();

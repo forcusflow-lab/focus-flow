@@ -6,15 +6,15 @@ import { ScaledText } from "./scaled-text";
 type IconName = React.ComponentProps<typeof MaterialIcons>["name"];
 
 export const COLORS = {
-  forest: "#246B5A",
-  blue: "#315B8C",
-  background: "#F7F8F5",
-  text: "#16332B",
-  muted: "#61716B",
-  border: "#DCE4DF",
-  success: "#4B9B72",
-  warning: "#C98626",
-  error: "#B64A4A",
+  forest: "#1B6B62",
+  blue: "#3566B7",
+  background: "#F2F6FC",
+  text: "#15233B",
+  muted: "#617089",
+  border: "#D7E1F0",
+  success: "#198A68",
+  warning: "#B96B13",
+  error: "#C24756",
   white: "#FFFFFF",
 };
 
@@ -87,16 +87,16 @@ export function safeHaptic(type: "light" | "success") {
 }
 
 const styles = StyleSheet.create({
-  heading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 },
+  heading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 15 },
   headingCopy: { flexShrink: 1 },
   eyebrow: { color: COLORS.forest, fontSize: 13, fontWeight: "700", letterSpacing: 0.5, marginBottom: 3 },
-  headingTitle: { color: COLORS.text, fontSize: 28, lineHeight: 35, fontWeight: "800", letterSpacing: -0.6 },
-  iconButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: 14, backgroundColor: "#E8F0EC" },
+  headingTitle: { color: COLORS.text, fontSize: 26, lineHeight: 31, fontWeight: "800", letterSpacing: -0.6 },
+  iconButton: { width: 42, height: 42, alignItems: "center", justifyContent: "center", borderRadius: 14, backgroundColor: "rgba(255,255,255,0.74)", borderWidth: 1, borderColor: "#DCE5F3" },
   iconButtonFilled: { backgroundColor: COLORS.forest },
   loading: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
   loadingText: { color: COLORS.muted, fontSize: 14 },
-  empty: { alignItems: "center", justifyContent: "center", paddingHorizontal: 32, paddingVertical: 34, backgroundColor: COLORS.white, borderColor: COLORS.border, borderWidth: 1, borderRadius: 22, marginTop: 8 },
-  emptyIcon: { width: 54, height: 54, borderRadius: 18, backgroundColor: "#E8F0EC", alignItems: "center", justifyContent: "center", marginBottom: 14 },
+  empty: { alignItems: "center", justifyContent: "center", paddingHorizontal: 28, paddingVertical: 28, backgroundColor: "rgba(255,255,255,0.72)", borderColor: COLORS.border, borderWidth: 1, borderRadius: 20, marginTop: 8 },
+  emptyIcon: { width: 50, height: 50, borderRadius: 17, backgroundColor: "#E2F0EF", alignItems: "center", justifyContent: "center", marginBottom: 12 },
   emptyTitle: { color: COLORS.text, fontSize: 17, lineHeight: 24, fontWeight: "800", textAlign: "center" },
   emptyDescription: { color: COLORS.muted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 7 },
   emptyAction: { minHeight: 44, justifyContent: "center", paddingHorizontal: 18, borderRadius: 22, backgroundColor: COLORS.forest, marginTop: 18 },

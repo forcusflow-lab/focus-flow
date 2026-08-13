@@ -38,6 +38,7 @@ describe("Focus Flowの日付・習慣計算", () => {
         { id: "h-required", title: "必須習慣", color: "#246B5A", goalPerWeek: 5, isRequired: true, createdAt: "2026-08-10T00:00:00.000Z", completedDates: [] },
         { id: "h-normal", title: "通常習慣", color: "#315B8C", goalPerWeek: 3, isRequired: false, createdAt: "2026-08-10T00:00:00.000Z", completedDates: ["2026-08-13"] },
       ],
+      memos: [],
       focusSessions: [],
       gateConfig: { enabled: true, blockedPackages: ["com.example.video"], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, schedules: [] },
       displaySettings: { fontScale: "standard", theme: "mist", cardOpacity: "solid" },
@@ -66,6 +67,7 @@ describe("Focus Flowの日付・習慣計算", () => {
         { id: "t-work", title: "通常Todo", priority: "medium", isRequired: false, completed: false, createdAt: "2026-08-10T00:00:00.000Z" },
       ],
       habits: [{ id: "h-morning", title: "必須習慣", color: "#246B5A", goalPerWeek: 5, isRequired: true, createdAt: "2026-08-10T00:00:00.000Z", completedDates: [] }],
+      memos: [],
       focusSessions: [],
       gateConfig: {
         enabled: true, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true,
@@ -88,6 +90,7 @@ describe("Focus Flowの日付・習慣計算", () => {
     const data: FocusFlowData = {
       todos: [{ id: "t-core", title: "薬を飲む", priority: "high", isRequired: true, completed: false, createdAt: "2026-08-13T00:00:00.000Z" }],
       habits: [{ id: "h-optional", title: "散歩", color: "#246B5A", goalPerWeek: 3, isRequired: false, createdAt: "2026-08-10T00:00:00.000Z", completedDates: [] }],
+      memos: [],
       focusSessions: [],
       gateConfig: { enabled: true, blockedPackages: ["com.example.video"], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, schedules: [] },
       displaySettings: { fontScale: "standard", theme: "mist", cardOpacity: "solid" },
@@ -103,7 +106,7 @@ describe("Focus Flowの日付・習慣計算", () => {
         { id: "t-overdue", title: "期限超過", priority: "high", dueDate: "2026-08-12", isRequired: false, completed: false, createdAt: "2026-08-10T00:00:00.000Z" },
         { id: "t-done", title: "完了済み", priority: "low", dueDate: "2026-08-13", isRequired: false, completed: true, completedAt: "2026-08-13T02:00:00.000Z", createdAt: "2026-08-10T00:00:00.000Z" },
       ],
-      habits: [], focusSessions: [],
+      habits: [], memos: [], focusSessions: [],
       gateConfig: { enabled: true, blockedPackages: ["com.example.video"], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, schedules: [] },
       displaySettings: { fontScale: "standard", theme: "mist", cardOpacity: "solid" },
     };

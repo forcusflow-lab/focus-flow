@@ -11,7 +11,7 @@ export default function TabLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const bottomPadding = Platform.OS === "web" ? 12 : Math.max(insets.bottom, 8);
-  const tabBarHeight = 56 + bottomPadding;
+  const tabBarHeight = 58 + bottomPadding;
 
   return (
     <FocusFlowProvider>
@@ -24,8 +24,8 @@ export default function TabLayout() {
           paddingTop: 8,
           paddingBottom: bottomPadding,
           height: tabBarHeight,
-          backgroundColor: colors.background,
-          borderTopColor: colors.border,
+          backgroundColor: "rgba(247,250,255,0.92)",
+          borderTopColor: "#D7E1F0",
           borderTopWidth: 0.5,
         },
       }}
@@ -33,6 +33,7 @@ export default function TabLayout() {
       <Tabs.Screen name="index" options={{ title: "今日", tabBarIcon: ({ color }) => <IconSymbol size={25} name="house.fill" color={color} /> }} />
       <Tabs.Screen name="todos" options={{ title: "Todo", tabBarIcon: ({ color }) => <IconSymbol size={25} name="checklist" color={color} /> }} />
       <Tabs.Screen name="habits" options={{ title: "習慣", tabBarIcon: ({ color }) => <IconSymbol size={25} name="repeat" color={color} /> }} />
+      <Tabs.Screen name="notes" options={{ title: "メモ", tabBarIcon: ({ color }) => <IconSymbol size={24} name="note.text" color={color} /> }} />
       <Tabs.Screen name="insights" options={{ title: "振り返り", tabBarIcon: ({ color }) => <IconSymbol size={25} name="chart.bar.fill" color={color} /> }} />
       <Tabs.Screen name="settings" options={{ title: "設定", tabBarIcon: ({ color }) => <IconSymbol size={24} name="gearshape.fill" color={color} /> }} />
     </Tabs>

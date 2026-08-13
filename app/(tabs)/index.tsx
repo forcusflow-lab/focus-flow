@@ -11,11 +11,11 @@ import { dayKey, getGateRuleSummaries, getGateSummary, isGateTimeActive, isHabit
 
 export default function TodayScreen() {
   const router = useRouter();
-  const { todos, habits, focusSessions, gateConfig, displaySettings, isReady, toggleTodo, toggleHabit, addTodo } = useFocusFlow();
+  const { todos, habits, memos, focusSessions, gateConfig, displaySettings, isReady, toggleTodo, toggleHabit, addTodo } = useFocusFlow();
   const [taskFormOpen, setTaskFormOpen] = useState(false);
   const today = dayKey();
-  const gateSummary = useMemo(() => getGateSummary({ todos, habits, focusSessions, gateConfig, displaySettings }), [todos, habits, focusSessions, gateConfig, displaySettings]);
-  const activeRules = useMemo(() => getGateRuleSummaries({ todos, habits, focusSessions, gateConfig, displaySettings }).filter((rule) => rule.isActive), [todos, habits, focusSessions, gateConfig, displaySettings]);
+  const gateSummary = useMemo(() => getGateSummary({ todos, habits, memos, focusSessions, gateConfig, displaySettings }), [todos, habits, memos, focusSessions, gateConfig, displaySettings]);
+  const activeRules = useMemo(() => getGateRuleSummaries({ todos, habits, memos, focusSessions, gateConfig, displaySettings }).filter((rule) => rule.isActive), [todos, habits, memos, focusSessions, gateConfig, displaySettings]);
   const timeActive = isGateTimeActive(gateConfig);
   const requiredTodoIds = new Set(activeRules.flatMap((rule) => rule.requiredTodoIds));
   const requiredHabitIds = new Set(activeRules.flatMap((rule) => rule.requiredHabitIds));

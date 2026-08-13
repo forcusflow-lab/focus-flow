@@ -3,7 +3,7 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, 
 
 import { createId, dayKey } from "./utils";
 import { syncAndroidGate } from "./android-gate";
-import { DEFAULT_DISPLAY_SETTINGS, DEFAULT_GATE_CONFIG, DisplaySettings, EMPTY_FOCUS_FLOW_DATA, FocusFlowData, GateConfig, Habit, Priority, Todo } from "./types";
+import { DEFAULT_DISPLAY_SETTINGS, DEFAULT_GATE_CONFIG, DisplaySettings, EMPTY_FOCUS_FLOW_DATA, FocusFlowData, GateConfig, Habit, Memo, Priority, Todo } from "./types";
 
 const STORAGE_KEY = "@focus-flow/data-v1";
 
@@ -17,6 +17,9 @@ type FocusFlowContextValue = FocusFlowData & {
   updateHabit: (id: string, input: { title: string; color: string; goalPerWeek: number; isRequired: boolean }) => void;
   toggleHabit: (id: string, date?: string) => void;
   deleteHabit: (id: string) => void;
+  addMemo: (input: { title?: string; body: string }) => void;
+  updateMemo: (id: string, input: { title?: string; body: string }) => void;
+  deleteMemo: (id: string) => void;
   addFocusSession: (durationMinutes: number) => void;
   setGateConfig: (input: Partial<GateConfig>) => void;
   setDisplaySettings: (input: Partial<DisplaySettings>) => void;
@@ -33,6 +36,7 @@ function normalizeData(value: unknown): FocusFlowData {
   return {
     todos: Array.isArray(candidate.todos) ? candidate.todos.map((todo) => ({ ...todo, isRequired: Boolean(todo.isRequired || legacyTodoIds.has(todo.id)) })) : [],
     habits: Array.isArray(candidate.habits) ? candidate.habits.map((habit) => ({ ...habit, isRequired: Boolean(habit.isRequired || legacyHabitIds.has(habit.id)) })) : [],
+    memos: Array.isArray(candidate.memos) ? candidate.memos : [],
     focusSessions: Array.isArray(candidate.focusSessions) ? candidate.focusSessions : [],
     gateConfig: { ...gateConfig, requiredTodoIds: [], requiredHabitIds: [], schedules: gateConfig.schedules.map((schedule) => ({ ...schedule, requiredTodoIds: [], requiredHabitIds: [] })) },
     displaySettings: { ...DEFAULT_DISPLAY_SETTINGS, ...(candidate.displaySettings ?? {}) },
@@ -156,6 +160,30 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
 
   const deleteHabit = useCallback((id: string) => commit((current) => ({ ...current, habits: current.habits.filter((habit) => habit.id !== id) })), [commit]);
 
+  const addMemo = useCallback(
+    ({ title, body }: { title?: string; body: string }) => {
+      const trimmedBody = body.trim();
+      const trimmedTitle = title?.trim() ?? "";
+      if (!trimmedTitle && !trimmedBody) return;
+      const now = new Date().toISOString();
+      const memo: Memo = { id: createId("memo"), title: trimmedTitle || trimmedBody.split("\n")[0].slice(0, 38), body: trimmedBody, createdAt: now, updatedAt: now };
+      commit((current) => ({ ...current, memos: [memo, ...current.memos] }));
+    },
+    [commit],
+  );
+
+  const updateMemo = useCallback(
+    (id: string, { title, body }: { title?: string; body: string }) => {
+      const trimmedBody = body.trim();
+      const trimmedTitle = title?.trim() ?? "";
+      if (!trimmedTitle && !trimmedBody) return;
+      commit((current) => ({ ...current, memos: current.memos.map((memo) => memo.id === id ? { ...memo, title: trimmedTitle || trimmedBody.split("\n")[0].slice(0, 38), body: trimmedBody, updatedAt: new Date().toISOString() } : memo) }));
+    },
+    [commit],
+  );
+
+  const deleteMemo = useCallback((id: string) => commit((current) => ({ ...current, memos: current.memos.filter((memo) => memo.id !== id) })), [commit]);
+
   const addFocusSession = useCallback(
     (durationMinutes: number) => {
       if (durationMinutes <= 0) return;
@@ -185,8 +213,8 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
   }, [data, isReady]);
 
   const value = useMemo(
-    () => ({ ...data, isReady, addTodo, updateTodo, toggleTodo, deleteTodo, addHabit, updateHabit, toggleHabit, deleteHabit, addFocusSession, setGateConfig, setDisplaySettings }),
-    [data, isReady, addTodo, updateTodo, toggleTodo, deleteTodo, addHabit, updateHabit, toggleHabit, deleteHabit, addFocusSession, setGateConfig, setDisplaySettings],
+    () => ({ ...data, isReady, addTodo, updateTodo, toggleTodo, deleteTodo, addHabit, updateHabit, toggleHabit, deleteHabit, addMemo, updateMemo, deleteMemo, addFocusSession, setGateConfig, setDisplaySettings }),
+    [data, isReady, addTodo, updateTodo, toggleTodo, deleteTodo, addHabit, updateHabit, toggleHabit, deleteHabit, addMemo, updateMemo, deleteMemo, addFocusSession, setGateConfig, setDisplaySettings],
   );
 
   return <FocusFlowContext.Provider value={value}>{children}</FocusFlowContext.Provider>;
