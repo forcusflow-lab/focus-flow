@@ -1,8 +1,9 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useEffect, useState } from "react";
-import { Alert, FlatList, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, FlatList, Modal, Platform, Pressable, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 
 import { COLORS, EmptyState, IconButton, LoadingScreen, safeHaptic, ScreenHeading } from "@/components/focus-flow/ui";
+import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
 import { ScreenContainer } from "@/components/screen-container";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
 import type { Memo } from "@/lib/focus-flow/types";

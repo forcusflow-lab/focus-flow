@@ -1,8 +1,9 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useMemo, useState } from "react";
-import { Alert, FlatList, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, FlatList, Platform, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { TaskForm } from "@/components/focus-flow/task-form";
+import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
 import { COLORS, EmptyState, IconButton, LoadingScreen, Pill, safeHaptic, ScreenHeading } from "@/components/focus-flow/ui";
 import { ScreenContainer } from "@/components/screen-container";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
@@ -59,7 +60,7 @@ export default function TodosScreen() {
               </TouchableOpacity>
               <TouchableOpacity accessibilityRole="button" onPress={() => openForm(item)} activeOpacity={0.72} style={styles.todoCopy}>
                 <Text style={[styles.todoTitle, item.completed && styles.todoTitleCompleted]} numberOfLines={2}>{item.title}</Text>
-                <View style={styles.metaRow}>{item.isRequired ? <Pill label="必須・アプリ制限あり" color={COLORS.forest} /> : dueStatus === "today" ? <Pill label="今日・自動必須" color={COLORS.warning} /> : null}<Pill label={`${priority.label}優先`} color={priority.color} /><Text style={[styles.dueText, dueStatus === "today" && styles.dueToday, dueStatus === "overdue" && styles.dueOverdue]}>{dueStatus === "today" ? "今日が期限" : dueStatus === "overdue" ? `${formatJapaneseDate(item.dueDate)}・期限超過` : formatJapaneseDate(item.dueDate)}</Text></View>
+                <View style={styles.metaRow}>{item.isRequired ? <Pill label="必須" color={COLORS.forest} /> : dueStatus === "today" ? <Pill label="今日" color={COLORS.warning} /> : null}<Pill label={`優先 ${priority.label}`} color={priority.color} />{item.dueDate ? <Text numberOfLines={1} style={[styles.dueText, dueStatus === "today" && styles.dueToday, dueStatus === "overdue" && styles.dueOverdue]}>{dueStatus === "today" ? "今日が期限" : dueStatus === "overdue" ? "期限超過" : formatJapaneseDate(item.dueDate)}</Text> : null}</View>
               </TouchableOpacity>
               <TouchableOpacity accessibilityLabel="Todoを削除" onPress={() => remove(item)} style={styles.deleteButton}><MaterialIcons name="more-horiz" size={22} color={COLORS.muted} /></TouchableOpacity>
             </View>
@@ -72,23 +73,23 @@ export default function TodosScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingTop: 16, paddingBottom: 28, flexGrow: 1 },
-  filters: { flexDirection: "row", gap: 8, marginBottom: 16 },
-  filter: { minHeight: 38, justifyContent: "center", paddingHorizontal: 14, borderRadius: 19, backgroundColor: "#E8EEEA" },
+  content: { paddingTop: 16, paddingBottom: 24, flexGrow: 1 },
+  filters: { flexDirection: "row", gap: 8, marginBottom: 12 },
+  filter: { flex: 1, minHeight: 42, alignItems: "center", justifyContent: "center", paddingHorizontal: 12, borderRadius: 14, backgroundColor: "#E7EEF7" },
   filterActive: { backgroundColor: COLORS.forest },
-  filterText: { color: COLORS.muted, fontSize: 13, fontWeight: "800" },
+  filterText: { color: COLORS.muted, fontSize: 14, fontWeight: "800" },
   filterTextActive: { color: COLORS.white },
-  explainer: { flexDirection: "row", alignItems: "center", gap: 7, backgroundColor: "#EAF3EE", borderRadius: 12, paddingHorizontal: 11, paddingVertical: 9, marginBottom: 14 },
-  explainerText: { color: "#416558", flex: 1, fontSize: 11, lineHeight: 16, fontWeight: "700" },
-  todoCard: { flexDirection: "row", alignItems: "center", backgroundColor: COLORS.white, borderColor: COLORS.border, borderWidth: 1, borderRadius: 18, padding: 14, marginBottom: 10 },
+  explainer: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#E9F4F1", borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12 },
+  explainerText: { color: "#245D52", flex: 1, fontSize: 12, lineHeight: 18, fontWeight: "700" },
+  todoCard: { flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255,255,255,0.86)", borderColor: COLORS.border, borderWidth: 1, borderRadius: 18, padding: 14, marginBottom: 9 },
   todoCardCompleted: { opacity: 0.7 },
   check: { width: 28, height: 28, alignItems: "center", justifyContent: "center", borderRadius: 10, borderWidth: 1.5, borderColor: "#AFC0B7", marginRight: 12 },
   checkDone: { borderColor: COLORS.success, backgroundColor: COLORS.success },
   todoCopy: { flex: 1, minWidth: 0 },
-  todoTitle: { color: COLORS.text, fontSize: 16, lineHeight: 22, fontWeight: "800" },
+  todoTitle: { color: COLORS.text, fontSize: 16, lineHeight: 23, fontWeight: "800" },
   todoTitleCompleted: { color: COLORS.muted, textDecorationLine: "line-through" },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
-  dueText: { color: COLORS.muted, fontSize: 12, fontWeight: "600" },
+  metaRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 6, rowGap: 6, marginTop: 8 },
+  dueText: { color: COLORS.muted, fontSize: 12, lineHeight: 18, fontWeight: "700", marginLeft: 2 },
   dueToday: { color: "#A96515", fontWeight: "800" },
   dueOverdue: { color: COLORS.error, fontWeight: "800" },
   deleteButton: { width: 38, height: 38, alignItems: "center", justifyContent: "center", marginLeft: 4 },

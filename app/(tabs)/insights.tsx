@@ -1,6 +1,7 @@
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { FlatList, StyleSheet, View } from "react-native";
 
 import { COLORS, LoadingScreen, ScreenHeading } from "@/components/focus-flow/ui";
+import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
 import { ScreenContainer } from "@/components/screen-container";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
 import { dayKeyOffset, getGateSummary, isGateTimeActive, shortWeekday, weeklyCompletedTodos, weeklyHabitProgress } from "@/lib/focus-flow/utils";

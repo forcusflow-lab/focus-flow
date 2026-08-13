@@ -18,6 +18,7 @@ const MAPPING = {
   "checklist": "checklist",
   "repeat": "repeat",
   "note.text": "sticky-note-2",
+  "ellipsis.circle": "more-horiz",
   "chart.bar.fill": "bar-chart",
   "gearshape.fill": "settings",
   "paperplane.fill": "send",

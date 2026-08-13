@@ -1,8 +1,9 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useMemo, useState } from "react";
-import { Alert, FlatList, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, FlatList, Platform, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { HabitForm } from "@/components/focus-flow/habit-form";
+import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
 import { COLORS, EmptyState, IconButton, LoadingScreen, Pill, safeHaptic, ScreenHeading } from "@/components/focus-flow/ui";
 import { ScreenContainer } from "@/components/screen-container";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
@@ -29,7 +30,7 @@ export default function HabitsScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        ListHeaderComponent={<><ScreenHeading eyebrow="続ける仕組み" title="習慣" action={<IconButton icon="add" label="習慣を追加" onPress={() => openForm()} variant="filled" />} /><View style={styles.explainer}><MaterialIcons name="lock-outline" size={17} color={COLORS.forest} /><Text style={styles.explainerText}>必須 {habits.filter((habit) => habit.isRequired).length}件は、集中ルール中の基本解除条件です。</Text></View></>}
+        ListHeaderComponent={<><ScreenHeading eyebrow="続ける仕組み" title="習慣" action={<IconButton icon="add" label="習慣を追加" onPress={() => openForm()} variant="filled" />} /><View style={styles.explainer}><MaterialIcons name="lock-outline" size={17} color={COLORS.forest} /><Text style={styles.explainerText}>必須の習慣は、アプリ制限を解除する条件になります。</Text></View></>}
         ListEmptyComponent={<EmptyState icon="repeat" title="最初の習慣を作りましょう" description="登録時に「必須の習慣」を選ぶと、毎日のアプリ制限の解除条件にできます。" actionLabel="習慣を作る" onAction={() => openForm()} />}
         renderItem={({ item }) => {
           const progress = weeklyHabitProgress(item);
@@ -39,7 +40,7 @@ export default function HabitsScreen() {
               <View style={styles.cardTop}>
                 <TouchableOpacity onPress={() => openForm(item)} activeOpacity={0.72} style={styles.habitTitleArea}>
                   <View style={[styles.habitMark, { backgroundColor: `${item.color}18` }]}><MaterialIcons name="auto-awesome" size={18} color={item.color} /></View>
-                  <View style={styles.habitTitleCopy}><Text style={styles.habitTitle}>{item.title}</Text><View style={styles.habitMetaRow}>{item.isRequired ? <Pill label="必須・アプリ制限あり" color={COLORS.forest} /> : null}<Text style={styles.habitMeta}>今週 {progress.completed}/{progress.target}日 ・ {habitStreak(item)}日連続</Text></View></View>
+                  <View style={styles.habitTitleCopy}><Text style={styles.habitTitle} numberOfLines={1}>{item.title}</Text><View style={styles.habitMetaRow}>{item.isRequired ? <Pill label="必須" color={COLORS.forest} /> : null}<Text style={styles.habitMeta} numberOfLines={1}>週 {progress.completed}/{progress.target} ・ {habitStreak(item)}日連続</Text></View></View>
                 </TouchableOpacity>
                 <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: todayDone }} accessibilityLabel="今日の習慣を記録" onPress={() => { safeHaptic(todayDone ? "light" : "success"); toggleHabit(item.id); }} style={[styles.todayCheck, todayDone && { backgroundColor: item.color, borderColor: item.color }]}>
                   {todayDone ? <MaterialIcons name="check" size={19} color={COLORS.white} /> : <Text style={[styles.todayCheckText, { color: item.color }]}>今日</Text>}
@@ -69,17 +70,17 @@ export default function HabitsScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingTop: 16, paddingBottom: 28, flexGrow: 1 },
-  habitCard: { backgroundColor: COLORS.white, borderColor: COLORS.border, borderWidth: 1, borderRadius: 20, padding: 16, marginBottom: 12 },
+  content: { paddingTop: 16, paddingBottom: 24, flexGrow: 1 },
+  habitCard: { backgroundColor: "rgba(255,255,255,0.86)", borderColor: COLORS.border, borderWidth: 1, borderRadius: 20, padding: 15, marginBottom: 10 },
   cardTop: { flexDirection: "row", alignItems: "center", gap: 12 },
   habitTitleArea: { flexDirection: "row", alignItems: "center", flex: 1, minWidth: 0 },
   habitMark: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 13, marginRight: 11 },
   habitTitleCopy: { flex: 1, minWidth: 0 },
-  habitTitle: { color: COLORS.text, fontSize: 16, lineHeight: 21, fontWeight: "800" },
-  habitMetaRow: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 3 },
-  habitMeta: { color: COLORS.muted, fontSize: 12, lineHeight: 17, fontWeight: "600", marginTop: 2 },
-  explainer: { flexDirection: "row", alignItems: "center", gap: 7, backgroundColor: "#EAF3EE", borderRadius: 12, paddingHorizontal: 11, paddingVertical: 9, marginTop: -8, marginBottom: 14 },
-  explainerText: { color: "#416558", flex: 1, fontSize: 11, lineHeight: 16, fontWeight: "700" },
+  habitTitle: { color: COLORS.text, fontSize: 16, lineHeight: 22, fontWeight: "800" },
+  habitMetaRow: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 5 },
+  habitMeta: { color: COLORS.muted, flex: 1, minWidth: 0, fontSize: 12, lineHeight: 17, fontWeight: "700" },
+  explainer: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#E9F4F1", borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, marginTop: -6, marginBottom: 12 },
+  explainerText: { color: "#245D52", flex: 1, fontSize: 12, lineHeight: 18, fontWeight: "700" },
   todayCheck: { minWidth: 50, height: 38, borderRadius: 13, borderWidth: 1, borderColor: COLORS.border, alignItems: "center", justifyContent: "center", paddingHorizontal: 8 },
   todayCheckText: { fontSize: 12, fontWeight: "800" },
   daysRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 18 },

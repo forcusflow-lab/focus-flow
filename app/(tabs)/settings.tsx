@@ -1,6 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Platform, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, FlatList, Platform, StyleSheet, Switch, TextInput, TouchableOpacity, View } from "react-native";
 
 import { ScaledText } from "@/components/focus-flow/scaled-text";
 import { COLORS, LoadingScreen, ScreenHeading } from "@/components/focus-flow/ui";
@@ -9,6 +9,8 @@ import { getAccessibilityStatus, getLaunchableApps, isNativeGateAvailable, openA
 import { useFocusFlow } from "@/lib/focus-flow/provider";
 import type { DisplaySettings, GateSchedule } from "@/lib/focus-flow/types";
 import { getGateSummary, isGateTimeActive } from "@/lib/focus-flow/utils";
+
+const Text = ScaledText;
 
 const opacityMap = { solid: 1, soft: 0.84, glass: 0.67 } as const;
 
@@ -84,7 +86,7 @@ export default function SettingsScreen() {
             <View style={[styles.card, { backgroundColor: displaySettings.theme === "slate" ? "#263934" : COLORS.white, opacity: opacityMap[displaySettings.cardOpacity] }]}>
               <Text style={[styles.preferenceLabel, displaySettings.theme === "slate" && { color: "#F1F8F4" }]}>文字サイズ</Text>
               <Text style={[styles.preferenceHint, displaySettings.theme === "slate" && { color: "#C8D5EA" }]}>情報を多く見たいときは「情報量優先」を選べます。</Text>
-              <Segmented options={[{ key: "compact", label: "情報量優先" }, { key: "standard", label: "標準" }, { key: "large", label: "読みやすく" }]} selected={displaySettings.fontScale} onSelect={(fontScale) => setDisplaySettings({ fontScale: fontScale as DisplaySettings["fontScale"] })} />
+              <Segmented options={[{ key: "compact", label: "小さめ" }, { key: "standard", label: "標準" }, { key: "large", label: "大きめ" }]} selected={displaySettings.fontScale} onSelect={(fontScale) => setDisplaySettings({ fontScale: fontScale as DisplaySettings["fontScale"] })} />
               <Text style={[styles.preferenceLabel, displaySettings.theme === "slate" && { color: "#F1F8F4" }]}>配色</Text>
               <Segmented options={[{ key: "mist", label: "ミスト" }, { key: "slate", label: "スレート" }]} selected={displaySettings.theme} onSelect={(theme) => setDisplaySettings({ theme: theme as DisplaySettings["theme"] })} />
               <Text style={[styles.preferenceLabel, displaySettings.theme === "slate" && { color: "#F1F8F4" }]}>カードの透過率</Text>
