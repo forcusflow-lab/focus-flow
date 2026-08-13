@@ -123,6 +123,9 @@ export default function SettingsScreen() {
               <Text style={[styles.preferenceLabel, displaySettings.theme === "slate" && { color: "#F1F8F4" }]}>文字サイズ</Text>
               <Text style={[styles.preferenceHint, displaySettings.theme === "slate" && { color: "#C8D5EA" }]}>情報を多く見たいときは「情報量優先」を選べます。</Text>
               <Segmented options={[{ key: "compact", label: "小さめ" }, { key: "standard", label: "標準" }, { key: "large", label: "大きめ" }]} selected={displaySettings.fontScale} onSelect={(fontScale) => setDisplaySettings({ fontScale: fontScale as DisplaySettings["fontScale"] })} />
+              <Text style={[styles.preferenceLabel, displaySettings.theme === "slate" && { color: "#F1F8F4" }]}>言語 / Language</Text>
+              <Text style={[styles.preferenceHint, displaySettings.theme === "slate" && { color: "#C8D5EA" }]}>自動では端末の言語を使います。Automatic follows your device language.</Text>
+              <Segmented options={[{ key: "auto", label: "自動" }, { key: "ja", label: "日本語" }, { key: "en", label: "English" }]} selected={displaySettings.language ?? "auto"} onSelect={(language) => setDisplaySettings({ language: language as NonNullable<DisplaySettings["language"]> })} />
               <Text style={[styles.preferenceLabel, displaySettings.theme === "slate" && { color: "#F1F8F4" }]}>配色</Text>
               <Segmented options={[{ key: "mist", label: "ミスト" }, { key: "slate", label: "スレート" }]} selected={displaySettings.theme} onSelect={(theme) => setDisplaySettings({ theme: theme as DisplaySettings["theme"] })} />
               <Text style={[styles.preferenceLabel, displaySettings.theme === "slate" && { color: "#F1F8F4" }]}>カードの透過率</Text>

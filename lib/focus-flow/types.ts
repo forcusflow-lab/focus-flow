@@ -78,6 +78,7 @@ export type DisplaySettings = {
   fontScale: "compact" | "standard" | "large";
   theme: "mist" | "slate";
   cardOpacity: "solid" | "soft" | "glass";
+  language?: "auto" | "ja" | "en";
 };
 
 export const DEFAULT_GATE_CONFIG: GateConfig = { enabled: false, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, accessibilityDisclosureAcceptedAt: undefined, schedules: [] };
@@ -86,6 +87,7 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   fontScale: "standard",
   theme: "mist",
   cardOpacity: "solid",
+  language: "auto",
 };
 
 export type FocusFlowData = {

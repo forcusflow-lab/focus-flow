@@ -5,16 +5,26 @@ import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Platform } from "react-native";
 import { useColors } from "@/hooks/use-colors";
-import { FocusFlowProvider } from "@/lib/focus-flow/provider";
+import { isEnglish } from "@/lib/focus-flow/i18n";
+import { FocusFlowProvider, useFocusFlow } from "@/lib/focus-flow/provider";
 
 export default function TabLayout() {
+  return (
+    <FocusFlowProvider>
+      <FocusTabs />
+    </FocusFlowProvider>
+  );
+}
+
+function FocusTabs() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { displaySettings } = useFocusFlow();
+  const english = isEnglish(displaySettings);
   const bottomPadding = Platform.OS === "web" ? 12 : Math.max(insets.bottom, 8);
   const tabBarHeight = 64 + bottomPadding;
 
   return (
-    <FocusFlowProvider>
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.tint,
@@ -32,14 +42,13 @@ export default function TabLayout() {
         tabBarItemStyle: { minWidth: 60 },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "今日", tabBarIcon: ({ color }) => <IconSymbol size={25} name="house.fill" color={color} /> }} />
+      <Tabs.Screen name="index" options={{ title: english ? "Today" : "今日", tabBarIcon: ({ color }) => <IconSymbol size={25} name="house.fill" color={color} /> }} />
       <Tabs.Screen name="todos" options={{ title: "Todo", tabBarIcon: ({ color }) => <IconSymbol size={25} name="checklist" color={color} /> }} />
-      <Tabs.Screen name="habits" options={{ title: "習慣", tabBarIcon: ({ color }) => <IconSymbol size={25} name="repeat" color={color} /> }} />
-      <Tabs.Screen name="notes" options={{ title: "メモ", tabBarIcon: ({ color }) => <IconSymbol size={24} name="note.text" color={color} /> }} />
-      <Tabs.Screen name="more" options={{ title: "管理", tabBarIcon: ({ color }) => <IconSymbol size={24} name="ellipsis.circle" color={color} /> }} />
+      <Tabs.Screen name="habits" options={{ title: english ? "Habits" : "習慣", tabBarIcon: ({ color }) => <IconSymbol size={25} name="repeat" color={color} /> }} />
+      <Tabs.Screen name="notes" options={{ title: english ? "Notes" : "メモ", tabBarIcon: ({ color }) => <IconSymbol size={24} name="note.text" color={color} /> }} />
+      <Tabs.Screen name="more" options={{ title: english ? "Manage" : "管理", tabBarIcon: ({ color }) => <IconSymbol size={24} name="ellipsis.circle" color={color} /> }} />
       <Tabs.Screen name="insights" options={{ href: null }} />
       <Tabs.Screen name="settings" options={{ href: null }} />
     </Tabs>
-    </FocusFlowProvider>
   );
 }
