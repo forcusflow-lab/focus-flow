@@ -9,6 +9,7 @@ import { ScreenContainer } from "@/components/screen-container";
 const ITEMS = [
   { route: "/(tabs)/insights", icon: "bar-chart" as const, title: "振り返り", description: "今週の完了状況と必須項目の進み方を見る", tint: "#E7F0FF", color: COLORS.blue },
   { route: "/(tabs)/settings", icon: "tune" as const, title: "設定", description: "アプリ制限、日課ルール、表示を整える", tint: "#E3F3EF", color: COLORS.forest },
+  { route: "/privacy", icon: "privacy-tip" as const, title: "プライバシーとベータ案内", description: "アクセシビリティの利用目的、端末内データ、フィードバック方法を見る", tint: "#E9F3FA", color: COLORS.blue },
 ];
 
 export default function MoreScreen() {

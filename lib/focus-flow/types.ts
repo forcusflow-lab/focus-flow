@@ -58,6 +58,7 @@ export type GateConfig = {
   requiredTodoIds: string[];
   requiredHabitIds: string[];
   autoRequireDueToday: boolean;
+  accessibilityDisclosureAcceptedAt?: string;
   schedules: GateSchedule[];
 };
 
@@ -79,7 +80,7 @@ export type DisplaySettings = {
   cardOpacity: "solid" | "soft" | "glass";
 };
 
-export const DEFAULT_GATE_CONFIG: GateConfig = { enabled: false, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, schedules: [] };
+export const DEFAULT_GATE_CONFIG: GateConfig = { enabled: false, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, accessibilityDisclosureAcceptedAt: undefined, schedules: [] };
 
 export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   fontScale: "standard",
