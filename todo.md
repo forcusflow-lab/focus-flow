@@ -75,3 +75,4 @@
 - [ ] Google Play BillingによるPlus課金の技術選択、価格導線、購入復元・失効・不具合対応設計を整える
 - [ ] プライバシーポリシーの公開URL、Data safety、AccessibilityService宣言、ストア登録情報を提出可能な状態へ整える
 - [x] スマホのブラウザで進めるGoogle Play Consoleのアプリ登録・クローズドテスト・ストア情報設定手順を整理する
+- [x] Focus Flowの価格、課金率、手数料、運用コストを前提に収益シナリオと損益分岐を試算する
