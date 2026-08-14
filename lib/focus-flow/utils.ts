@@ -166,7 +166,7 @@ function getRuleSummary(data: FocusFlowData, schedule: GateSchedule | undefined,
   const pendingHabits = pendingHabitIds.length;
   const pendingCount = pendingTodos + pendingHabits;
   const fragments = language === "en" ? [pendingTodos ? `${pendingTodos} task${pendingTodos === 1 ? "" : "s"}` : "", pendingHabits ? `${pendingHabits} habit${pendingHabits === 1 ? "" : "s"}` : ""].filter(Boolean) : [pendingTodos ? `Todo ${pendingTodos}件` : "", pendingHabits ? `習慣 ${pendingHabits}件` : ""].filter(Boolean);
-  return { id: schedule?.id ?? "always", label: schedule?.label ?? (language === "en" ? "Always-on focus rule" : "常時の集中ルール"), isActive: schedule ? isScheduleActive(schedule, base) : true, blockedPackages: schedule?.blockedPackages ?? data.gateConfig.blockedPackages, requiredTodoIds: requiredTodos.map((todo) => todo.id), requiredHabitIds: requiredHabits.map((habit) => habit.id), pendingTodoIds, pendingHabitIds, pendingTodos, pendingHabits, pendingCount, schedule, message: pendingCount ? language === "en" ? `Still to complete: ${fragments.join(", ")}` : `未完了：${fragments.join("・")}` : language === "en" ? "You completed this rule's must-dos" : "このルールの必須項目を完了しました" };
+  return { id: schedule?.id ?? "always", label: schedule?.label ?? (language === "en" ? "Always-on schedule" : "常時の集中ルール"), isActive: schedule ? isScheduleActive(schedule, base) : true, blockedPackages: schedule?.blockedPackages ?? data.gateConfig.blockedPackages, requiredTodoIds: requiredTodos.map((todo) => todo.id), requiredHabitIds: requiredHabits.map((habit) => habit.id), pendingTodoIds, pendingHabitIds, pendingTodos, pendingHabits, pendingCount, schedule, message: pendingCount ? language === "en" ? `To unlock: ${fragments.join(", ")}` : `未完了：${fragments.join("・")}` : language === "en" ? "All must-dos for this schedule are complete" : "このルールの必須項目を完了しました" };
 }
 
 export function getGateRuleSummaries(data: FocusFlowData, base = new Date(), language: ContentLanguage = "ja") {
@@ -182,7 +182,7 @@ export function getGateSummary(data: FocusFlowData, base = new Date(), language:
   const pendingHabits = habitIds.size;
   const pendingCount = pendingTodos + pendingHabits;
   const fragments = language === "en" ? [pendingTodos ? `${pendingTodos} task${pendingTodos === 1 ? "" : "s"}` : "", pendingHabits ? `${pendingHabits} habit${pendingHabits === 1 ? "" : "s"}` : ""].filter(Boolean) : [pendingTodos ? `Todo ${pendingTodos}件` : "", pendingHabits ? `習慣 ${pendingHabits}件` : ""].filter(Boolean);
-  return { pendingTodos, pendingHabits, pendingCount, message: pendingCount ? language === "en" ? `Your must-dos are not finished: ${fragments.join(", ")}` : `必須項目が未完了です：${fragments.join("・")}` : activeRules.length ? language === "en" ? "You completed the must-dos for this time" : "この時間帯の必須項目を完了しました" : language === "en" ? "This focus rule is inactive right now" : "現在は制限時間外です" };
+  return { pendingTodos, pendingHabits, pendingCount, message: pendingCount ? language === "en" ? `To unlock your apps: ${fragments.join(", ")}` : `必須項目が未完了です：${fragments.join("・")}` : activeRules.length ? language === "en" ? "All must-dos for this time are complete" : "この時間帯の必須項目を完了しました" : language === "en" ? "App limits are inactive right now" : "現在は制限時間外です" };
 }
 
 function timeToMinutes(value: string) {
