@@ -1,9 +1,9 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Modal, Platform, StyleSheet, TouchableOpacity, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Animated, Easing, Modal, Platform, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
-import { COLORS } from "@/components/focus-flow/ui";
+import { COLORS, safeHaptic } from "@/components/focus-flow/ui";
 import { getAccessibilityStatus, isNativeGateAvailable, openAccessibilitySettings } from "@/lib/focus-flow/android-gate";
 
 type DeviceSetupTutorialProps = {
@@ -23,16 +23,52 @@ type SetupStep = {
 export function DeviceSetupTutorial({ visible, english, onComplete }: DeviceSetupTutorialProps) {
   const [step, setStep] = useState(0);
   const [accessibilityEnabled, setAccessibilityEnabled] = useState(false);
+  const [accessibilityStatusLoaded, setAccessibilityStatusLoaded] = useState(false);
+  const [permissionJustEnabled, setPermissionJustEnabled] = useState(false);
   const [checking, setChecking] = useState(false);
+  const previousAccessibilityEnabled = useRef<boolean | undefined>(undefined);
+  const permissionCheckScale = useRef(new Animated.Value(1)).current;
+  const successMessageOpacity = useRef(new Animated.Value(0)).current;
+  const successMessageOffset = useRef(new Animated.Value(6)).current;
   const nativeAndroid = Platform.OS === "android" && isNativeGateAvailable();
   const isIOS = Platform.OS === "ios";
 
   useEffect(() => {
     if (!visible) return;
     setStep(0);
+    setAccessibilityStatusLoaded(false);
+    setPermissionJustEnabled(false);
+    previousAccessibilityEnabled.current = undefined;
+    permissionCheckScale.setValue(1);
+    successMessageOpacity.setValue(0);
+    successMessageOffset.setValue(6);
     if (!nativeAndroid) return;
-    void getAccessibilityStatus().then(setAccessibilityEnabled).catch(() => setAccessibilityEnabled(false));
-  }, [visible, nativeAndroid]);
+    void getAccessibilityStatus().then(setAccessibilityEnabled).catch(() => setAccessibilityEnabled(false)).finally(() => setAccessibilityStatusLoaded(true));
+  }, [nativeAndroid, permissionCheckScale, successMessageOffset, successMessageOpacity, visible]);
+
+  useEffect(() => {
+    if (!visible || !nativeAndroid || !accessibilityStatusLoaded) return;
+    const wasEnabled = previousAccessibilityEnabled.current;
+    previousAccessibilityEnabled.current = accessibilityEnabled;
+    if (!accessibilityEnabled) {
+      setPermissionJustEnabled(false);
+      successMessageOpacity.setValue(0);
+      return;
+    }
+    if (wasEnabled !== false || permissionJustEnabled) return;
+    setPermissionJustEnabled(true);
+    safeHaptic("success");
+    permissionCheckScale.setValue(0.84);
+    successMessageOpacity.setValue(0);
+    successMessageOffset.setValue(6);
+    Animated.parallel([
+      Animated.timing(permissionCheckScale, { toValue: 1, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.parallel([
+        Animated.timing(successMessageOpacity, { toValue: 1, duration: 190, useNativeDriver: true }),
+        Animated.timing(successMessageOffset, { toValue: 0, duration: 220, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      ]),
+    ]).start();
+  }, [accessibilityEnabled, accessibilityStatusLoaded, nativeAndroid, permissionCheckScale, permissionJustEnabled, successMessageOffset, successMessageOpacity, visible]);
 
   const androidSteps = useMemo<SetupStep[]>(() => english ? [
     { icon: "flag", eyebrow: "STEP 1 OF 4", title: "Pick one must-do", body: "Create one small task or habit that matters today. Must-dos are the only items that can unlock your selected apps." },
@@ -61,7 +97,7 @@ export function DeviceSetupTutorial({ visible, english, onComplete }: DeviceSetu
   const refreshAccessibility = async () => {
     if (!nativeAndroid) return;
     setChecking(true);
-    try { setAccessibilityEnabled(await getAccessibilityStatus()); } finally { setChecking(false); }
+    try { setAccessibilityEnabled(await getAccessibilityStatus()); setAccessibilityStatusLoaded(true); } finally { setChecking(false); }
   };
   const openAndroidSettings = async () => {
     if (!nativeAndroid) return;
@@ -83,12 +119,12 @@ export function DeviceSetupTutorial({ visible, english, onComplete }: DeviceSetu
           <Text style={styles.title}>{current.title}</Text>
           <Text style={styles.body}>{current.body}</Text>
           {current.note ? <View style={styles.note}><MaterialIcons name="info-outline" size={17} color="#215B83" /><Text style={styles.noteText}>{current.note}</Text></View> : null}
-          {step === 2 && nativeAndroid ? <View style={[styles.permissionStatus, accessibilityEnabled ? styles.permissionOn : styles.permissionOff]}><MaterialIcons name={accessibilityEnabled ? "check-circle" : "warning-amber"} size={19} color={accessibilityEnabled ? COLORS.success : COLORS.warning} /><View style={styles.permissionCopy}><Text style={styles.permissionTitle}>{accessibilityEnabled ? (english ? "Accessibility is on" : "アクセシビリティは有効です") : (english ? "Accessibility is not on yet" : "アクセシビリティは未設定です")}</Text><Text style={styles.permissionText}>{accessibilityEnabled ? (english ? "You can continue to choose a test app in Settings." : "設定からテスト用アプリを選べます。") : (english ? "Allow Focus Flow in Android settings, then check again." : "Androidの設定でFocus Flowを許可してから、もう一度確認してください。")}</Text></View></View> : null}
+          {step === 2 && nativeAndroid ? <View style={[styles.permissionStatus, accessibilityEnabled ? styles.permissionOn : styles.permissionOff]}><Animated.View style={{ transform: [{ scale: accessibilityEnabled ? permissionCheckScale : 1 }] }}><MaterialIcons name={accessibilityEnabled ? "check-circle" : "warning-amber"} size={19} color={accessibilityEnabled ? COLORS.success : COLORS.warning} /></Animated.View><View style={styles.permissionCopy}><Text style={styles.permissionTitle}>{accessibilityEnabled ? (english ? "Accessibility is on" : "アクセシビリティは有効です") : (english ? "Accessibility is not on yet" : "アクセシビリティは未設定です")}</Text><Text style={styles.permissionText}>{accessibilityEnabled ? (english ? "You can continue to choose a test app in Settings." : "設定からテスト用アプリを選べます。") : (english ? "Allow Focus Flow in Android settings, then check again." : "Androidの設定でFocus Flowを許可してから、もう一度確認してください。")}</Text>{permissionJustEnabled ? <Animated.View accessibilityRole="alert" style={[styles.permissionSuccessMessage, { opacity: successMessageOpacity, transform: [{ translateY: successMessageOffset }] }]}><MaterialIcons name="check" size={15} color={COLORS.success} /><Text style={styles.permissionSuccessText}>{english ? "Permission confirmed — you’re ready to continue." : "許可を確認しました。次へ進めます。"}</Text></Animated.View> : null}</View></View> : null}
           {step === 2 && nativeAndroid && !accessibilityEnabled ? <TouchableOpacity accessibilityRole="button" onPress={() => void openAndroidSettings()} style={styles.secondaryAction}><MaterialIcons name="open-in-new" size={18} color={COLORS.blue} /><Text style={styles.secondaryActionText}>{english ? "Open Android settings" : "Androidの設定を開く"}</Text></TouchableOpacity> : null}
           {step === 2 && nativeAndroid ? <TouchableOpacity accessibilityRole="button" onPress={() => void refreshAccessibility()} style={styles.checkAction}>{checking ? <ActivityIndicator size="small" color={COLORS.muted} /> : <MaterialIcons name="refresh" size={17} color={COLORS.muted} />}<Text style={styles.checkActionText}>{english ? "Check status again" : "状態をもう一度確認"}</Text></TouchableOpacity> : null}
           <View style={styles.actions}>
             {step > 0 ? <TouchableOpacity accessibilityRole="button" onPress={() => setStep((value) => value - 1)} style={styles.backButton}><Text style={styles.backText}>{english ? "Back" : "戻る"}</Text></TouchableOpacity> : <TouchableOpacity accessibilityRole="button" onPress={onComplete} style={styles.backButton}><Text style={styles.backText}>{english ? "Set up later" : "あとで設定する"}</Text></TouchableOpacity>}
-            <TouchableOpacity accessibilityRole="button" onPress={() => step === steps.length - 1 ? onComplete() : setStep((value) => value + 1)} style={styles.nextButton}><Text style={styles.nextText}>{step === steps.length - 1 ? (english ? "Finish guide" : "案内を完了") : (english ? "Continue" : "次へ")}</Text><MaterialIcons name={step === steps.length - 1 ? "check" : "arrow-forward"} size={18} color={COLORS.white} /></TouchableOpacity>
+            <TouchableOpacity accessibilityRole="button" accessibilityHint={step === 2 && nativeAndroid && permissionJustEnabled ? (english ? "Permission confirmed. Continue to the final safety check." : "許可を確認しました。最後の安全確認へ進みます。") : undefined} onPress={() => step === steps.length - 1 ? onComplete() : setStep((value) => value + 1)} style={[styles.nextButton, step === 2 && nativeAndroid && permissionJustEnabled && styles.nextButtonReady]}><Text style={styles.nextText}>{step === steps.length - 1 ? (english ? "Finish guide" : "案内を完了") : (english ? "Continue" : "次へ")}</Text><MaterialIcons name={step === steps.length - 1 ? "check" : "arrow-forward"} size={18} color={COLORS.white} /></TouchableOpacity>
           </View>
         </View>
       </View>
@@ -103,7 +139,7 @@ const styles = StyleSheet.create({
   progressPanel: { marginBottom: 21 }, progressSummary: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 11 }, progressCount: { color: COLORS.forest, fontSize: 13, fontWeight: "800" }, progressRemaining: { color: COLORS.muted, fontSize: 12, fontWeight: "700" }, stepper: { flexDirection: "row", alignItems: "center" }, stepperItem: { flex: 1, flexDirection: "row", alignItems: "center" }, stepConnector: { height: 3, flex: 1, backgroundColor: "#DDE7E2" }, stepConnectorDone: { backgroundColor: COLORS.forest }, stepBadge: { width: 30, height: 30, alignItems: "center", justifyContent: "center", borderRadius: 15, backgroundColor: "#EEF3F0", borderWidth: 1, borderColor: "#D6E2DC" }, stepBadgeDone: { backgroundColor: COLORS.forest, borderColor: COLORS.forest }, stepBadgeCurrent: { backgroundColor: "#E3F2ED", borderWidth: 2, borderColor: COLORS.forest }, stepNumber: { color: COLORS.muted, fontSize: 13, fontWeight: "800" }, stepNumberCurrent: { color: COLORS.forest },
   iconWrap: { width: 58, height: 58, alignItems: "center", justifyContent: "center", borderRadius: 19, backgroundColor: "#E4F2EE" }, eyebrow: { color: COLORS.forest, fontSize: 12, fontWeight: "800", letterSpacing: 0.45, marginTop: 18 }, title: { color: COLORS.text, fontSize: 24, lineHeight: 31, fontWeight: "800", letterSpacing: -0.4, marginTop: 5 }, body: { color: "#415B54", fontSize: 15, lineHeight: 22, marginTop: 10 },
   note: { flexDirection: "row", gap: 8, alignItems: "flex-start", backgroundColor: "#EAF3F9", borderRadius: 13, padding: 11, marginTop: 15 }, noteText: { flex: 1, color: "#365E77", fontSize: 12, lineHeight: 17, fontWeight: "600" },
-  permissionStatus: { flexDirection: "row", gap: 9, borderRadius: 14, padding: 12, marginTop: 15 }, permissionOn: { backgroundColor: "#E8F4EE" }, permissionOff: { backgroundColor: "#FFF4E3" }, permissionCopy: { flex: 1 }, permissionTitle: { color: COLORS.text, fontSize: 13, fontWeight: "800" }, permissionText: { color: COLORS.muted, fontSize: 12, lineHeight: 17, marginTop: 2 },
+  permissionStatus: { flexDirection: "row", gap: 9, borderRadius: 14, padding: 12, marginTop: 15 }, permissionOn: { backgroundColor: "#E8F4EE" }, permissionOff: { backgroundColor: "#FFF4E3" }, permissionCopy: { flex: 1 }, permissionTitle: { color: COLORS.text, fontSize: 13, fontWeight: "800" }, permissionText: { color: COLORS.muted, fontSize: 12, lineHeight: 17, marginTop: 2 }, permissionSuccessMessage: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 7 }, permissionSuccessText: { color: "#16754B", fontSize: 12, lineHeight: 17, fontWeight: "800" },
   secondaryAction: { minHeight: 46, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7, backgroundColor: "#EAF3F9", borderRadius: 13, marginTop: 11 }, secondaryActionText: { color: COLORS.blue, fontSize: 13, fontWeight: "800" }, checkAction: { minHeight: 40, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6, marginTop: 4 }, checkActionText: { color: COLORS.muted, fontSize: 12, fontWeight: "800" },
-  actions: { flexDirection: "row", gap: 10, marginTop: 20 }, backButton: { flex: 1, minHeight: 50, alignItems: "center", justifyContent: "center", borderRadius: 14, backgroundColor: "#EFF4F1" }, backText: { color: COLORS.forest, fontSize: 14, fontWeight: "800" }, nextButton: { flex: 1.25, minHeight: 50, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 14, backgroundColor: COLORS.forest }, nextText: { color: COLORS.white, fontSize: 14, fontWeight: "800" },
+  actions: { flexDirection: "row", gap: 10, marginTop: 20 }, backButton: { flex: 1, minHeight: 50, alignItems: "center", justifyContent: "center", borderRadius: 14, backgroundColor: "#EFF4F1" }, backText: { color: COLORS.forest, fontSize: 14, fontWeight: "800" }, nextButton: { flex: 1.25, minHeight: 50, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 14, backgroundColor: COLORS.forest }, nextButtonReady: { backgroundColor: "#147A5A", borderWidth: 2, borderColor: "#BEE8D5" }, nextText: { color: COLORS.white, fontSize: 14, fontWeight: "800" },
 });
