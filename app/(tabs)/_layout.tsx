@@ -43,7 +43,7 @@ function FocusTabs() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: english ? "Today" : "今日", tabBarIcon: ({ color }) => <IconSymbol size={25} name="house.fill" color={color} /> }} />
-      <Tabs.Screen name="todos" options={{ title: "Todo", tabBarIcon: ({ color }) => <IconSymbol size={25} name="checklist" color={color} /> }} />
+      <Tabs.Screen name="todos" options={{ title: english ? "Tasks" : "Todo", tabBarIcon: ({ color }) => <IconSymbol size={25} name="checklist" color={color} /> }} />
       <Tabs.Screen name="habits" options={{ title: english ? "Habits" : "習慣", tabBarIcon: ({ color }) => <IconSymbol size={25} name="repeat" color={color} /> }} />
       <Tabs.Screen name="notes" options={{ title: english ? "Notes" : "メモ", tabBarIcon: ({ color }) => <IconSymbol size={24} name="note.text" color={color} /> }} />
       <Tabs.Screen name="more" options={{ title: english ? "Manage" : "管理", tabBarIcon: ({ color }) => <IconSymbol size={24} name="ellipsis.circle" color={color} /> }} />

@@ -3,13 +3,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { dayKey, dayKeyToDate } from "@/lib/focus-flow/utils";
+import { getAppLanguage, localized } from "@/lib/focus-flow/i18n";
+import { useFocusFlow } from "@/lib/focus-flow/provider";
 import { COLORS } from "./ui";
-
-const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
 type DatePickerProps = { visible: boolean; value?: string; onClose: () => void; onSelect: (value?: string) => void };
 
 export function DatePicker({ visible, value, onClose, onSelect }: DatePickerProps) {
+  const { displaySettings } = useFocusFlow(); const language = getAppLanguage(displaySettings); const t = (ja: string, en: string) => localized(language, ja, en); const weekdays = language === "en" ? ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] : ["日", "月", "火", "水", "木", "金", "土"];
   const [month, setMonth] = useState(() => startOfMonth(value ? dayKeyToDate(value) : new Date()));
   useEffect(() => { if (visible) setMonth(startOfMonth(value ? dayKeyToDate(value) : new Date())); }, [value, visible]);
   const cells = useMemo(() => getCalendarCells(month), [month]);
@@ -19,11 +20,11 @@ export function DatePicker({ visible, value, onClose, onSelect }: DatePickerProp
   return <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
     <Pressable style={styles.backdrop} onPress={onClose}>
       <Pressable style={styles.sheet} onPress={() => undefined}>
-        <View style={styles.header}><Text style={styles.title}>期限を選択</Text><TouchableOpacity accessibilityLabel="閉じる" onPress={onClose} style={styles.iconButton}><MaterialIcons name="close" color={COLORS.muted} size={20} /></TouchableOpacity></View>
-        <View style={styles.monthRow}><TouchableOpacity accessibilityLabel="前の月" onPress={() => setMonth(addMonths(month, -1))} style={styles.iconButton}><MaterialIcons name="chevron-left" color={COLORS.forest} size={24} /></TouchableOpacity><Text style={styles.monthTitle}>{month.getFullYear()}年 {month.getMonth() + 1}月</Text><TouchableOpacity accessibilityLabel="次の月" onPress={() => setMonth(addMonths(month, 1))} style={styles.iconButton}><MaterialIcons name="chevron-right" color={COLORS.forest} size={24} /></TouchableOpacity></View>
-        <View style={styles.weekRow}>{WEEKDAYS.map((weekday) => <Text key={weekday} style={[styles.weekday, weekday === "日" && styles.sunday, weekday === "土" && styles.saturday]}>{weekday}</Text>)}</View>
-        <View style={styles.grid}>{cells.map((cell, index) => cell ? <TouchableOpacity key={cell.key} accessibilityRole="button" accessibilityLabel={`${cell.date.getMonth() + 1}月${cell.date.getDate()}日`} onPress={() => { onSelect(cell.key); onClose(); }} style={[styles.day, selected === cell.key && styles.daySelected, today === cell.key && selected !== cell.key && styles.dayToday]}><Text style={[styles.dayText, cell.date.getDay() === 0 && styles.sunday, cell.date.getDay() === 6 && styles.saturday, selected === cell.key && styles.dayTextSelected]}>{cell.date.getDate()}</Text></TouchableOpacity> : <View key={`empty-${index}`} style={styles.day} />)}</View>
-        <View style={styles.actions}><TouchableOpacity onPress={() => { onSelect(); onClose(); }} style={styles.clearButton}><Text style={styles.clearText}>期限を外す</Text></TouchableOpacity><TouchableOpacity onPress={() => { onSelect(dayKey()); onClose(); }} style={styles.todayButton}><Text style={styles.todayText}>今日</Text></TouchableOpacity></View>
+        <View style={styles.header}><Text style={styles.title}>{t("期限を選択", "Select due date")}</Text><TouchableOpacity accessibilityLabel={t("閉じる", "Close")} onPress={onClose} style={styles.iconButton}><MaterialIcons name="close" color={COLORS.muted} size={20} /></TouchableOpacity></View>
+        <View style={styles.monthRow}><TouchableOpacity accessibilityLabel={t("前の月", "Previous month")} onPress={() => setMonth(addMonths(month, -1))} style={styles.iconButton}><MaterialIcons name="chevron-left" color={COLORS.forest} size={24} /></TouchableOpacity><Text style={styles.monthTitle}>{language === "en" ? new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(month) : `${month.getFullYear()}年 ${month.getMonth() + 1}月`}</Text><TouchableOpacity accessibilityLabel={t("次の月", "Next month")} onPress={() => setMonth(addMonths(month, 1))} style={styles.iconButton}><MaterialIcons name="chevron-right" color={COLORS.forest} size={24} /></TouchableOpacity></View>
+        <View style={styles.weekRow}>{weekdays.map((weekday, index) => <Text key={weekday} style={[styles.weekday, index === 0 && styles.sunday, index === 6 && styles.saturday]}>{weekday}</Text>)}</View>
+        <View style={styles.grid}>{cells.map((cell, index) => cell ? <TouchableOpacity key={cell.key} accessibilityRole="button" accessibilityLabel={language === "en" ? new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric" }).format(cell.date) : `${cell.date.getMonth() + 1}月${cell.date.getDate()}日`} onPress={() => { onSelect(cell.key); onClose(); }} style={[styles.day, selected === cell.key && styles.daySelected, today === cell.key && selected !== cell.key && styles.dayToday]}><Text style={[styles.dayText, cell.date.getDay() === 0 && styles.sunday, cell.date.getDay() === 6 && styles.saturday, selected === cell.key && styles.dayTextSelected]}>{cell.date.getDate()}</Text></TouchableOpacity> : <View key={`empty-${index}`} style={styles.day} />)}</View>
+        <View style={styles.actions}><TouchableOpacity onPress={() => { onSelect(); onClose(); }} style={styles.clearButton}><Text style={styles.clearText}>{t("期限を外す", "Clear due date")}</Text></TouchableOpacity><TouchableOpacity onPress={() => { onSelect(dayKey()); onClose(); }} style={styles.todayButton}><Text style={styles.todayText}>{t("今日", "Today")}</Text></TouchableOpacity></View>
       </Pressable>
     </Pressable>
   </Modal>;

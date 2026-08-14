@@ -1,6 +1,7 @@
 import type { FocusFlowData, FocusSession, GateConfig, GateSchedule, Habit, RepeatRule, Todo, TodoSubtask } from "./types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+export type ContentLanguage = "ja" | "en";
 
 export function createId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -23,9 +24,10 @@ export function dayKeyToDate(value: string) {
   return new Date(year, month - 1, day, 12, 0, 0, 0);
 }
 
-export function formatJapaneseDate(value?: string) {
-  if (!value) return "期限なし";
+export function formatJapaneseDate(value?: string, language: ContentLanguage = "ja") {
+  if (!value) return language === "en" ? "No due date" : "期限なし";
   const date = dayKeyToDate(value);
+  if (language === "en") return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date);
   return `${date.getMonth() + 1}月${date.getDate()}日`;
 }
 
@@ -58,10 +60,10 @@ export function isTodoAchieved(todo: Todo) {
   return todo.completed && progressMet && subtasksMet;
 }
 
-export function todoProgressLabel(todo: Todo) {
+export function todoProgressLabel(todo: Todo, language: ContentLanguage = "ja") {
   const unit = todo.progressUnit ?? "check";
   if (unit === "check") return null;
-  const suffix = unit === "minutes" ? "分" : "回";
+  const suffix = unit === "minutes" ? language === "en" ? " min" : "分" : language === "en" ? " times" : "回";
   return `${Math.min(getTodoProgress(todo), getTodoTarget(todo))}/${getTodoTarget(todo)}${suffix}`;
 }
 
@@ -85,11 +87,11 @@ export function isHabitCompleteOn(habit: Habit, value: string) {
   return habit.completedDates.includes(value);
 }
 
-export function habitProgressLabel(habit: Habit, value = dayKey()) {
+export function habitProgressLabel(habit: Habit, value = dayKey(), language: ContentLanguage = "ja") {
   const unit = habit.progressUnit ?? "check";
   if (unit === "check") return null;
   const target = Math.max(habit.targetValue ?? 1, 1);
-  const suffix = unit === "minutes" ? "分" : "回";
+  const suffix = unit === "minutes" ? language === "en" ? " min" : "分" : language === "en" ? " times" : "回";
   return `${Math.min(habit.dailyProgress?.[value] ?? 0, target)}/${target}${suffix}`;
 }
 
@@ -134,15 +136,16 @@ export function totalFocusMinutes(sessions: FocusSession[]) {
   return sessions.filter((session) => session.completed).reduce((total, session) => total + session.durationMinutes, 0);
 }
 
-export function formatMinutes(minutes: number) {
-  if (minutes < 60) return `${minutes}分`;
+export function formatMinutes(minutes: number, language: ContentLanguage = "ja") {
+  if (minutes < 60) return language === "en" ? `${minutes} min` : `${minutes}分`;
   const hours = Math.floor(minutes / 60);
   const remainder = minutes % 60;
+  if (language === "en") return remainder ? `${hours}h ${remainder}m` : `${hours}h`;
   return remainder ? `${hours}時間${remainder}分` : `${hours}時間`;
 }
 
-export function shortWeekday(key: string) {
-  return ["日", "月", "火", "水", "木", "金", "土"][dayKeyToDate(key).getDay()];
+export function shortWeekday(key: string, language: ContentLanguage = "ja") {
+  return language === "en" ? ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dayKeyToDate(key).getDay()] : ["日", "月", "火", "水", "木", "金", "土"][dayKeyToDate(key).getDay()];
 }
 
 export function daysBetween(a: string, b: string) {
@@ -152,7 +155,7 @@ export function daysBetween(a: string, b: string) {
 export type GateSummary = { pendingTodos: number; pendingHabits: number; pendingCount: number; message: string };
 export type GateRuleSummary = GateSummary & { id: string; label: string; isActive: boolean; blockedPackages: string[]; requiredTodoIds: string[]; requiredHabitIds: string[]; pendingTodoIds: string[]; pendingHabitIds: string[]; schedule?: GateSchedule };
 
-function getRuleSummary(data: FocusFlowData, schedule: GateSchedule | undefined, base: Date): GateRuleSummary {
+function getRuleSummary(data: FocusFlowData, schedule: GateSchedule | undefined, base: Date, language: ContentLanguage): GateRuleSummary {
   const baseTodoIds = data.todos.filter((todo) => isTodoRequiredForGate(todo, data.gateConfig.autoRequireDueToday, base)).map((todo) => todo.id);
   const baseHabitIds = data.habits.filter((habit) => habit.isRequired).map((habit) => habit.id);
   const requiredTodos = data.todos.filter((todo) => baseTodoIds.includes(todo.id));
@@ -162,24 +165,24 @@ function getRuleSummary(data: FocusFlowData, schedule: GateSchedule | undefined,
   const pendingTodos = pendingTodoIds.length;
   const pendingHabits = pendingHabitIds.length;
   const pendingCount = pendingTodos + pendingHabits;
-  const fragments = [pendingTodos ? `Todo ${pendingTodos}件` : "", pendingHabits ? `習慣 ${pendingHabits}件` : ""].filter(Boolean);
-  return { id: schedule?.id ?? "always", label: schedule?.label ?? "常時の集中ルール", isActive: schedule ? isScheduleActive(schedule, base) : true, blockedPackages: schedule?.blockedPackages ?? data.gateConfig.blockedPackages, requiredTodoIds: requiredTodos.map((todo) => todo.id), requiredHabitIds: requiredHabits.map((habit) => habit.id), pendingTodoIds, pendingHabitIds, pendingTodos, pendingHabits, pendingCount, schedule, message: pendingCount ? `未完了：${fragments.join("・")}` : "このルールの必須項目を完了しました" };
+  const fragments = language === "en" ? [pendingTodos ? `${pendingTodos} task${pendingTodos === 1 ? "" : "s"}` : "", pendingHabits ? `${pendingHabits} habit${pendingHabits === 1 ? "" : "s"}` : ""].filter(Boolean) : [pendingTodos ? `Todo ${pendingTodos}件` : "", pendingHabits ? `習慣 ${pendingHabits}件` : ""].filter(Boolean);
+  return { id: schedule?.id ?? "always", label: schedule?.label ?? (language === "en" ? "Always-on focus rule" : "常時の集中ルール"), isActive: schedule ? isScheduleActive(schedule, base) : true, blockedPackages: schedule?.blockedPackages ?? data.gateConfig.blockedPackages, requiredTodoIds: requiredTodos.map((todo) => todo.id), requiredHabitIds: requiredHabits.map((habit) => habit.id), pendingTodoIds, pendingHabitIds, pendingTodos, pendingHabits, pendingCount, schedule, message: pendingCount ? language === "en" ? `Still to complete: ${fragments.join(", ")}` : `未完了：${fragments.join("・")}` : language === "en" ? "You completed this rule's must-dos" : "このルールの必須項目を完了しました" };
 }
 
-export function getGateRuleSummaries(data: FocusFlowData, base = new Date()) {
+export function getGateRuleSummaries(data: FocusFlowData, base = new Date(), language: ContentLanguage = "ja") {
   const schedules = data.gateConfig.schedules.length ? data.gateConfig.schedules : [undefined];
-  return schedules.map((schedule) => getRuleSummary(data, schedule, base));
+  return schedules.map((schedule) => getRuleSummary(data, schedule, base, language));
 }
 
-export function getGateSummary(data: FocusFlowData, base = new Date()): GateSummary {
-  const activeRules = getGateRuleSummaries(data, base).filter((rule) => rule.isActive);
+export function getGateSummary(data: FocusFlowData, base = new Date(), language: ContentLanguage = "ja"): GateSummary {
+  const activeRules = getGateRuleSummaries(data, base, language).filter((rule) => rule.isActive);
   const todoIds = new Set(activeRules.flatMap((rule) => rule.pendingTodoIds));
   const habitIds = new Set(activeRules.flatMap((rule) => rule.pendingHabitIds));
   const pendingTodos = todoIds.size;
   const pendingHabits = habitIds.size;
   const pendingCount = pendingTodos + pendingHabits;
-  const fragments = [pendingTodos ? `Todo ${pendingTodos}件` : "", pendingHabits ? `習慣 ${pendingHabits}件` : ""].filter(Boolean);
-  return { pendingTodos, pendingHabits, pendingCount, message: pendingCount ? `必須項目が未完了です：${fragments.join("・")}` : activeRules.length ? "この時間帯の必須項目を完了しました" : "現在は制限時間外です" };
+  const fragments = language === "en" ? [pendingTodos ? `${pendingTodos} task${pendingTodos === 1 ? "" : "s"}` : "", pendingHabits ? `${pendingHabits} habit${pendingHabits === 1 ? "" : "s"}` : ""].filter(Boolean) : [pendingTodos ? `Todo ${pendingTodos}件` : "", pendingHabits ? `習慣 ${pendingHabits}件` : ""].filter(Boolean);
+  return { pendingTodos, pendingHabits, pendingCount, message: pendingCount ? language === "en" ? `Your must-dos are not finished: ${fragments.join(", ")}` : `必須項目が未完了です：${fragments.join("・")}` : activeRules.length ? language === "en" ? "You completed the must-dos for this time" : "この時間帯の必須項目を完了しました" : language === "en" ? "This focus rule is inactive right now" : "現在は制限時間外です" };
 }
 
 function timeToMinutes(value: string) {

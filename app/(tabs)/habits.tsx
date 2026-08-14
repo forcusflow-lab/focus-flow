@@ -6,12 +6,15 @@ import { HabitForm } from "@/components/focus-flow/habit-form";
 import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
 import { COLORS, EmptyState, IconButton, LoadingScreen, Pill, safeHaptic, ScreenHeading } from "@/components/focus-flow/ui";
 import { ScreenContainer } from "@/components/screen-container";
+import { getAppLanguage, localized } from "@/lib/focus-flow/i18n";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
 import type { Habit } from "@/lib/focus-flow/types";
 import { dayKey, dayKeyOffset, habitProgressLabel, habitStreak, isHabitCompleteOn, shortWeekday, weeklyHabitProgress } from "@/lib/focus-flow/utils";
 
 export default function HabitsScreen() {
-  const { habits, isReady, addHabit, updateHabit, toggleHabit, adjustHabitProgress, deleteHabit } = useFocusFlow();
+  const { habits, displaySettings, isReady, addHabit, updateHabit, toggleHabit, adjustHabitProgress, deleteHabit } = useFocusFlow();
+  const language = getAppLanguage(displaySettings);
+  const t = (ja: string, en: string) => localized(language, ja, en);
   const [formOpen, setFormOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | undefined>();
   const week = useMemo(() => Array.from({ length: 7 }, (_, index) => dayKeyOffset(index - 6)), []);
@@ -19,7 +22,7 @@ export default function HabitsScreen() {
   const remove = (habit: Habit) => {
     const confirm = () => deleteHabit(habit.id);
     if (Platform.OS === "web") confirm();
-    else Alert.alert("習慣を削除しますか？", `「${habit.title}」の記録も削除されます。`, [{ text: "キャンセル", style: "cancel" }, { text: "削除", style: "destructive", onPress: confirm }]);
+    else Alert.alert(t("習慣を削除しますか？", "Delete this habit?"), t(`「${habit.title}」の記録も削除されます。`, `The records for “${habit.title}” will also be deleted.`), [{ text: t("キャンセル", "Cancel"), style: "cancel" }, { text: t("削除", "Delete"), style: "destructive", onPress: confirm }]);
   };
   if (!isReady) return <ScreenContainer><LoadingScreen /></ScreenContainer>;
 
@@ -30,21 +33,21 @@ export default function HabitsScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        ListHeaderComponent={<><ScreenHeading eyebrow="続ける仕組み" title="習慣" action={<IconButton icon="add" label="習慣を追加" onPress={() => openForm()} variant="filled" />} /><View style={styles.explainer}><MaterialIcons name="lock-outline" size={17} color={COLORS.forest} /><Text style={styles.explainerText}>必須の習慣は、アプリ制限を解除する条件になります。</Text></View></>}
-        ListEmptyComponent={<EmptyState icon="repeat" title="最初の習慣を作りましょう" description="登録時に「必須の習慣」を選ぶと、毎日のアプリ制限の解除条件にできます。" actionLabel="習慣を作る" onAction={() => openForm()} />}
+        ListHeaderComponent={<><ScreenHeading eyebrow={t("続ける仕組み", "Build consistency")} title={t("習慣", "Habits")} action={<IconButton icon="add" label={t("習慣を追加", "Add habit")} onPress={() => openForm()} variant="filled" />} /><View style={styles.explainer}><MaterialIcons name="lock-outline" size={17} color={COLORS.forest} /><Text style={styles.explainerText}>{t("必須の習慣は、アプリ制限を解除する条件になります。", "Must-do habits become an unlock condition for your selected apps.")}</Text></View></>}
+        ListEmptyComponent={<EmptyState icon="repeat" title={t("最初の習慣を作りましょう", "Create your first habit")} description={t("登録時に「必須の習慣」を選ぶと、毎日のアプリ制限の解除条件にできます。", "Choose Must-do when you create a habit to use it as a daily unlock condition.")} actionLabel={t("習慣を作る", "Create habit")} onAction={() => openForm()} />}
         renderItem={({ item }) => {
           const progress = weeklyHabitProgress(item);
           const todayDone = isHabitCompleteOn(item, dayKey());
-          const progressLabel = habitProgressLabel(item);
+          const progressLabel = habitProgressLabel(item, dayKey(), language);
           return (
             <View style={styles.habitCard}>
               <View style={styles.cardTop}>
                 <TouchableOpacity onPress={() => openForm(item)} activeOpacity={0.72} style={styles.habitTitleArea}>
                   <View style={[styles.habitMark, { backgroundColor: `${item.color}18` }]}><MaterialIcons name="auto-awesome" size={18} color={item.color} /></View>
-                  <View style={styles.habitTitleCopy}><Text style={styles.habitTitle} numberOfLines={1}>{item.title}</Text><View style={styles.habitMetaRow}>{item.isRequired ? <Pill label="必須" color={COLORS.forest} /> : null}<Text style={styles.habitMeta} numberOfLines={1}>週 {progress.completed}/{progress.target} ・ {habitStreak(item)}日連続</Text></View></View>
+                  <View style={styles.habitTitleCopy}><Text style={styles.habitTitle} numberOfLines={1}>{item.title}</Text><View style={styles.habitMetaRow}>{item.isRequired ? <Pill label={t("必須", "Must-do")} color={COLORS.forest} /> : null}<Text style={styles.habitMeta} numberOfLines={1}>{t(`週 ${progress.completed}/${progress.target} ・ ${habitStreak(item)}日連続`, `${progress.completed}/${progress.target} this week · ${habitStreak(item)}-day streak`)}</Text></View></View>
                 </TouchableOpacity>
-                <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: todayDone }} accessibilityLabel="今日の習慣を記録" onPress={() => { safeHaptic(todayDone ? "light" : "success"); toggleHabit(item.id); }} style={[styles.todayCheck, todayDone && { backgroundColor: item.color, borderColor: item.color }]}>
-                  {todayDone ? <MaterialIcons name="check" size={19} color={COLORS.white} /> : <Text style={[styles.todayCheckText, { color: item.color }]}>今日</Text>}
+                <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: todayDone }} accessibilityLabel={t("今日の習慣を記録", "Record today's habit")} onPress={() => { safeHaptic(todayDone ? "light" : "success"); toggleHabit(item.id); }} style={[styles.todayCheck, todayDone && { backgroundColor: item.color, borderColor: item.color }]}>
+                  {todayDone ? <MaterialIcons name="check" size={19} color={COLORS.white} /> : <Text style={[styles.todayCheckText, { color: item.color }]}>{t("今日", "Today")}</Text>}
                 </TouchableOpacity>
               </View>
               <View style={styles.daysRow}>
@@ -52,16 +55,16 @@ export default function HabitsScreen() {
                   const done = isHabitCompleteOn(item, key);
                   const isToday = key === dayKey();
                   return (
-                    <TouchableOpacity key={key} accessibilityLabel={`${shortWeekday(key)}曜日を記録`} onPress={() => { safeHaptic(done ? "light" : "success"); toggleHabit(item.id, key); }} style={styles.dayButton}>
-                      <Text style={[styles.dayLabel, isToday && { color: item.color }]}>{shortWeekday(key)}</Text>
+                    <TouchableOpacity key={key} accessibilityLabel={t(`${shortWeekday(key)}曜日を記録`, `Record ${shortWeekday(key, language)}`)} onPress={() => { safeHaptic(done ? "light" : "success"); toggleHabit(item.id, key); }} style={styles.dayButton}>
+                      <Text style={[styles.dayLabel, isToday && { color: item.color }]}>{shortWeekday(key, language)}</Text>
                       <View style={[styles.dayDot, done && { backgroundColor: item.color, borderColor: item.color }, isToday && !done && { borderColor: item.color }]}>{done ? <MaterialIcons name="check" size={13} color={COLORS.white} /> : null}</View>
                     </TouchableOpacity>
                   );
                 })}
               </View>
-              {progressLabel ? <View style={[styles.dailyProgress, { backgroundColor: `${item.color}14` }]}><TouchableOpacity accessibilityLabel="今日の進捗を減らす" onPress={() => adjustHabitProgress(item.id, -1)} style={styles.progressButton}><MaterialIcons name="remove" size={16} color={item.color} /></TouchableOpacity><Text style={[styles.dailyProgressText, { color: item.color }]}>今日 {progressLabel}</Text><TouchableOpacity accessibilityLabel="今日の進捗を増やす" onPress={() => { safeHaptic("light"); adjustHabitProgress(item.id, 1); }} style={styles.progressButton}><MaterialIcons name="add" size={16} color={item.color} /></TouchableOpacity></View> : null}
+              {progressLabel ? <View style={[styles.dailyProgress, { backgroundColor: `${item.color}14` }]}><TouchableOpacity accessibilityLabel={t("今日の進捗を減らす", "Decrease today's progress")} onPress={() => adjustHabitProgress(item.id, -1)} style={styles.progressButton}><MaterialIcons name="remove" size={16} color={item.color} /></TouchableOpacity><Text style={[styles.dailyProgressText, { color: item.color }]}>{t("今日", "Today")} {progressLabel}</Text><TouchableOpacity accessibilityLabel={t("今日の進捗を増やす", "Increase today's progress")} onPress={() => { safeHaptic("light"); adjustHabitProgress(item.id, 1); }} style={styles.progressButton}><MaterialIcons name="add" size={16} color={item.color} /></TouchableOpacity></View> : null}
               <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${Math.round(progress.ratio * 100)}%`, backgroundColor: item.color }]} /></View>
-              <TouchableOpacity accessibilityLabel="習慣を削除" onPress={() => remove(item)} style={styles.removeLink}><Text style={styles.removeLinkText}>削除</Text></TouchableOpacity>
+              <TouchableOpacity accessibilityLabel={t("習慣を削除", "Delete habit")} onPress={() => remove(item)} style={styles.removeLink}><Text style={styles.removeLinkText}>{t("削除", "Delete")}</Text></TouchableOpacity>
             </View>
           );
         }}

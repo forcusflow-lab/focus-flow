@@ -6,6 +6,7 @@ import { TaskForm } from "@/components/focus-flow/task-form";
 import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
 import { COLORS, EmptyState, IconButton, LoadingScreen, Pill, safeHaptic, ScreenHeading } from "@/components/focus-flow/ui";
 import { ScreenContainer } from "@/components/screen-container";
+import { getAppLanguage, localized } from "@/lib/focus-flow/i18n";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
 import type { Todo } from "@/lib/focus-flow/types";
 import { formatJapaneseDate, getTodoDueStatus, getTodoSubtasks, isTodoAchieved, todoProgressLabel } from "@/lib/focus-flow/utils";
@@ -14,7 +15,9 @@ type Filter = "open" | "done";
 const priorityMeta = { high: { label: "高", color: COLORS.error }, medium: { label: "中", color: COLORS.warning }, low: { label: "低", color: COLORS.blue } };
 
 export default function TodosScreen() {
-  const { todos, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo } = useFocusFlow();
+  const { todos, displaySettings, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo } = useFocusFlow();
+  const language = getAppLanguage(displaySettings);
+  const t = (ja: string, en: string) => localized(language, ja, en);
   const [filter, setFilter] = useState<Filter>("open");
   const [formOpen, setFormOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | undefined>();
@@ -27,7 +30,7 @@ export default function TodosScreen() {
   const remove = (todo: Todo) => {
     const confirm = () => deleteTodo(todo.id);
     if (Platform.OS === "web") confirm();
-    else Alert.alert("Todoを削除しますか？", `「${todo.title}」は復元できません。`, [{ text: "キャンセル", style: "cancel" }, { text: "削除", style: "destructive", onPress: confirm }]);
+    else Alert.alert(t("Todoを削除しますか？", "Delete this task?"), t(`「${todo.title}」は復元できません。`, `“${todo.title}” cannot be restored.`), [{ text: t("キャンセル", "Cancel"), style: "cancel" }, { text: t("削除", "Delete"), style: "destructive", onPress: confirm }]);
   };
 
   if (!isReady) return <ScreenContainer><LoadingScreen /></ScreenContainer>;
@@ -41,20 +44,20 @@ export default function TodosScreen() {
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <>
-            <ScreenHeading eyebrow="行動を整える" title="Todo" action={<IconButton icon="add" label="Todoを追加" onPress={() => openForm()} variant="filled" />} />
+            <ScreenHeading eyebrow={t("行動を整える", "Plan your day")} title="Todo" action={<IconButton icon="add" label={t("Todoを追加", "Add task")} onPress={() => openForm()} variant="filled" />} />
             <View style={styles.filters}>
-              <TouchableOpacity onPress={() => setFilter("open")} style={[styles.filter, filter === "open" && styles.filterActive]}><Text style={[styles.filterText, filter === "open" && styles.filterTextActive]}>未完了 {todos.filter((todo) => !todo.completed).length}</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => setFilter("done")} style={[styles.filter, filter === "done" && styles.filterActive]}><Text style={[styles.filterText, filter === "done" && styles.filterTextActive]}>完了 {todos.filter((todo) => todo.completed).length}</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setFilter("open")} style={[styles.filter, filter === "open" && styles.filterActive]}><Text style={[styles.filterText, filter === "open" && styles.filterTextActive]}>{t("未完了", "Open")} {todos.filter((todo) => !todo.completed).length}</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setFilter("done")} style={[styles.filter, filter === "done" && styles.filterActive]}><Text style={[styles.filterText, filter === "done" && styles.filterTextActive]}>{t("完了", "Done")} {todos.filter((todo) => todo.completed).length}</Text></TouchableOpacity>
             </View>
-            <View style={styles.explainer}><MaterialIcons name="lock-outline" size={17} color={COLORS.forest} /><Text style={styles.explainerText}>必須 {todos.filter((todo) => todo.isRequired).length}件は、集中ルール中の基本解除条件です。</Text></View>
+            <View style={styles.explainer}><MaterialIcons name="lock-outline" size={17} color={COLORS.forest} /><Text style={styles.explainerText}>{t(`必須 ${todos.filter((todo) => todo.isRequired).length}件は、集中ルール中の基本解除条件です。`, `${todos.filter((todo) => todo.isRequired).length} must-do task(s) are the default unlock condition.`)}</Text></View>
           </>
         }
-        ListEmptyComponent={<EmptyState icon="playlist-add" title={filter === "open" ? "最初のTodoを追加しましょう" : "完了したTodoはまだありません"} description={filter === "open" ? "追加時に「必須」を選ぶと、日課ルールに含めなくてもアプリ制限の解除条件になります。" : "完了したTodoはここで振り返れます。"} actionLabel={filter === "open" ? "Todoを追加" : "未完了を表示"} onAction={() => (filter === "open" ? openForm() : setFilter("open"))} />}
+        ListEmptyComponent={<EmptyState icon="playlist-add" title={filter === "open" ? t("最初のTodoを追加しましょう", "Add your first task") : t("完了したTodoはまだありません", "No completed tasks yet")} description={filter === "open" ? t("追加時に「必須」を選ぶと、日課ルールに含めなくてもアプリ制限の解除条件になります。", "Choose Must-do when you add a task to make it an unlock condition.") : t("完了したTodoはここで振り返れます。", "Your finished tasks will appear here.")} actionLabel={filter === "open" ? t("Todoを追加", "Add task") : t("未完了を表示", "Show open")} onAction={() => (filter === "open" ? openForm() : setFilter("open"))} />}
         renderItem={({ item }) => {
           const priority = priorityMeta[item.priority];
           const dueStatus = getTodoDueStatus(item);
           const achieved = isTodoAchieved(item);
-          const progressLabel = todoProgressLabel(item);
+          const progressLabel = todoProgressLabel(item, language);
           const subtasks = getTodoSubtasks(item);
           return (
             <View style={[styles.todoCard, achieved && styles.todoCardCompleted]}>
@@ -63,11 +66,11 @@ export default function TodosScreen() {
               </TouchableOpacity>
               <View style={styles.todoCopy}>
                 <TouchableOpacity accessibilityRole="button" onPress={() => openForm(item)} activeOpacity={0.72}><Text style={[styles.todoTitle, achieved && styles.todoTitleCompleted]} numberOfLines={2}>{item.title}</Text></TouchableOpacity>
-                <View style={styles.metaRow}>{item.isRequired ? <Pill label="必須" color={COLORS.forest} /> : dueStatus === "today" ? <Pill label="今日" color={COLORS.warning} /> : null}<Pill label={`優先 ${priority.label}`} color={priority.color} />{item.dueDate ? <Text numberOfLines={1} style={[styles.dueText, dueStatus === "today" && styles.dueToday, dueStatus === "overdue" && styles.dueOverdue]}>{dueStatus === "today" ? "今日が期限" : dueStatus === "overdue" ? "期限超過" : formatJapaneseDate(item.dueDate)}</Text> : null}</View>
-                {progressLabel ? <View style={styles.progressRow}><TouchableOpacity accessibilityLabel="進捗を減らす" onPress={() => adjustTodoProgress(item.id, -1)} style={styles.progressButton}><MaterialIcons name="remove" size={16} color={COLORS.forest} /></TouchableOpacity><Text style={styles.progressText}>{progressLabel}</Text><TouchableOpacity accessibilityLabel="進捗を増やす" onPress={() => { safeHaptic("light"); adjustTodoProgress(item.id, 1); }} style={styles.progressButton}><MaterialIcons name="add" size={16} color={COLORS.forest} /></TouchableOpacity></View> : null}
+                <View style={styles.metaRow}>{item.isRequired ? <Pill label={t("必須", "Must-do")} color={COLORS.forest} /> : dueStatus === "today" ? <Pill label={t("今日", "Today")} color={COLORS.warning} /> : null}<Pill label={t(`優先 ${priority.label}`, `Priority ${item.priority}`)} color={priority.color} />{item.dueDate ? <Text numberOfLines={1} style={[styles.dueText, dueStatus === "today" && styles.dueToday, dueStatus === "overdue" && styles.dueOverdue]}>{dueStatus === "today" ? t("今日が期限", "Due today") : dueStatus === "overdue" ? t("期限超過", "Overdue") : formatJapaneseDate(item.dueDate, language)}</Text> : null}</View>
+                {progressLabel ? <View style={styles.progressRow}><TouchableOpacity accessibilityLabel={t("進捗を減らす", "Decrease progress")} onPress={() => adjustTodoProgress(item.id, -1)} style={styles.progressButton}><MaterialIcons name="remove" size={16} color={COLORS.forest} /></TouchableOpacity><Text style={styles.progressText}>{progressLabel}</Text><TouchableOpacity accessibilityLabel={t("進捗を増やす", "Increase progress")} onPress={() => { safeHaptic("light"); adjustTodoProgress(item.id, 1); }} style={styles.progressButton}><MaterialIcons name="add" size={16} color={COLORS.forest} /></TouchableOpacity></View> : null}
                 {subtasks.length ? <View style={styles.subtaskList}>{subtasks.map((subtask) => <TouchableOpacity key={subtask.id} accessibilityRole="checkbox" accessibilityState={{ checked: subtask.completed }} onPress={() => { safeHaptic(subtask.completed ? "light" : "success"); toggleSubtask(item.id, subtask.id); }} style={styles.subtaskRow}><View style={[styles.subtaskCheck, subtask.completed && styles.subtaskCheckDone]}>{subtask.completed ? <MaterialIcons name="check" size={12} color={COLORS.white} /> : null}</View><Text style={[styles.subtaskTitle, subtask.completed && styles.subtaskTitleDone]} numberOfLines={1}>{subtask.title}</Text></TouchableOpacity>)}</View> : null}
               </View>
-              <TouchableOpacity accessibilityLabel="Todoを削除" onPress={() => remove(item)} style={styles.deleteButton}><MaterialIcons name="more-horiz" size={22} color={COLORS.muted} /></TouchableOpacity>
+              <TouchableOpacity accessibilityLabel={t("Todoを削除", "Delete task")} onPress={() => remove(item)} style={styles.deleteButton}><MaterialIcons name="more-horiz" size={22} color={COLORS.muted} /></TouchableOpacity>
             </View>
           );
         }}
