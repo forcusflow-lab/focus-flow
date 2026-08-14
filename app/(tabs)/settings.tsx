@@ -24,6 +24,7 @@ export default function SettingsScreen() {
   const [loadingApps, setLoadingApps] = useState(false);
   const [disclosureOpen, setDisclosureOpen] = useState(false);
   const english = isEnglish(displaySettings);
+  const isIOS = Platform.OS === "ios";
   const summary = useMemo(() => getGateSummary({ todos, habits, memos, focusSessions, gateConfig, displaySettings }, new Date(), english ? "en" : "ja"), [todos, habits, memos, focusSessions, gateConfig, displaySettings, english]);
   const scheduleActive = useMemo(() => isGateTimeActive(gateConfig), [gateConfig]);
 
@@ -55,6 +56,7 @@ export default function SettingsScreen() {
   const addSchedule = () => setGateConfig({ schedules: [...gateConfig.schedules, { id: `schedule-${Date.now()}`, label: english ? `New daily rule ${gateConfig.schedules.length + 1}` : `新しい日課ルール ${gateConfig.schedules.length + 1}`, enabled: true, days: [1, 2, 3, 4, 5], startTime: "09:00", endTime: "18:00", requiredTodoIds: [], requiredHabitIds: [], blockedPackages: [] }] });
   const removeSchedule = (id: string) => setGateConfig({ schedules: gateConfig.schedules.filter((schedule) => schedule.id !== id) });
   const setGateEnabled = (enabled: boolean) => {
+    if (enabled && isIOS) return;
     if (enabled && !gateConfig.accessibilityDisclosureAcceptedAt) {
       setDisclosureOpen(true);
       return;
@@ -91,9 +93,9 @@ export default function SettingsScreen() {
 
             <SectionLabel title="集中ルール" />
             <View style={styles.card}>
-              <View style={styles.row}><View style={styles.rowCopy}><Text style={styles.rowTitle}>必須項目を終えるまで制限</Text><Text style={styles.rowDescription}>{gateConfig.enabled ? summary.message : "集中ルールはオフです"}</Text></View><Switch value={gateConfig.enabled} onValueChange={setGateEnabled} trackColor={{ false: "#CCD7D1", true: "#91C3B3" }} thumbColor={gateConfig.enabled ? COLORS.forest : "#F7F8F5"} /></View>
+              <View style={styles.row}><View style={styles.rowCopy}><Text style={styles.rowTitle}>{isIOS ? (english ? "iPhone app limits" : "iPhoneのアプリ制限") : (english ? "Limit apps until must-dos are done" : "必須項目を終えるまで制限")}</Text><Text style={styles.rowDescription}>{isIOS ? (english ? "App limits are not available in this iPhone build. Tasks, habits, and schedules still work normally." : "このiPhoneビルドではアプリ制限を利用できません。Todo・習慣・日課は通常どおり使えます。") : gateConfig.enabled ? summary.message : (english ? "App limits are off." : "集中ルールはオフです")}</Text></View><Switch value={isIOS ? false : gateConfig.enabled} disabled={isIOS} onValueChange={setGateEnabled} trackColor={{ false: "#CCD7D1", true: "#91C3B3" }} thumbColor={gateConfig.enabled ? COLORS.forest : "#F7F8F5"} /></View>
               <View style={styles.row}><View style={styles.rowCopy}><Text style={styles.rowTitle}>期限当日のTodoを自動で必須にする</Text><Text style={styles.rowDescription}>未完了の期限当日Todoを、日課ルールに追加しなくても解除条件にします。</Text></View><Switch value={gateConfig.autoRequireDueToday} onValueChange={(autoRequireDueToday) => setGateConfig({ autoRequireDueToday })} trackColor={{ false: "#CCD7D1", true: "#91C3B3" }} thumbColor={gateConfig.autoRequireDueToday ? COLORS.forest : "#F7F8F5"} /></View>
-              <View style={[styles.status, gateConfig.enabled && summary.pendingCount ? styles.statusLocked : styles.statusOpen]}><MaterialIcons name={gateConfig.enabled && summary.pendingCount ? "lock-outline" : "lock-open"} size={17} color={gateConfig.enabled && summary.pendingCount ? COLORS.warning : COLORS.success} /><Text style={[styles.statusText, { color: gateConfig.enabled && summary.pendingCount ? "#8A5A13" : "#2A7552" }]}>{gateConfig.enabled && summary.pendingCount ? english ? `${summary.pendingCount} must-do item(s) are still open.` : `現在 ${summary.pendingCount}件の必須項目が未完了です` : english ? "Limits lift automatically when all must-dos are complete." : "必須項目が完了すると、制限は自動的に解除されます"}</Text></View>
+              <View style={[styles.status, !isIOS && gateConfig.enabled && summary.pendingCount ? styles.statusLocked : styles.statusOpen]}><MaterialIcons name={isIOS ? "info-outline" : gateConfig.enabled && summary.pendingCount ? "lock-outline" : "lock-open"} size={17} color={!isIOS && gateConfig.enabled && summary.pendingCount ? COLORS.warning : COLORS.success} /><Text style={[styles.statusText, { color: !isIOS && gateConfig.enabled && summary.pendingCount ? "#8A5A13" : "#2A7552" }]}>{isIOS ? (english ? "No device permission is required for Focus Flow's core planning features on iPhone." : "iPhoneでは、Focus Flowの基本的な計画機能に端末権限は必要ありません。") : gateConfig.enabled && summary.pendingCount ? english ? `${summary.pendingCount} must-do item(s) are still open.` : `現在 ${summary.pendingCount}件の必須項目が未完了です` : english ? "Limits lift automatically when all must-dos are complete." : "必須項目が完了すると、制限は自動的に解除されます"}</Text></View>
             </View>
 
             <SectionLabel title="日課ルールと有効時間帯" detail="必須項目はいつでも解除条件です。ここでは制限する時間帯とアプリだけを決めます。" />
@@ -119,7 +121,7 @@ export default function SettingsScreen() {
 
             <SectionLabel title="端末の動作確認" detail="端末の省電力設定で制限されると、アプリ制限が不安定になる場合があります。標準設定のままで問題がなければ変更は不要です。" />
             <View style={styles.card}>
-              {!nativeReady ? <Notice icon="android" text="この診断はネイティブAndroidビルドで利用できます。" /> : <>
+              {!nativeReady ? <Notice icon={isIOS ? "phone-iphone" : "android"} text={isIOS ? (english ? "This iPhone build does not use Accessibility or app-limit diagnostics. Your tasks, habits, routines, and notes remain available without extra device permission." : "このiPhoneビルドではアクセシビリティやアプリ制限の診断を使いません。Todo・習慣・日課・メモは追加の端末権限なしで利用できます。") : (english ? "Device diagnostics are available in the installed Android build." : "この診断はネイティブAndroidビルドで利用できます。")} /> : <>
                 <DiagnosticRow icon="accessibility-new" title="アクセシビリティ" detail={accessibilityEnabled ? "有効です。選択アプリの前面化を確認できます。" : "無効です。集中ルールは適用されません。"} good={accessibilityEnabled} />
                 <DiagnosticRow icon="battery-charging-full" title="バッテリー最適化" detail={diagnostics?.batteryOptimizationIgnored ? "制限なしです。" : "最適化中です。制限が不安定なときだけアプリ情報で確認してください。"} good={Boolean(diagnostics?.batteryOptimizationIgnored)} />
                 <DiagnosticRow icon="settings" title="バックグラウンド実行" detail={diagnostics?.backgroundRestricted ? "制限ありです。端末のバッテリー設定で許可してください。" : "大きな制限は検出されませんでした。"} good={!diagnostics?.backgroundRestricted} />
@@ -130,7 +132,7 @@ export default function SettingsScreen() {
               </>}
             </View>
 
-            {gateConfig.schedules.length === 0 ? <><SectionLabel title="常時ルールの制限アプリ" detail="時間帯ルールを登録しない場合に使います。必須項目はTodo・習慣の登録時に決めます。" /><View style={styles.card}>{!nativeReady ? <Notice icon="android" text="ネイティブAndroidビルドを端末へ入れると、インストール済みアプリをここで選択できます。" /> : loadingApps ? <View style={styles.loadingRow}><ActivityIndicator color={COLORS.forest} /><Text style={styles.loadingText}>アプリ一覧を読み込んでいます</Text></View> : apps.length ? apps.slice(0, 36).map((app) => <ChoiceRow key={app.packageName} title={app.label} detail={app.packageName} selected={gateConfig.blockedPackages.includes(app.packageName)} onPress={() => selectedApp(app.packageName)} />) : <Notice icon="apps" text="選択できるアプリを取得できませんでした。" />}</View></> : null}
+            {gateConfig.schedules.length === 0 ? <><SectionLabel title={isIOS ? (english ? "App limits on iPhone" : "iPhoneのアプリ制限") : "常時ルールの制限アプリ"} detail={isIOS ? (english ? "App limits are not active in this iPhone build." : "このiPhoneビルドではアプリ制限は有効になりません。") : "時間帯ルールを登録しない場合に使います。必須項目はTodo・習慣の登録時に決めます。"} /><View style={styles.card}>{!nativeReady ? <Notice icon={isIOS ? "phone-iphone" : "android"} text={isIOS ? (english ? "You do not need to choose apps or enable Android Accessibility on iPhone. Focus Flow's planning features are ready to use." : "iPhoneではアプリ選択やAndroidアクセシビリティの有効化は必要ありません。Focus Flowの計画機能をそのまま使えます。") : (english ? "Install the native Android build to choose apps already on your device." : "ネイティブAndroidビルドを端末へ入れると、インストール済みアプリをここで選択できます。")} /> : loadingApps ? <View style={styles.loadingRow}><ActivityIndicator color={COLORS.forest} /><Text style={styles.loadingText}>アプリ一覧を読み込んでいます</Text></View> : apps.length ? apps.slice(0, 36).map((app) => <ChoiceRow key={app.packageName} title={app.label} detail={app.packageName} selected={gateConfig.blockedPackages.includes(app.packageName)} onPress={() => selectedApp(app.packageName)} />) : <Notice icon="apps" text="選択できるアプリを取得できませんでした。" />}</View></> : null}
 
             <SectionLabel title="ホーム画面ウィジェット" />
             <View style={styles.widgetCard}><View style={styles.widgetPreview}><Text style={styles.widgetCount}>{summary.pendingCount ? `${summary.pendingCount}件` : "完了"}</Text><View style={styles.widgetCopy}><Text style={styles.widgetBrand}>Focus Flow</Text><Text style={styles.widgetStatus}>{gateConfig.enabled && summary.pendingCount ? "集中制限中：タップして必須項目を確認" : "今日の集中ルールは解除されています"}</Text></View></View><Text style={styles.widgetDescription}>Androidのホーム画面を長押しして「ウィジェット」から Focus Flow を追加してください。Todo・習慣の完了に合わせて状態が更新されます。</Text></View>

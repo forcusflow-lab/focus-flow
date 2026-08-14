@@ -25,6 +25,7 @@ export function DeviceSetupTutorial({ visible, english, onComplete }: DeviceSetu
   const [accessibilityEnabled, setAccessibilityEnabled] = useState(false);
   const [checking, setChecking] = useState(false);
   const nativeAndroid = Platform.OS === "android" && isNativeGateAvailable();
+  const isIOS = Platform.OS === "ios";
 
   useEffect(() => {
     if (!visible) return;
@@ -33,7 +34,7 @@ export function DeviceSetupTutorial({ visible, english, onComplete }: DeviceSetu
     void getAccessibilityStatus().then(setAccessibilityEnabled).catch(() => setAccessibilityEnabled(false));
   }, [visible, nativeAndroid]);
 
-  const steps = useMemo<SetupStep[]>(() => english ? [
+  const androidSteps = useMemo<SetupStep[]>(() => english ? [
     { icon: "flag", eyebrow: "STEP 1 OF 4", title: "Pick one must-do", body: "Create one small task or habit that matters today. Must-dos are the only items that can unlock your selected apps." },
     { icon: "apps", eyebrow: "STEP 2 OF 4", title: "Choose a safe test app", body: "In Settings, choose one non-essential app to limit. Avoid banking, payment, messaging, or navigation apps while testing." },
     { icon: "accessibility-new", eyebrow: "STEP 3 OF 4", title: "Allow App limits", body: nativeAndroid ? "Open Android Accessibility settings, select Focus Flow, and allow the service. Focus Flow only checks when a selected app comes to the foreground." : "App limits work only in the installed Android build. After installing it, return here and allow the Focus Flow accessibility service.", note: nativeAndroid ? "You can turn this off anytime in Android settings." : "This preview cannot request Android permissions." },
@@ -45,6 +46,17 @@ export function DeviceSetupTutorial({ visible, english, onComplete }: DeviceSetu
     { icon: "shield", eyebrow: "ステップ 4 / 4", title: "安全な戻り方も確認する", body: "必須項目を完了する前にテスト用アプリを開きます。もし誤って制限されたら、制限画面の「10分だけ安全停止する」を使えます。管理画面からこの案内をいつでも開き直せます。" },
   ], [english, nativeAndroid]);
 
+  const steps = useMemo<SetupStep[]>(() => isIOS ? (english ? [
+    { icon: "flag", eyebrow: "STEP 1 OF 4", title: "Pick one must-do", body: "Create one small task or habit that matters today. Must-dos keep your daily priorities clear." },
+    { icon: "phone-iphone", eyebrow: "STEP 2 OF 4", title: "Use the core workflow", body: "Tasks, habits, notes, schedules, and progress tracking work on your iPhone. Start with those before changing any system settings." },
+    { icon: "screen-lock-portrait", eyebrow: "STEP 3 OF 4", title: "About iPhone app limits", body: "This build does not lock other iPhone apps. That feature requires Apple Screen Time authorization and a separate iPhone implementation. You do not need to enable Android Accessibility on iPhone.", note: "Focus Flow will clearly ask for any iPhone permission if app limits become available." },
+    { icon: "shield", eyebrow: "STEP 4 OF 4", title: "Use it with confidence", body: "No other apps are restricted on iPhone in this build. You can safely explore your must-dos, habits, and routines, then reopen this guide any time from Manage." },
+  ] : [
+    { icon: "flag", eyebrow: "ステップ 1 / 4", title: "必須項目を1つ決める", body: "今日大切なTodoまたは習慣を1つ作ります。必須項目で、その日の優先順位を分かりやすく保てます。" },
+    { icon: "phone-iphone", eyebrow: "ステップ 2 / 4", title: "基本の流れを使ってみる", body: "iPhoneでは、Todo・習慣・メモ・日課・進捗管理を使えます。まずは端末の設定を変えずに、これらの機能から始めてください。" },
+    { icon: "screen-lock-portrait", eyebrow: "ステップ 3 / 4", title: "iPhoneのアプリ制限について", body: "このビルドでは、iPhone上の他アプリを制限しません。この機能にはAppleのScreen Timeに関する許可と、iPhone向けの別実装が必要です。iPhoneではAndroidのアクセシビリティを有効にする必要はありません。", note: "iPhoneのアプリ制限が利用可能になった場合は、必要な許可をアプリ内で分かりやすく案内します。" },
+    { icon: "shield", eyebrow: "ステップ 4 / 4", title: "安心して使い始める", body: "このiPhoneビルドで他アプリが制限されることはありません。必須Todo・習慣・日課を試し、必要になったら管理画面からこの案内を開き直せます。" },
+  ]) : androidSteps, [androidSteps, english, isIOS]);
   const current = steps[step];
   const refreshAccessibility = async () => {
     if (!nativeAndroid) return;
