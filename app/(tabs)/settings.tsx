@@ -5,7 +5,7 @@ import { ActivityIndicator, FlatList, Modal, Platform, StyleSheet, Switch, TextI
 import { ScaledText } from "@/components/focus-flow/scaled-text";
 import { COLORS, LoadingScreen, ScreenHeading } from "@/components/focus-flow/ui";
 import { ScreenContainer } from "@/components/screen-container";
-import { getAccessibilityStatus, getLaunchableApps, isNativeGateAvailable, openAccessibilitySettings, type LaunchableApp } from "@/lib/focus-flow/android-gate";
+import { getAccessibilityStatus, getGateDiagnostics, getLaunchableApps, isNativeGateAvailable, openAccessibilitySettings, openAppDetailsSettings, type GateDiagnostics, type LaunchableApp } from "@/lib/focus-flow/android-gate";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
 import type { DisplaySettings, GateSchedule } from "@/lib/focus-flow/types";
 import { getGateSummary, isGateTimeActive } from "@/lib/focus-flow/utils";
@@ -19,6 +19,7 @@ export default function SettingsScreen() {
   const [apps, setApps] = useState<LaunchableApp[]>([]);
   const [nativeReady, setNativeReady] = useState(false);
   const [accessibilityEnabled, setAccessibilityEnabled] = useState(false);
+  const [diagnostics, setDiagnostics] = useState<GateDiagnostics>();
   const [loadingApps, setLoadingApps] = useState(false);
   const [disclosureOpen, setDisclosureOpen] = useState(false);
   const summary = useMemo(() => getGateSummary({ todos, habits, memos, focusSessions, gateConfig, displaySettings }), [todos, habits, memos, focusSessions, gateConfig, displaySettings]);
@@ -30,9 +31,10 @@ export default function SettingsScreen() {
       setNativeReady(available);
       if (!available) return;
       setLoadingApps(true);
-      const [status, installed] = await Promise.all([getAccessibilityStatus(), getLaunchableApps()]);
+      const [status, installed, currentDiagnostics] = await Promise.all([getAccessibilityStatus(), getLaunchableApps(), getGateDiagnostics()]);
       setAccessibilityEnabled(status);
       setApps(installed);
+      setDiagnostics(currentDiagnostics);
       setLoadingApps(false);
     };
     void load();
@@ -41,7 +43,7 @@ export default function SettingsScreen() {
   if (!isReady) return <ScreenContainer><LoadingScreen /></ScreenContainer>;
 
   const selectedApp = (packageName: string) => setGateConfig({ blockedPackages: toggleId(gateConfig.blockedPackages, packageName) });
-  const refreshAccessibility = async () => setAccessibilityEnabled(await getAccessibilityStatus());
+  const refreshAccessibility = async () => { const [status, currentDiagnostics] = await Promise.all([getAccessibilityStatus(), getGateDiagnostics()]); setAccessibilityEnabled(status); setDiagnostics(currentDiagnostics); };
   const acknowledgeAndOpenAccessibility = async () => {
     if (!gateConfig.accessibilityDisclosureAcceptedAt) setGateConfig({ accessibilityDisclosureAcceptedAt: new Date().toISOString() });
     await openAccessibilitySettings();
@@ -113,6 +115,19 @@ export default function SettingsScreen() {
               {nativeReady ? <TouchableOpacity onPress={() => void acknowledgeAndOpenAccessibility()} style={styles.permissionButton}><Text style={styles.permissionButtonText}>{accessibilityEnabled ? "確認" : "設定を開く"}</Text></TouchableOpacity> : null}
             </View>
 
+            <SectionLabel title="端末の動作確認" detail="端末の省電力設定で制限されると、アプリ制限が不安定になる場合があります。標準設定のままで問題がなければ変更は不要です。" />
+            <View style={styles.card}>
+              {!nativeReady ? <Notice icon="android" text="この診断はネイティブAndroidビルドで利用できます。" /> : <>
+                <DiagnosticRow icon="accessibility-new" title="アクセシビリティ" detail={accessibilityEnabled ? "有効です。選択アプリの前面化を確認できます。" : "無効です。集中ルールは適用されません。"} good={accessibilityEnabled} />
+                <DiagnosticRow icon="battery-charging-full" title="バッテリー最適化" detail={diagnostics?.batteryOptimizationIgnored ? "制限なしです。" : "最適化中です。制限が不安定なときだけアプリ情報で確認してください。"} good={Boolean(diagnostics?.batteryOptimizationIgnored)} />
+                <DiagnosticRow icon="settings" title="バックグラウンド実行" detail={diagnostics?.backgroundRestricted ? "制限ありです。端末のバッテリー設定で許可してください。" : "大きな制限は検出されませんでした。"} good={!diagnostics?.backgroundRestricted} />
+                {diagnostics?.safetyPauseUntil && diagnostics.safetyPauseUntil > Date.now() ? <DiagnosticRow icon="pause-circle-outline" title="安全停止" detail={`${new Date(diagnostics.safetyPauseUntil).toLocaleTimeString()} までアプリ制限を一時停止しています。`} good={false} /> : null}
+                <TouchableOpacity onPress={() => void refreshAccessibility()} style={styles.disclosureButton}><Text style={styles.disclosureButtonText}>状態を再確認</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => void openAppDetailsSettings()} style={[styles.permissionButton, { alignSelf: "center", marginVertical: 10 }]}><Text style={styles.permissionButtonText}>アプリ情報を開く</Text></TouchableOpacity>
+                <Text style={styles.permissionDescription}>誤って制限された場合は、制限画面の「10分だけ安全停止する」から一時的に解除できます。端末やOSの都合で常時の動作は保証できません。</Text>
+              </>}
+            </View>
+
             {gateConfig.schedules.length === 0 ? <><SectionLabel title="常時ルールの制限アプリ" detail="時間帯ルールを登録しない場合に使います。必須項目はTodo・習慣の登録時に決めます。" /><View style={styles.card}>{!nativeReady ? <Notice icon="android" text="ネイティブAndroidビルドを端末へ入れると、インストール済みアプリをここで選択できます。" /> : loadingApps ? <View style={styles.loadingRow}><ActivityIndicator color={COLORS.forest} /><Text style={styles.loadingText}>アプリ一覧を読み込んでいます</Text></View> : apps.length ? apps.slice(0, 36).map((app) => <ChoiceRow key={app.packageName} title={app.label} detail={app.packageName} selected={gateConfig.blockedPackages.includes(app.packageName)} onPress={() => selectedApp(app.packageName)} />) : <Notice icon="apps" text="選択できるアプリを取得できませんでした。" />}</View></> : null}
 
             <SectionLabel title="ホーム画面ウィジェット" />
@@ -140,6 +155,7 @@ export default function SettingsScreen() {
 }
 
 function SectionLabel({ title, detail }: { title: string; detail?: string }) { return <View style={styles.sectionHeading}><Text style={styles.sectionTitle}>{title}</Text>{detail ? <Text style={styles.sectionDetail}>{detail}</Text> : null}</View>; }
+function DiagnosticRow({ icon, title, detail, good }: { icon: React.ComponentProps<typeof MaterialIcons>["name"]; title: string; detail: string; good: boolean }) { return <View style={styles.permissionCard}><View style={[styles.permissionIcon, { backgroundColor: good ? "#E7F3ED" : "#FFF2DD" }]}><MaterialIcons name={icon} size={20} color={good ? COLORS.success : COLORS.warning} /></View><View style={styles.permissionCopy}><Text style={styles.permissionTitle}>{title}</Text><Text style={styles.permissionDescription}>{detail}</Text></View></View>; }
 function Notice({ icon, text }: { icon: React.ComponentProps<typeof MaterialIcons>["name"]; text: string }) { return <View style={styles.notice}><MaterialIcons name={icon} size={20} color={COLORS.muted} /><Text style={styles.noticeText}>{text}</Text></View>; }
 function ChoiceRow({ title, detail, selected, onPress, accent }: { title: string; detail: string; selected: boolean; onPress: () => void; accent?: string }) { return <TouchableOpacity onPress={onPress} activeOpacity={0.72} style={styles.choiceRow}><View style={[styles.choiceMark, selected && { backgroundColor: accent ?? COLORS.forest, borderColor: accent ?? COLORS.forest }]}>{selected ? <MaterialIcons name="check" size={15} color={COLORS.white} /> : null}</View><View style={styles.choiceCopy}><Text style={styles.choiceTitle} numberOfLines={1}>{title}</Text><Text style={styles.choiceDetail} numberOfLines={1}>{detail}</Text></View></TouchableOpacity>; }
 function Segmented({ options, selected, onSelect }: { options: { key: string; label: string }[]; selected: string; onSelect: (key: string) => void }) { return <View style={styles.segmented}>{options.map((option) => <TouchableOpacity key={option.key} onPress={() => onSelect(option.key)} style={[styles.segment, selected === option.key && styles.segmentSelected]}><Text style={[styles.segmentText, selected === option.key && styles.segmentTextSelected]}>{option.label}</Text></TouchableOpacity>)}</View>; }
