@@ -79,6 +79,7 @@ export type DisplaySettings = {
   theme: "mist" | "slate";
   cardOpacity: "solid" | "soft" | "glass";
   language?: "auto" | "ja" | "en";
+  deviceSetupCompletedAt?: string;
 };
 
 export const DEFAULT_GATE_CONFIG: GateConfig = { enabled: false, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, accessibilityDisclosureAcceptedAt: undefined, schedules: [] };

@@ -1,9 +1,10 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { TaskForm } from "@/components/focus-flow/task-form";
+import { DeviceSetupTutorial } from "@/components/focus-flow/device-setup-tutorial";
 import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
 import { COLORS, IconButton, LoadingScreen, safeHaptic } from "@/components/focus-flow/ui";
 import { ScreenContainer } from "@/components/screen-container";
@@ -13,8 +14,9 @@ import { dayKey, getGateRuleSummaries, getGateSummary, isGateTimeActive, isHabit
 
 export default function TodayScreen() {
   const router = useRouter();
-  const { todos, habits, memos, focusSessions, gateConfig, displaySettings, isReady, toggleTodo, toggleHabit, addTodo } = useFocusFlow();
+  const { todos, habits, memos, focusSessions, gateConfig, displaySettings, isReady, toggleTodo, toggleHabit, addTodo, setDisplaySettings } = useFocusFlow();
   const [taskFormOpen, setTaskFormOpen] = useState(false);
+  const [deviceSetupOpen, setDeviceSetupOpen] = useState(false);
   const english = isEnglish(displaySettings);
   const today = dayKey();
   const gateSummary = useMemo(() => getGateSummary({ todos, habits, memos, focusSessions, gateConfig, displaySettings }, new Date(), english ? "en" : "ja"), [todos, habits, memos, focusSessions, gateConfig, displaySettings, english]);
@@ -34,6 +36,10 @@ export default function TodayScreen() {
   const activeRuleNames = activeRules.map((rule) => rule.label).join(english ? ", " : "・");
   const gateDescription = !gateConfig.enabled ? english ? "Turn on App limits in Settings to lock selected apps until your must-dos are complete." : "設定から集中ルールをオンにすると、選択アプリを制限できます。" : !timeActive ? english ? "App limits will resume during your next scheduled window." : "次の設定済み時間帯になると、未完了の必須項目に対して制限を開始します。" : gateLocked ? english ? "Finish your remaining must-dos to unlock your selected apps." : `${activeRuleNames}：${gateSummary.message}` : activeRules.length ? english ? "You’ve completed the active schedule's must-dos." : `${activeRuleNames}の解除条件を完了しました。` : english ? "Your selected apps are unlocked." : "選択したアプリへのアクセスは解除されています。";
   const greeting = new Date().getHours() < 12 ? english ? "Good morning" : "おはようございます" : new Date().getHours() < 18 ? english ? "Make progress on today's essentials" : "今日の必須項目を進めましょう" : english ? "Close your day with intention" : "一日をやさしく締めくくりましょう";
+
+  useEffect(() => {
+    if (isReady && !displaySettings.deviceSetupCompletedAt) setDeviceSetupOpen(true);
+  }, [displaySettings.deviceSetupCompletedAt, isReady]);
 
   if (!isReady) return <ScreenContainer><LoadingScreen /></ScreenContainer>;
 
@@ -61,6 +67,7 @@ export default function TodayScreen() {
         </>}
       />
       <TaskForm visible={taskFormOpen} onClose={() => setTaskFormOpen(false)} onSave={addTodo} />
+      <DeviceSetupTutorial visible={deviceSetupOpen} english={english} onComplete={() => { setDeviceSetupOpen(false); setDisplaySettings({ deviceSetupCompletedAt: new Date().toISOString() }); }} />
     </ScreenContainer>
   );
 }
