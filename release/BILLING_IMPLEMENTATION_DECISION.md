@@ -42,3 +42,13 @@ Free users retain core daily planning: normal and required To-dos, habits, notes
 
 [1]: https://developer.android.com/google/play/billing/integrate "Android Developers: Integrate the Google Play Billing Library into your app"
 [2]: https://developer.android.com/google/play/billing/test "Android Developers: Test your Google Play Billing Library integration"
+
+## 2026年8月の実装更新
+
+Googleの現行資料では、**2026年8月31日以降の新規アプリ・更新にはBilling Library 8以上**が必要です。購入導線では、Playから取得したローカライズ済みの商品情報だけを表示し、購入後は確認・権利付与・購入の承認を順番に行います。テーマを有料機能として公開する場合も、アプリ内の見かけ上の状態だけで権利を確定してはいけません。[3]
+
+Play Consoleで`focus_flow_plus`を作成し、テストトラックへ公開したうえで、ライセンステスターによる購入、保留、復元、更新、失効を確認します。ライセンステスターにはテスト用支払方法が提供され、テスト購入でも承認漏れは返金につながるため、購入が確認されるまでPlusを有効化しない設計を維持します。[4] [5]
+
+[3]: https://developer.android.com/google/play/billing/integrate "Android Developers: Integrate the Google Play Billing Library into your app"
+[4]: https://developer.android.com/google/play/billing/test "Android Developers: Test your Google Play Billing Library integration"
+[5]: https://support.google.com/googleplay/android-developer/answer/6062777?hl=en "Play Console Help: Test in-app billing with application licensing"

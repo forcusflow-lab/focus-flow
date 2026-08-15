@@ -1,7 +1,9 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ReactNode } from "react";
-import { ActivityIndicator, Platform, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Platform, StyleSheet, TouchableOpacity, useColorScheme, View } from "react-native";
 import { ScaledText } from "./scaled-text";
+import { getAppPalette } from "@/lib/focus-flow/app-themes";
+import { useFocusFlow } from "@/lib/focus-flow/provider";
 
 type IconName = React.ComponentProps<typeof MaterialIcons>["name"];
 
@@ -21,11 +23,13 @@ export const COLORS = {
 export const HABIT_COLORS = ["#246B5A", "#315B8C", "#A76439", "#76569B", "#4B9B72"];
 
 export function ScreenHeading({ eyebrow, title, action }: { eyebrow?: string; title: string; action?: ReactNode }) {
+  const { displaySettings } = useFocusFlow();
+  const palette = getAppPalette(displaySettings, useColorScheme() === "dark" ? "dark" : "light");
   return (
     <View style={styles.heading}>
       <View style={styles.headingCopy}>
-        {eyebrow ? <ScaledText style={styles.eyebrow}>{eyebrow}</ScaledText> : null}
-        <ScaledText style={styles.headingTitle}>{title}</ScaledText>
+        {eyebrow ? <ScaledText style={[styles.eyebrow, { color: palette.primary }]}>{eyebrow}</ScaledText> : null}
+        <ScaledText style={[styles.headingTitle, { color: palette.text }]}>{title}</ScaledText>
       </View>
       {action}
     </View>

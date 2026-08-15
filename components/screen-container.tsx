@@ -1,8 +1,9 @@
-import { View, type ViewProps } from "react-native";
+import { useColorScheme, View, type ViewProps } from "react-native";
 import { SafeAreaView, type Edge } from "react-native-safe-area-context";
 
 import { cn } from "@/lib/utils";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
+import { getAppPalette } from "@/lib/focus-flow/app-themes";
 
 export interface ScreenContainerProps extends ViewProps {
   /**
@@ -49,7 +50,8 @@ export function ScreenContainer({
   ...props
 }: ScreenContainerProps) {
   const { displaySettings } = useFocusFlow();
-  const backgroundColor = displaySettings.theme === "slate" ? "#14231F" : "#F7F8F5";
+  const systemScheme = useColorScheme() === "dark" ? "dark" : "light";
+  const palette = getAppPalette(displaySettings, systemScheme);
   return (
     <View
       className={cn(
@@ -58,12 +60,12 @@ export function ScreenContainer({
         containerClassName
       )}
       {...props}
-      style={{ backgroundColor }}
+      style={[{ backgroundColor: palette.background }, style]}
     >
       <SafeAreaView
         edges={edges}
         className={cn("flex-1", safeAreaClassName)}
-        style={style}
+        style={undefined}
       >
         <View className={cn("flex-1", className)}>{children}</View>
       </SafeAreaView>

@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
 import org.json.JSONArray
@@ -46,6 +47,7 @@ internal abstract class FocusFlowBaseWidgetProvider : AppWidgetProvider() {
     bind(views, current)
     bindAction(context, id, views, current)
     applyTheme(context, views, current)
+    applyTextScale(views, current)
     adaptForSize(context, id, views, current)
     views.setOnClickPendingIntent(R.id.focus_flow_widget_root, launchIntent(context, id))
     manager.updateAppWidget(id, views)
@@ -84,6 +86,20 @@ internal abstract class FocusFlowBaseWidgetProvider : AppWidgetProvider() {
       views.setTextColor(R.id.focus_flow_widget_main, primary)
       views.setTextColor(R.id.focus_flow_widget_detail, detail)
       if (widgetKey() == "next" || widgetKey() == "habit") views.setInt(R.id.focus_flow_widget_action, "setBackgroundResource", accentResource(accent))
+    }
+  }
+
+  private fun applyTextScale(views: RemoteViews, state: JSONObject) {
+    val size = state.optJSONObject("widgetTextSizes")?.optString(widgetKey(), "standard") ?: "standard"
+    val scale = when (size) { "compact" -> 0.90f; "large" -> 1.16f; else -> 1f }
+    if (widgetKey() == "overview") {
+      views.setTextViewTextSize(R.id.focus_flow_widget_count, TypedValue.COMPLEX_UNIT_SP, 23f * scale)
+      views.setTextViewTextSize(R.id.focus_flow_widget_status, TypedValue.COMPLEX_UNIT_SP, 12f * scale)
+    } else {
+      views.setTextViewTextSize(R.id.focus_flow_widget_title, TypedValue.COMPLEX_UNIT_SP, 11f * scale)
+      views.setTextViewTextSize(R.id.focus_flow_widget_main, TypedValue.COMPLEX_UNIT_SP, 16f * scale)
+      views.setTextViewTextSize(R.id.focus_flow_widget_detail, TypedValue.COMPLEX_UNIT_SP, 11f * scale)
+      if (widgetKey() == "next" || widgetKey() == "habit") views.setTextViewTextSize(R.id.focus_flow_widget_action, TypedValue.COMPLEX_UNIT_SP, 12f * scale)
     }
   }
 

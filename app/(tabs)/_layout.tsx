@@ -3,10 +3,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Platform } from "react-native";
+import { Platform, useColorScheme } from "react-native";
 import { useColors } from "@/hooks/use-colors";
 import { isEnglish } from "@/lib/focus-flow/i18n";
 import { FocusFlowProvider, useFocusFlow } from "@/lib/focus-flow/provider";
+import { getAppPalette } from "@/lib/focus-flow/app-themes";
 
 export default function TabLayout() {
   return (
@@ -20,6 +21,8 @@ function FocusTabs() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { displaySettings } = useFocusFlow();
+  const systemScheme = useColorScheme() === "dark" ? "dark" : "light";
+  const palette = getAppPalette(displaySettings, systemScheme);
   const english = isEnglish(displaySettings);
   const bottomPadding = Platform.OS === "web" ? 12 : Math.max(insets.bottom, 8);
   const tabBarHeight = 64 + bottomPadding;
@@ -34,8 +37,8 @@ function FocusTabs() {
           paddingTop: 8,
           paddingBottom: bottomPadding,
           height: tabBarHeight,
-          backgroundColor: "rgba(247,250,255,0.92)",
-          borderTopColor: "#D7E1F0",
+          backgroundColor: palette.tab,
+          borderTopColor: palette.border,
           borderTopWidth: 0.5,
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: "700", marginTop: 1 },

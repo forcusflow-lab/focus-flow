@@ -3,9 +3,11 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, 
 import { AppState } from "react-native";
 
 import { consumeWidgetCompletions, syncAndroidGate } from "./android-gate";
+import { getPlusStatus as readPlusStatus, purchasePlus as startPlusPurchase, restorePlus as restorePlusPurchase, type PlusStatus } from "./billing";
 import { cancelDailyReminder } from "./reminders";
 import { createId, dayKey, getTodoSubtasks, isTodoAchieved, isTodoRequiredForGate, nextRecurringDueDate } from "./utils";
 import { DEFAULT_DISPLAY_SETTINGS, DEFAULT_GATE_CONFIG, DisplaySettings, EMPTY_FOCUS_FLOW_DATA, FocusFlowData, GateConfig, Habit, Memo, Priority, ProgressUnit, RepeatRule, Todo, TodoSubtask } from "./types";
+import { isPremiumAppTheme } from "./app-themes";
 
 const STORAGE_KEY = "@focus-flow/data-v1";
 
@@ -32,6 +34,10 @@ type FocusFlowContextValue = FocusFlowData & {
   setGateConfig: (input: Partial<GateConfig>) => void;
   setDisplaySettings: (input: Partial<DisplaySettings>) => void;
   clearAllData: () => void;
+  plusStatus: PlusStatus;
+  refreshPlusStatus: () => Promise<void>;
+  purchasePlus: () => Promise<void>;
+  restorePlus: () => Promise<void>;
 };
 
 const FocusFlowContext = createContext<FocusFlowContextValue | null>(null);
@@ -70,7 +76,7 @@ function normalizeData(value: unknown): FocusFlowData {
     memos: Array.isArray(candidate.memos) ? candidate.memos : [],
     focusSessions: Array.isArray(candidate.focusSessions) ? candidate.focusSessions : [],
     gateConfig: { ...gateConfig, requiredTodoIds: [], requiredHabitIds: [], schedules: gateConfig.schedules.map((schedule) => ({ ...schedule, requiredTodoIds: [], requiredHabitIds: [] })) },
-    displaySettings: { ...DEFAULT_DISPLAY_SETTINGS, ...(candidate.displaySettings ?? {}) },
+    displaySettings: { ...DEFAULT_DISPLAY_SETTINGS, ...(candidate.displaySettings ?? {}), appTheme: candidate.displaySettings?.appTheme ?? candidate.displaySettings?.theme ?? "mist" },
   };
 }
 
@@ -98,6 +104,7 @@ function maybeAdvanceRecurring(todo: Todo) {
 export function FocusFlowProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<FocusFlowData>(EMPTY_FOCUS_FLOW_DATA);
   const [isReady, setIsReady] = useState(false);
+  const [plusStatus, setPlusStatus] = useState<PlusStatus>({ status: "unavailable", active: false });
 
   useEffect(() => {
     let active = true;
@@ -224,12 +231,25 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
   }, [commit]);
 
   const setGateConfig = useCallback((input: Partial<GateConfig>) => commit((current) => ({ ...current, gateConfig: { ...current.gateConfig, ...input } })), [commit]);
-  const setDisplaySettings = useCallback((input: Partial<DisplaySettings>) => commit((current) => ({ ...current, displaySettings: { ...current.displaySettings, ...input } })), [commit]);
+  const setDisplaySettings = useCallback((input: Partial<DisplaySettings>) => commit((current) => {
+    const requestedTheme = input.appTheme ?? current.displaySettings.appTheme ?? current.displaySettings.theme;
+    const canUseTheme = !isPremiumAppTheme(requestedTheme) || Boolean(current.displaySettings.plusEntitlement);
+    const nextInput = canUseTheme ? input : { ...input, appTheme: current.displaySettings.appTheme ?? current.displaySettings.theme };
+    return { ...current, displaySettings: { ...current.displaySettings, ...nextInput } };
+  }), [commit]);
   const clearAllData = useCallback(() => {
     setData({ todos: [], habits: [], memos: [], focusSessions: [], gateConfig: { ...DEFAULT_GATE_CONFIG, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], schedules: [] }, displaySettings: { ...DEFAULT_DISPLAY_SETTINGS } });
     void AsyncStorage.removeItem(STORAGE_KEY);
     void cancelDailyReminder();
   }, []);
+
+  const applyPlusStatus = useCallback((status: PlusStatus) => {
+    setPlusStatus(status);
+    commit((current) => current.displaySettings.plusEntitlement === status.active ? current : { ...current, displaySettings: { ...current.displaySettings, plusEntitlement: status.active } });
+  }, [commit]);
+  const refreshPlusStatus = useCallback(async () => { applyPlusStatus(await readPlusStatus()); }, [applyPlusStatus]);
+  const purchasePlus = useCallback(async () => { setPlusStatus((current) => ({ ...current, status: "loading" })); applyPlusStatus(await startPlusPurchase()); }, [applyPlusStatus]);
+  const restorePlus = useCallback(async () => { setPlusStatus((current) => ({ ...current, status: "loading" })); applyPlusStatus(await restorePlusPurchase()); }, [applyPlusStatus]);
 
   const applyWidgetCompletions = useCallback(async () => {
     const actions = await consumeWidgetCompletions();
@@ -255,13 +275,14 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isReady) return;
     void applyWidgetCompletions();
-    const subscription = AppState.addEventListener("change", (state) => { if (state === "active") void applyWidgetCompletions(); });
+    void refreshPlusStatus();
+    const subscription = AppState.addEventListener("change", (state) => { if (state === "active") { void applyWidgetCompletions(); void refreshPlusStatus(); } });
     return () => subscription.remove();
-  }, [applyWidgetCompletions, isReady]);
+  }, [applyWidgetCompletions, isReady, refreshPlusStatus]);
 
   useEffect(() => { if (isReady) void syncAndroidGate(data); }, [data, isReady]);
 
-  const value = useMemo(() => ({ ...data, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo, addHabit, updateHabit, toggleHabit, adjustHabitProgress, deleteHabit, addMemo, updateMemo, deleteMemo, addFocusSession, setGateConfig, setDisplaySettings, clearAllData }), [data, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo, addHabit, updateHabit, toggleHabit, adjustHabitProgress, deleteHabit, addMemo, updateMemo, deleteMemo, addFocusSession, setGateConfig, setDisplaySettings, clearAllData]);
+  const value = useMemo(() => ({ ...data, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo, addHabit, updateHabit, toggleHabit, adjustHabitProgress, deleteHabit, addMemo, updateMemo, deleteMemo, addFocusSession, setGateConfig, setDisplaySettings, clearAllData, plusStatus, refreshPlusStatus, purchasePlus, restorePlus }), [data, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo, addHabit, updateHabit, toggleHabit, adjustHabitProgress, deleteHabit, addMemo, updateMemo, deleteMemo, addFocusSession, setGateConfig, setDisplaySettings, clearAllData, plusStatus, refreshPlusStatus, purchasePlus, restorePlus]);
 
   return <FocusFlowContext.Provider value={value}>{children}</FocusFlowContext.Provider>;
 }

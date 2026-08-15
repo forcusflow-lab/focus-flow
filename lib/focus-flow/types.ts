@@ -5,6 +5,10 @@ export type WidgetThemeKind = "overview" | "progress" | "next" | "habit" | "rout
 export type WidgetBackgroundTheme = "default" | "forest" | "ocean" | "violet" | "amber" | "blush" | "ink";
 export type WidgetAccentTheme = "auto" | "mint" | "sky" | "violet" | "coral" | "gold" | "ink";
 export type WidgetThemeSelection = { background: WidgetBackgroundTheme; accent: WidgetAccentTheme };
+export type AppThemeId = "mist" | "slate" | "evergreen" | "ocean" | "orchid" | "sunrise";
+export type AppearancePreference = "system" | "light" | "dark";
+export type WidgetTextSize = "compact" | "standard" | "large";
+export type SavedThemeSet = { id: string; name: string; appTheme: AppThemeId; appearance: AppearancePreference; widgetThemes: Partial<Record<WidgetThemeKind, WidgetThemeSelection>>; widgetTextSizes: Partial<Record<WidgetThemeKind, WidgetTextSize>> };
 
 export type TodoSubtask = {
   id: string;
@@ -81,12 +85,17 @@ export type GateSchedule = {
 export type DisplaySettings = {
   fontScale: "compact" | "standard" | "large";
   theme: "mist" | "slate";
+  appTheme?: AppThemeId;
+  appearance?: AppearancePreference;
   cardOpacity: "solid" | "soft" | "glass";
   language?: "auto" | "ja" | "en";
   deviceSetupCompletedAt?: string;
   dailyReminderEnabled?: boolean;
   dailyReminderTime?: string;
   widgetThemes?: Partial<Record<WidgetThemeKind, WidgetThemeSelection>>;
+  widgetTextSizes?: Partial<Record<WidgetThemeKind, WidgetTextSize>>;
+  savedThemeSets?: SavedThemeSet[];
+  plusEntitlement?: boolean;
 };
 
 export const DEFAULT_GATE_CONFIG: GateConfig = { enabled: false, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, accessibilityDisclosureAcceptedAt: undefined, schedules: [] };
@@ -94,10 +103,15 @@ export const DEFAULT_GATE_CONFIG: GateConfig = { enabled: false, blockedPackages
 export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   fontScale: "standard",
   theme: "mist",
+  appTheme: "mist",
+  appearance: "system",
   cardOpacity: "solid",
   language: "auto",
   dailyReminderEnabled: false,
   dailyReminderTime: "19:00",
+  widgetTextSizes: {},
+  savedThemeSets: [],
+  plusEntitlement: false,
 };
 
 export type FocusFlowData = {
