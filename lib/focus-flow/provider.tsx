@@ -8,6 +8,7 @@ import { cancelDailyReminder } from "./reminders";
 import { createId, dayKey, getTodoSubtasks, isTodoAchieved, isTodoRequiredForGate, nextRecurringDueDate } from "./utils";
 import { DEFAULT_DISPLAY_SETTINGS, DEFAULT_GATE_CONFIG, DisplaySettings, EMPTY_FOCUS_FLOW_DATA, FocusFlowData, GateConfig, Habit, Memo, Priority, ProgressUnit, RepeatRule, Todo, TodoSubtask } from "./types";
 import { isPremiumAppTheme } from "./app-themes";
+import { isPremiumAppFont } from "./app-fonts";
 
 const STORAGE_KEY = "@focus-flow/data-v1";
 
@@ -234,7 +235,9 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
   const setDisplaySettings = useCallback((input: Partial<DisplaySettings>) => commit((current) => {
     const requestedTheme = input.appTheme ?? current.displaySettings.appTheme ?? current.displaySettings.theme;
     const canUseTheme = !isPremiumAppTheme(requestedTheme) || Boolean(current.displaySettings.plusEntitlement);
-    const nextInput = canUseTheme ? input : { ...input, appTheme: current.displaySettings.appTheme ?? current.displaySettings.theme };
+    const requestedFont = input.fontFamily ?? current.displaySettings.fontFamily ?? "system";
+    const canUseFont = !isPremiumAppFont(requestedFont) || Boolean(current.displaySettings.plusEntitlement);
+    const nextInput = { ...input, ...(canUseTheme ? {} : { appTheme: current.displaySettings.appTheme ?? current.displaySettings.theme }), ...(canUseFont ? {} : { fontFamily: current.displaySettings.fontFamily ?? "system" }) };
     return { ...current, displaySettings: { ...current.displaySettings, ...nextInput } };
   }), [commit]);
   const clearAllData = useCallback(() => {

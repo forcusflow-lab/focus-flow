@@ -8,7 +8,8 @@ export type WidgetThemeSelection = { background: WidgetBackgroundTheme; accent: 
 export type AppThemeId = "mist" | "slate" | "evergreen" | "ocean" | "orchid" | "sunrise";
 export type AppearancePreference = "system" | "light" | "dark";
 export type WidgetTextSize = "compact" | "standard" | "large";
-export type SavedThemeSet = { id: string; name: string; appTheme: AppThemeId; appearance: AppearancePreference; widgetThemes: Partial<Record<WidgetThemeKind, WidgetThemeSelection>>; widgetTextSizes: Partial<Record<WidgetThemeKind, WidgetTextSize>> };
+export type AppFontId = "system" | "reading" | "notebook" | "focus";
+export type SavedThemeSet = { id: string; name: string; appTheme: AppThemeId; appearance: AppearancePreference; fontFamily?: AppFontId; widgetThemes: Partial<Record<WidgetThemeKind, WidgetThemeSelection>>; widgetTextSizes: Partial<Record<WidgetThemeKind, WidgetTextSize>> };
 
 export type TodoSubtask = {
   id: string;
@@ -87,6 +88,7 @@ export type DisplaySettings = {
   theme: "mist" | "slate";
   appTheme?: AppThemeId;
   appearance?: AppearancePreference;
+  fontFamily?: AppFontId;
   cardOpacity: "solid" | "soft" | "glass";
   language?: "auto" | "ja" | "en";
   deviceSetupCompletedAt?: string;
@@ -105,6 +107,7 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   theme: "mist",
   appTheme: "mist",
   appearance: "system",
+  fontFamily: "system",
   cardOpacity: "solid",
   language: "auto",
   dailyReminderEnabled: false,
