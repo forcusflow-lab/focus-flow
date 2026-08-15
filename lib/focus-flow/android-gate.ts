@@ -10,6 +10,7 @@ export type GateDiagnostics = { accessibilityEnabled: boolean; batteryOptimizati
 
 type FocusGateNativeModule = {
   saveGateState: (serialized: string) => Promise<void>;
+  consumeWidgetCompletions: () => Promise<Array<{ id: string; kind: "todo" | "habit" }>>;
   getAccessibilityStatus: () => Promise<boolean>;
   openAccessibilitySettings: () => Promise<void>;
   openAppDetailsSettings: () => Promise<void>;
@@ -38,7 +39,7 @@ export async function syncAndroidGate(data: FocusFlowData) {
   const nextTodo = [...pendingTodoItems].sort((left, right) => priorityRank[left.priority] - priorityRank[right.priority] || (left.dueDate ?? "9999-12-31").localeCompare(right.dueDate ?? "9999-12-31"))[0];
   const nextHabit = pendingHabitItems[0];
   const activeRoutine = rules.find((rule) => rule.isActive);
-  await module.saveGateState(JSON.stringify({ active: data.gateConfig.enabled, language, pendingCount: summary.pendingCount, pendingTodos: summary.pendingTodos, pendingHabits: summary.pendingHabits, message: summary.message, rules, requiredTodoTotal: requiredTodos.length, requiredHabitTotal: requiredHabits.length, completedTodoTotal: requiredTodos.length - pendingTodoItems.length, completedHabitTotal: requiredHabits.length - pendingHabitItems.length, nextRequiredTitle: nextTodo?.title ?? nextHabit?.title ?? "", nextRequiredKind: nextTodo ? "todo" : nextHabit ? "habit" : "", routineActive: Boolean(activeRoutine?.isActive), routineLabel: activeRoutine?.label ?? "" }));
+  await module.saveGateState(JSON.stringify({ active: data.gateConfig.enabled, language, pendingCount: summary.pendingCount, pendingTodos: summary.pendingTodos, pendingHabits: summary.pendingHabits, message: summary.message, rules, requiredTodoTotal: requiredTodos.length, requiredHabitTotal: requiredHabits.length, completedTodoTotal: requiredTodos.length - pendingTodoItems.length, completedHabitTotal: requiredHabits.length - pendingHabitItems.length, todoQueue: [...pendingTodoItems].sort((left, right) => priorityRank[left.priority] - priorityRank[right.priority] || (left.dueDate ?? "9999-12-31").localeCompare(right.dueDate ?? "9999-12-31")).map((todo) => ({ id: todo.id, title: todo.title })), habitQueue: pendingHabitItems.map((habit) => ({ id: habit.id, title: habit.title })), nextTodoId: nextTodo?.id ?? "", nextTodoTitle: nextTodo?.title ?? "", nextHabitId: nextHabit?.id ?? "", nextHabitTitle: nextHabit?.title ?? "", nextRequiredId: nextTodo?.id ?? nextHabit?.id ?? "", nextRequiredTitle: nextTodo?.title ?? nextHabit?.title ?? "", nextRequiredKind: nextTodo ? "todo" : nextHabit ? "habit" : "", routineActive: Boolean(activeRoutine?.isActive), routineLabel: activeRoutine?.label ?? "" }));
 }
 
 export async function getAccessibilityStatus() { return (await nativeModule()?.getAccessibilityStatus()) ?? false; }
@@ -46,4 +47,6 @@ export async function openAccessibilitySettings() { await nativeModule()?.openAc
 export async function openAppDetailsSettings() { await nativeModule()?.openAppDetailsSettings(); }
 export async function getGateDiagnostics() { return await nativeModule()?.getGateDiagnostics(); }
 export async function getLaunchableApps() { return (await nativeModule()?.getLaunchableApps()) ?? [] as LaunchableApp[]; }
+export async function consumeWidgetCompletions() { return (await nativeModule()?.consumeWidgetCompletions()) ?? [] as Array<{ id: string; kind: "todo" | "habit" }>;
+}
 export type { LaunchableApp };

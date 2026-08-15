@@ -3,4 +3,5 @@
   <TextView android:id="@+id/focus_flow_widget_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#775300" android:textSize="11sp" android:textStyle="bold" />
   <TextView android:id="@+id/focus_flow_widget_main" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:ellipsize="end" android:maxLines="2" android:textColor="#3F310B" android:textSize="17sp" android:textStyle="bold" />
   <TextView android:id="@+id/focus_flow_widget_detail" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:ellipsize="end" android:maxLines="2" android:textColor="#65541F" android:textSize="12sp" />
+  <Button android:id="@+id/focus_flow_widget_action" android:layout_width="wrap_content" android:layout_height="36dp" android:layout_marginTop="8dp" android:background="@drawable/focus_flow_widget_action_background" android:minHeight="0dp" android:paddingHorizontal="14dp" android:textColor="#FFFFFF" android:textSize="12sp" android:textStyle="bold" android:visibility="gone" />
 </LinearLayout>

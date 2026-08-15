@@ -1,9 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { AppState } from "react-native";
 
-import { syncAndroidGate } from "./android-gate";
+import { consumeWidgetCompletions, syncAndroidGate } from "./android-gate";
 import { cancelDailyReminder } from "./reminders";
-import { createId, dayKey, getTodoSubtasks, isTodoAchieved, nextRecurringDueDate } from "./utils";
+import { createId, dayKey, getTodoSubtasks, isTodoAchieved, isTodoRequiredForGate, nextRecurringDueDate } from "./utils";
 import { DEFAULT_DISPLAY_SETTINGS, DEFAULT_GATE_CONFIG, DisplaySettings, EMPTY_FOCUS_FLOW_DATA, FocusFlowData, GateConfig, Habit, Memo, Priority, ProgressUnit, RepeatRule, Todo, TodoSubtask } from "./types";
 
 const STORAGE_KEY = "@focus-flow/data-v1";
@@ -229,6 +230,34 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
     void AsyncStorage.removeItem(STORAGE_KEY);
     void cancelDailyReminder();
   }, []);
+
+  const applyWidgetCompletions = useCallback(async () => {
+    const actions = await consumeWidgetCompletions();
+    if (!actions.length) return;
+    commit((current) => {
+      const today = dayKey();
+      const todoIds = new Set(actions.filter((action) => action.kind === "todo").map((action) => action.id));
+      const habitIds = new Set(actions.filter((action) => action.kind === "habit").map((action) => action.id));
+      const todos = current.todos.map((todo) => {
+        if (!todoIds.has(todo.id) || isTodoAchieved(todo) || !isTodoRequiredForGate(todo, current.gateConfig.autoRequireDueToday)) return todo;
+        const completed: Todo = { ...todo, completed: true, completedAt: new Date().toISOString(), progressValue: todo.progressUnit === "check" ? todo.progressValue : todo.targetValue, subtasks: getTodoSubtasks(todo).map((subtask) => ({ ...subtask, completed: true })) };
+        return maybeAdvanceRecurring(completed);
+      });
+      const habits = current.habits.map((habit) => {
+        if (!habitIds.has(habit.id) || !habit.isRequired) return habit;
+        const completedDates = Array.from(new Set([...habit.completedDates, today])).sort();
+        return { ...habit, completedDates, dailyProgress: { ...(habit.dailyProgress ?? {}), [today]: habit.targetValue ?? 1 } };
+      });
+      return { ...current, todos, habits };
+    });
+  }, [commit]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    void applyWidgetCompletions();
+    const subscription = AppState.addEventListener("change", (state) => { if (state === "active") void applyWidgetCompletions(); });
+    return () => subscription.remove();
+  }, [applyWidgetCompletions, isReady]);
 
   useEffect(() => { if (isReady) void syncAndroidGate(data); }, [data, isReady]);
 
