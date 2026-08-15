@@ -1,6 +1,6 @@
 # Focus Flow Privacy Policy — Draft for Legal Review
 
-> **Draft — review with a qualified lawyer before publishing.** This document describes the current local-first Android beta as implemented. Before public release, the publisher must replace the contact and legal-entity fields below, host this policy at a stable public URL, and re-check it against the final signed build, all third-party SDKs, the Google Play Data safety form, and each launch territory’s requirements.
+> **Draft — review with a qualified lawyer before publishing.** This document describes the current local-first Android application as implemented. Before public release, the publisher must replace the contact and legal-entity fields below, host this policy at a stable public URL, and re-check it against the final signed build, all third-party SDKs, the Google Play Data safety form, and each launch territory’s requirements.
 
 **Effective date:** 14 August 2026  
 **Publisher:** `[LEGAL_ENTITY_OR_INDIVIDUAL_NAME_TO_BE_CONFIRMED]`  
@@ -8,7 +8,7 @@
 
 ## 1. Scope
 
-This Privacy Policy explains how Focus Flow handles information when you use the Android beta application. Focus Flow is a self-management and productivity tool. It is not a parental-control service, enterprise device-management product, or security product.
+This Privacy Policy explains how Focus Flow handles information when you use the Android application. Focus Flow is a self-management and productivity tool. It is not a parental-control service, enterprise device-management product, or security product.
 
 ## 2. Information stored on your device
 
@@ -22,7 +22,7 @@ Focus Flow stores the following information in the app’s local storage on your
 | Focus rules, schedules, and selected app package identifiers | To determine when your chosen focus rule should apply. |
 | Display preferences and acknowledgement of the accessibility disclosure | To preserve your visual settings and consent-flow state. |
 
-The current beta does not require an account and does not provide cloud synchronization. This information is not transmitted by Focus Flow to a server operated by the publisher.
+Focus Flow does not require an account and does not provide cloud synchronization. This information is not transmitted by Focus Flow to a server operated by the publisher.
 
 ## 3. Optional AccessibilityService
 
@@ -32,7 +32,7 @@ Focus Flow does **not** use the AccessibilityService to read screen text, messag
 
 ## 4. Sharing and sale of information
 
-The current beta does not sell, rent, or share your To-dos, habits, notes, or app-activity information with third parties. It does not include advertising SDKs or behavioral tracking SDKs.
+Focus Flow does not sell, rent, or share your To-dos, habits, notes, or app-activity information with third parties. It does not include advertising SDKs or behavioral tracking SDKs.
 
 ## 5. Diagnostics and feedback
 
@@ -40,7 +40,7 @@ If you voluntarily send feedback through Google Play, email, or another support 
 
 ## 6. Retention and deletion
 
-Your planning data remains in the app’s local storage until you edit or delete it, clear app storage, or uninstall the app. Because the current beta has no user account and does not sync planning data to a publisher-operated server, the publisher cannot retrieve or delete local data for you remotely.
+Your planning data remains in the app’s local storage until you edit or delete it, choose **Delete all data from this device** in the app’s Privacy & data screen, clear app storage, or uninstall the app. The in-app deletion action permanently removes your planning data, routine configuration, progress, and display settings, and turns off App limits. Because Focus Flow has no user account and does not sync planning data to a publisher-operated server, the publisher cannot retrieve or delete local data for you remotely.
 
 ## 7. Security
 

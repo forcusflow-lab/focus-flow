@@ -31,7 +31,7 @@ Create named rules for mornings, work hours, evenings, or any schedule you choos
 
 ### Optional Android focus gate
 
-On Android, Focus Flow can use the optional AccessibilityService to detect when a selected app comes to the foreground and apply your chosen focus rule. It does not read screen text, messages, typed content, or screenshots. Focus Flow does not send your task, note, or app activity data off your device in this beta. You can turn this feature off anytime in Android settings.
+On Android, Focus Flow can use the optional AccessibilityService to detect when a selected app comes to the foreground and apply your chosen focus rule. It does not read screen text, messages, typed content, or screenshots. Focus Flow does not send your task, note, or app activity data off your device. You can turn this feature off anytime in Android settings.
 
 ### Keep your thoughts nearby
 
@@ -39,7 +39,7 @@ Capture notes before they become tasks, then convert them into a regular To-do w
 
 ### Built for your device
 
-Your tasks, habits, notes, schedules, and display settings stay on your device in this beta. No account is required to begin.
+Your tasks, habits, notes, schedules, and display settings stay on your device. No account is required to begin, and you can delete all Focus Flow data from the Privacy & data screen.
 
 Focus Flow is a self-management tool, not a parental-control, device-management, or security application. The Android focus gate is optional and cannot guarantee uninterrupted restriction under every device, operating-system, or user-configuration condition.
 
@@ -52,6 +52,10 @@ Focus Flow is a self-management tool, not a parental-control, device-management,
 | 3 | Routine rule | Your routine, your hours, your apps. | Named schedule, days, times, selected apps. |
 | 4 | Accessibility disclosure | Clear permission. Clear control. | Plain-language explanation and Android settings entry point. |
 | 5 | Habits and notes | Build a system that lasts. | Habit progress, notes, and calm visual customization. |
+
+## Prepared feature graphic
+
+The prepared visual source is available at `/manus-storage/focus-flow-feature-graphic_e5ad8b40.png`. Before upload, crop or export it to Google Play's required **1024 × 500 px** PNG/JPEG format without adding misleading claims, badge artwork, prices, or unreadable text. The artwork deliberately contains no text so that the store name remains localized by Google Play and no AI-rendered lettering is presented to users.
 
 ## ASO terms to validate
 

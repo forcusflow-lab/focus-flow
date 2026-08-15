@@ -29,6 +29,7 @@ type FocusFlowContextValue = FocusFlowData & {
   addFocusSession: (durationMinutes: number) => void;
   setGateConfig: (input: Partial<GateConfig>) => void;
   setDisplaySettings: (input: Partial<DisplaySettings>) => void;
+  clearAllData: () => void;
 };
 
 const FocusFlowContext = createContext<FocusFlowContextValue | null>(null);
@@ -222,10 +223,14 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
 
   const setGateConfig = useCallback((input: Partial<GateConfig>) => commit((current) => ({ ...current, gateConfig: { ...current.gateConfig, ...input } })), [commit]);
   const setDisplaySettings = useCallback((input: Partial<DisplaySettings>) => commit((current) => ({ ...current, displaySettings: { ...current.displaySettings, ...input } })), [commit]);
+  const clearAllData = useCallback(() => {
+    setData({ todos: [], habits: [], memos: [], focusSessions: [], gateConfig: { ...DEFAULT_GATE_CONFIG, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], schedules: [] }, displaySettings: { ...DEFAULT_DISPLAY_SETTINGS } });
+    void AsyncStorage.removeItem(STORAGE_KEY);
+  }, []);
 
   useEffect(() => { if (isReady) void syncAndroidGate(data); }, [data, isReady]);
 
-  const value = useMemo(() => ({ ...data, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo, addHabit, updateHabit, toggleHabit, adjustHabitProgress, deleteHabit, addMemo, updateMemo, deleteMemo, addFocusSession, setGateConfig, setDisplaySettings }), [data, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo, addHabit, updateHabit, toggleHabit, adjustHabitProgress, deleteHabit, addMemo, updateMemo, deleteMemo, addFocusSession, setGateConfig, setDisplaySettings]);
+  const value = useMemo(() => ({ ...data, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo, addHabit, updateHabit, toggleHabit, adjustHabitProgress, deleteHabit, addMemo, updateMemo, deleteMemo, addFocusSession, setGateConfig, setDisplaySettings, clearAllData }), [data, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo, addHabit, updateHabit, toggleHabit, adjustHabitProgress, deleteHabit, addMemo, updateMemo, deleteMemo, addFocusSession, setGateConfig, setDisplaySettings, clearAllData]);
 
   return <FocusFlowContext.Provider value={value}>{children}</FocusFlowContext.Provider>;
 }
