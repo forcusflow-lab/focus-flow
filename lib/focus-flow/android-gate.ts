@@ -1,6 +1,6 @@
 import { NativeModules, Platform } from "react-native";
 
-import { getGateRuleSummaries, getGateSummary } from "./utils";
+import { dayKey, getGateRuleSummaries, getGateSummary, isHabitCompleteOn, isTodoAchieved, isTodoRequiredForGate } from "./utils";
 import type { GateConfig } from "./types";
 import type { FocusFlowData } from "./types";
 import { getAppLanguage } from "./i18n";
@@ -29,7 +29,16 @@ export async function syncAndroidGate(data: FocusFlowData) {
   const language = getAppLanguage(data.displaySettings);
   const summary = getGateSummary(data, new Date(), language);
   const rules = getGateRuleSummaries(data, new Date(), language);
-  await module.saveGateState(JSON.stringify({ active: data.gateConfig.enabled, language, pendingCount: summary.pendingCount, pendingTodos: summary.pendingTodos, pendingHabits: summary.pendingHabits, message: summary.message, rules }));
+  const today = dayKey();
+  const requiredTodos = data.todos.filter((todo) => isTodoRequiredForGate(todo, data.gateConfig.autoRequireDueToday));
+  const requiredHabits = data.habits.filter((habit) => habit.isRequired);
+  const pendingTodoItems = requiredTodos.filter((todo) => !isTodoAchieved(todo));
+  const pendingHabitItems = requiredHabits.filter((habit) => !isHabitCompleteOn(habit, today));
+  const priorityRank = { high: 0, medium: 1, low: 2 } as const;
+  const nextTodo = [...pendingTodoItems].sort((left, right) => priorityRank[left.priority] - priorityRank[right.priority] || (left.dueDate ?? "9999-12-31").localeCompare(right.dueDate ?? "9999-12-31"))[0];
+  const nextHabit = pendingHabitItems[0];
+  const activeRoutine = rules.find((rule) => rule.isActive);
+  await module.saveGateState(JSON.stringify({ active: data.gateConfig.enabled, language, pendingCount: summary.pendingCount, pendingTodos: summary.pendingTodos, pendingHabits: summary.pendingHabits, message: summary.message, rules, requiredTodoTotal: requiredTodos.length, requiredHabitTotal: requiredHabits.length, completedTodoTotal: requiredTodos.length - pendingTodoItems.length, completedHabitTotal: requiredHabits.length - pendingHabitItems.length, nextRequiredTitle: nextTodo?.title ?? nextHabit?.title ?? "", nextRequiredKind: nextTodo ? "todo" : nextHabit ? "habit" : "", routineActive: Boolean(activeRoutine?.isActive), routineLabel: activeRoutine?.label ?? "" }));
 }
 
 export async function getAccessibilityStatus() { return (await nativeModule()?.getAccessibilityStatus()) ?? false; }
