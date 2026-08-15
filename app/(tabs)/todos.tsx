@@ -1,5 +1,5 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Alert, FlatList, Platform, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { TaskForm } from "@/components/focus-flow/task-form";
@@ -11,22 +11,42 @@ import { useFocusFlow } from "@/lib/focus-flow/provider";
 import type { Todo } from "@/lib/focus-flow/types";
 import { formatJapaneseDate, getTodoDueStatus, getTodoSubtasks, isTodoAchieved, todoProgressLabel } from "@/lib/focus-flow/utils";
 
-type Filter = "open" | "done";
-const priorityMeta = { high: { label: "高", color: COLORS.error }, medium: { label: "中", color: COLORS.warning }, low: { label: "低", color: COLORS.blue } };
+type ViewMode = "focus" | "all" | "done";
+type ListItem = { type: "heading"; id: string; title: string; count: number } | { type: "todo"; id: string; todo: Todo };
+
+const priorityRank = { high: 0, medium: 1, low: 2 } as const;
+const dueRank = (todo: Todo) => { const status = todo.dueDate ? getTodoDueStatus(todo) : undefined; return status === "overdue" ? 0 : status === "today" ? 1 : todo.dueDate ? 2 : 3; };
 
 export default function TodosScreen() {
   const { todos, displaySettings, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo } = useFocusFlow();
   const language = getAppLanguage(displaySettings);
-  const t = (ja: string, en: string) => localized(language, ja, en);
-  const [filter, setFilter] = useState<Filter>("open");
+  const t = useCallback((ja: string, en: string) => localized(language, ja, en), [language]);
+  const [viewMode, setViewMode] = useState<ViewMode>("focus");
   const [formOpen, setFormOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | undefined>();
 
-  const displayed = useMemo(() => todos.filter((todo) => (filter === "done" ? todo.completed : !todo.completed)), [filter, todos]);
-  const openForm = (todo?: Todo) => {
-    setEditingTodo(todo);
-    setFormOpen(true);
-  };
+  const openTodos = useMemo(() => todos.filter((todo) => !todo.completed).sort((left, right) => {
+    return dueRank(left) - dueRank(right) || priorityRank[left.priority] - priorityRank[right.priority] || (left.dueDate ?? "9999-12-31").localeCompare(right.dueDate ?? "9999-12-31") || left.createdAt.localeCompare(right.createdAt);
+  }), [todos]);
+  const doneTodos = useMemo(() => todos.filter((todo) => todo.completed).sort((left, right) => (right.completedAt ?? right.createdAt).localeCompare(left.completedAt ?? left.createdAt)), [todos]);
+  const completedMustDos = todos.filter((todo) => todo.isRequired && todo.completed).length;
+  const totalMustDos = todos.filter((todo) => todo.isRequired).length;
+  const mustProgress = totalMustDos ? Math.round((completedMustDos / totalMustDos) * 100) : 0;
+
+  const listItems = useMemo<ListItem[]>(() => {
+    const todoItems = (items: Todo[]) => items.map((todo) => ({ type: "todo" as const, id: `todo-${todo.id}`, todo }));
+    if (viewMode === "done") return todoItems(doneTodos);
+    if (viewMode === "all") return todoItems(openTodos);
+    const groups = [
+      { id: "overdue", title: t("期限超過", "Overdue"), todos: openTodos.filter((todo) => getTodoDueStatus(todo) === "overdue") },
+      { id: "must", title: t("必須・今日の解除条件", "Must-dos to unlock"), todos: openTodos.filter((todo) => todo.isRequired && getTodoDueStatus(todo) !== "overdue") },
+      { id: "today", title: t("今日取り組む", "Due today"), todos: openTodos.filter((todo) => !todo.isRequired && getTodoDueStatus(todo) === "today") },
+      { id: "next", title: t("次に取り組む", "Next up"), todos: openTodos.filter((todo) => !todo.isRequired && getTodoDueStatus(todo) !== "overdue" && getTodoDueStatus(todo) !== "today") },
+    ].filter((group) => group.todos.length);
+    return groups.flatMap((group) => [{ type: "heading" as const, id: `heading-${group.id}`, title: group.title, count: group.todos.length }, ...todoItems(group.todos)]);
+  }, [doneTodos, openTodos, t, viewMode]);
+
+  const openForm = (todo?: Todo) => { setEditingTodo(todo); setFormOpen(true); };
   const remove = (todo: Todo) => {
     const confirm = () => deleteTodo(todo.id);
     if (Platform.OS === "web") confirm();
@@ -35,79 +55,26 @@ export default function TodosScreen() {
 
   if (!isReady) return <ScreenContainer><LoadingScreen /></ScreenContainer>;
 
-  return (
-    <ScreenContainer className="px-5" containerClassName="bg-background">
-      <FlatList
-        data={displayed}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={
-          <>
-            <ScreenHeading eyebrow={t("行動を整える", "Plan your day")} title="Todo" action={<IconButton icon="add" label={t("Todoを追加", "Add task")} onPress={() => openForm()} variant="filled" />} />
-            <View style={styles.filters}>
-              <TouchableOpacity onPress={() => setFilter("open")} style={[styles.filter, filter === "open" && styles.filterActive]}><Text style={[styles.filterText, filter === "open" && styles.filterTextActive]}>{t("未完了", "Open")} {todos.filter((todo) => !todo.completed).length}</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => setFilter("done")} style={[styles.filter, filter === "done" && styles.filterActive]}><Text style={[styles.filterText, filter === "done" && styles.filterTextActive]}>{t("完了", "Done")} {todos.filter((todo) => todo.completed).length}</Text></TouchableOpacity>
-            </View>
-            <View style={styles.explainer}><MaterialIcons name="lock-outline" size={17} color={COLORS.forest} /><Text style={styles.explainerText}>{t(`必須 ${todos.filter((todo) => todo.isRequired).length}件は、集中ルール中の基本解除条件です。`, `${todos.filter((todo) => todo.isRequired).length} must-do task(s) are the default unlock condition.`)}</Text></View>
-          </>
-        }
-        ListEmptyComponent={<EmptyState icon="playlist-add" title={filter === "open" ? t("最初のTodoを追加しましょう", "Add your first task") : t("完了したTodoはまだありません", "No completed tasks yet")} description={filter === "open" ? t("追加時に「必須」を選ぶと、日課ルールに含めなくてもアプリ制限の解除条件になります。", "Choose Must-do when you add a task to make it an unlock condition.") : t("完了したTodoはここで振り返れます。", "Your finished tasks will appear here.")} actionLabel={filter === "open" ? t("Todoを追加", "Add task") : t("未完了を表示", "Show open")} onAction={() => (filter === "open" ? openForm() : setFilter("open"))} />}
-        renderItem={({ item }) => {
-          const priority = priorityMeta[item.priority];
-          const dueStatus = getTodoDueStatus(item);
-          const achieved = isTodoAchieved(item);
-          const progressLabel = todoProgressLabel(item, language);
-          const subtasks = getTodoSubtasks(item);
-          return (
-            <View style={[styles.todoCard, achieved && styles.todoCardCompleted]}>
-              <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: achieved }} onPress={() => { safeHaptic(achieved ? "light" : "success"); toggleTodo(item.id); }} style={[styles.check, achieved && styles.checkDone]}>
-                {achieved ? <MaterialIcons name="check" size={17} color={COLORS.white} /> : null}
-              </TouchableOpacity>
-              <View style={styles.todoCopy}>
-                <TouchableOpacity accessibilityRole="button" onPress={() => openForm(item)} activeOpacity={0.72}><Text style={[styles.todoTitle, achieved && styles.todoTitleCompleted]} numberOfLines={2}>{item.title}</Text></TouchableOpacity>
-                <View style={styles.metaRow}>{item.isRequired ? <Pill label={t("必須", "Must-do")} color={COLORS.forest} /> : dueStatus === "today" ? <Pill label={t("今日", "Today")} color={COLORS.warning} /> : null}<Pill label={t(`優先 ${priority.label}`, `Priority ${item.priority}`)} color={priority.color} />{item.dueDate ? <Text numberOfLines={1} style={[styles.dueText, dueStatus === "today" && styles.dueToday, dueStatus === "overdue" && styles.dueOverdue]}>{dueStatus === "today" ? t("今日が期限", "Due today") : dueStatus === "overdue" ? t("期限超過", "Overdue") : formatJapaneseDate(item.dueDate, language)}</Text> : null}</View>
-                {progressLabel ? <View style={styles.progressRow}><TouchableOpacity accessibilityLabel={t("進捗を減らす", "Decrease progress")} onPress={() => adjustTodoProgress(item.id, -1)} style={styles.progressButton}><MaterialIcons name="remove" size={16} color={COLORS.forest} /></TouchableOpacity><Text style={styles.progressText}>{progressLabel}</Text><TouchableOpacity accessibilityLabel={t("進捗を増やす", "Increase progress")} onPress={() => { safeHaptic("light"); adjustTodoProgress(item.id, 1); }} style={styles.progressButton}><MaterialIcons name="add" size={16} color={COLORS.forest} /></TouchableOpacity></View> : null}
-                {subtasks.length ? <View style={styles.subtaskList}>{subtasks.map((subtask) => <TouchableOpacity key={subtask.id} accessibilityRole="checkbox" accessibilityState={{ checked: subtask.completed }} onPress={() => { safeHaptic(subtask.completed ? "light" : "success"); toggleSubtask(item.id, subtask.id); }} style={styles.subtaskRow}><View style={[styles.subtaskCheck, subtask.completed && styles.subtaskCheckDone]}>{subtask.completed ? <MaterialIcons name="check" size={12} color={COLORS.white} /> : null}</View><Text style={[styles.subtaskTitle, subtask.completed && styles.subtaskTitleDone]} numberOfLines={1}>{subtask.title}</Text></TouchableOpacity>)}</View> : null}
-              </View>
-              <TouchableOpacity accessibilityLabel={t("Todoを削除", "Delete task")} onPress={() => remove(item)} style={styles.deleteButton}><MaterialIcons name="more-horiz" size={22} color={COLORS.muted} /></TouchableOpacity>
-            </View>
-          );
-        }}
-      />
-      <TaskForm visible={formOpen} todo={editingTodo} onClose={() => { setFormOpen(false); setEditingTodo(undefined); }} onSave={(input) => editingTodo ? updateTodo(editingTodo.id, input) : addTodo(input)} />
-    </ScreenContainer>
-  );
+  return <ScreenContainer className="px-5" containerClassName="bg-background"><FlatList
+    data={listItems}
+    keyExtractor={(item) => item.id}
+    showsVerticalScrollIndicator={false}
+    contentContainerStyle={styles.content}
+    ListHeaderComponent={<><ScreenHeading eyebrow={t("今日の実行リスト", "Your action list")} title={t("Todo", "Tasks")} action={<IconButton icon="add" label={t("Todoを追加", "Add task")} onPress={() => openForm()} variant="filled" />} />
+      <View style={styles.summary}><View style={styles.summaryTop}><View style={styles.summaryIcon}><MaterialIcons name="lock-outline" size={19} color={COLORS.forest} /></View><View style={styles.summaryCopy}><Text style={styles.summaryEyebrow}>{t("アプリ解除の進捗", "UNLOCK PROGRESS")}</Text><Text style={styles.summaryTitle}>{totalMustDos ? t(`必須 ${completedMustDos}/${totalMustDos}件を完了`, `${completedMustDos}/${totalMustDos} must-dos complete`) : t("必須Todoを追加して開始", "Add a must-do to get started")}</Text></View><Text style={styles.summaryPercent}>{mustProgress}%</Text></View><View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${mustProgress}%` }]} /></View><Text style={styles.summaryHint}>{t("必須Todoを完了すると、選択したアプリの解除条件を満たせます。", "Complete must-dos to meet the unlock condition for your selected apps.")}</Text></View>
+      <View style={styles.segmented}>{([{ key: "focus", label: t("フォーカス", "Focus"), count: openTodos.length }, { key: "all", label: t("すべて", "All"), count: openTodos.length }, { key: "done", label: t("完了", "Done"), count: doneTodos.length }] as const).map((tab) => <TouchableOpacity key={tab.key} accessibilityRole="button" accessibilityState={{ selected: viewMode === tab.key }} onPress={() => setViewMode(tab.key)} style={[styles.segment, viewMode === tab.key && styles.segmentActive]}><Text style={[styles.segmentText, viewMode === tab.key && styles.segmentTextActive]}>{tab.label}</Text><Text style={[styles.segmentCount, viewMode === tab.key && styles.segmentCountActive]}>{tab.count}</Text></TouchableOpacity>)}</View>
+    </>}
+    ListEmptyComponent={<EmptyState icon={viewMode === "done" ? "task-alt" : "playlist-add"} title={viewMode === "done" ? t("完了したTodoはまだありません", "No completed tasks yet") : t("最初のTodoを追加しましょう", "Add your first task")} description={viewMode === "done" ? t("完了したTodoはここで振り返れます。", "Finished tasks will appear here.") : t("必須を選ぶと、日課ルールに含めなくてもアプリ制限の解除条件になります。", "Choose Must-do to make a task an unlock condition.")} actionLabel={viewMode === "done" ? t("フォーカスを表示", "Show focus") : t("Todoを追加", "Add task")} onAction={() => viewMode === "done" ? setViewMode("focus") : openForm()} />}
+    renderItem={({ item }) => item.type === "heading" ? <View style={styles.groupHeading}><Text style={styles.groupTitle}>{item.title}</Text><Text style={styles.groupCount}>{item.count}</Text></View> : <TaskRow todo={item.todo} language={language} t={t} onEdit={() => openForm(item.todo)} onToggle={() => { safeHaptic(isTodoAchieved(item.todo) ? "light" : "success"); toggleTodo(item.todo.id); }} onProgress={(delta) => { if (delta > 0) safeHaptic("light"); adjustTodoProgress(item.todo.id, delta); }} onSubtask={(subtaskId) => { const subtask = getTodoSubtasks(item.todo).find((candidate) => candidate.id === subtaskId); safeHaptic(subtask?.completed ? "light" : "success"); toggleSubtask(item.todo.id, subtaskId); }} onDelete={() => remove(item.todo)} />}
+  />
+  <TaskForm visible={formOpen} todo={editingTodo} onClose={() => { setFormOpen(false); setEditingTodo(undefined); }} onSave={(input) => editingTodo ? updateTodo(editingTodo.id, input) : addTodo(input)} />
+  </ScreenContainer>;
 }
 
-const styles = StyleSheet.create({
-  content: { paddingTop: 16, paddingBottom: 24, flexGrow: 1 },
-  filters: { flexDirection: "row", gap: 8, marginBottom: 12 },
-  filter: { flex: 1, minHeight: 42, alignItems: "center", justifyContent: "center", paddingHorizontal: 12, borderRadius: 14, backgroundColor: "#E7EEF7" },
-  filterActive: { backgroundColor: COLORS.forest },
-  filterText: { color: COLORS.muted, fontSize: 14, fontWeight: "800" },
-  filterTextActive: { color: COLORS.white },
-  explainer: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#E9F4F1", borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12 },
-  explainerText: { color: "#245D52", flex: 1, fontSize: 12, lineHeight: 18, fontWeight: "700" },
-  todoCard: { flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255,255,255,0.86)", borderColor: COLORS.border, borderWidth: 1, borderRadius: 18, padding: 14, marginBottom: 9 },
-  todoCardCompleted: { opacity: 0.7 },
-  check: { width: 28, height: 28, alignItems: "center", justifyContent: "center", borderRadius: 10, borderWidth: 1.5, borderColor: "#AFC0B7", marginRight: 12 },
-  checkDone: { borderColor: COLORS.success, backgroundColor: COLORS.success },
-  todoCopy: { flex: 1, minWidth: 0 },
-  todoTitle: { color: COLORS.text, fontSize: 16, lineHeight: 23, fontWeight: "800" },
-  todoTitleCompleted: { color: COLORS.muted, textDecorationLine: "line-through" },
-  metaRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 6, rowGap: 6, marginTop: 8 },
-  dueText: { color: COLORS.muted, fontSize: 12, lineHeight: 18, fontWeight: "700", marginLeft: 2 },
-  dueToday: { color: "#A96515", fontWeight: "800" },
-  dueOverdue: { color: COLORS.error, fontWeight: "800" },
-  progressRow: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", gap: 8, marginTop: 9, borderRadius: 10, backgroundColor: "#EAF4F1", paddingHorizontal: 6, paddingVertical: 3 },
-  progressButton: { width: 28, height: 28, alignItems: "center", justifyContent: "center", borderRadius: 8, backgroundColor: COLORS.white },
-  progressText: { minWidth: 52, textAlign: "center", color: COLORS.forest, fontSize: 12, fontWeight: "800" },
-  subtaskList: { marginTop: 9, gap: 5 },
-  subtaskRow: { minHeight: 30, flexDirection: "row", alignItems: "center", gap: 7 },
-  subtaskCheck: { width: 18, height: 18, alignItems: "center", justifyContent: "center", borderRadius: 6, borderWidth: 1, borderColor: "#AFC0B7" },
-  subtaskCheckDone: { backgroundColor: COLORS.success, borderColor: COLORS.success },
-  subtaskTitle: { flex: 1, color: COLORS.muted, fontSize: 12, fontWeight: "600" },
-  subtaskTitleDone: { textDecorationLine: "line-through" },
-  deleteButton: { width: 38, height: 38, alignItems: "center", justifyContent: "center", marginLeft: 4 },
-});
+function TaskRow({ todo, language, t, onEdit, onToggle, onProgress, onSubtask, onDelete }: { todo: Todo; language: "ja" | "en"; t: (ja: string, en: string) => string; onEdit: () => void; onToggle: () => void; onProgress: (delta: number) => void; onSubtask: (id: string) => void; onDelete: () => void }) {
+  const achieved = isTodoAchieved(todo); const dueStatus = getTodoDueStatus(todo); const subtasks = getTodoSubtasks(todo); const progress = todoProgressLabel(todo, language); const priorityColor = todo.priority === "high" ? COLORS.error : todo.priority === "medium" ? COLORS.warning : COLORS.blue;
+  const due = !todo.dueDate ? undefined : dueStatus === "overdue" ? t("期限超過", "Overdue") : dueStatus === "today" ? t("今日が期限", "Due today") : formatJapaneseDate(todo.dueDate, language);
+  return <View style={[styles.taskRow, achieved && styles.taskRowDone]}><View style={[styles.priorityRail, { backgroundColor: priorityColor }]} /><TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: achieved }} accessibilityLabel={t(`「${todo.title}」を完了にする`, `Mark “${todo.title}” complete`)} hitSlop={8} onPress={onToggle} style={[styles.check, achieved && styles.checkDone]}>{achieved ? <MaterialIcons name="check" size={17} color={COLORS.white} /> : null}</TouchableOpacity><View style={styles.taskCopy}><TouchableOpacity accessibilityRole="button" onPress={onEdit} activeOpacity={0.72}><Text style={[styles.taskTitle, achieved && styles.taskTitleDone]} numberOfLines={2}>{todo.title}</Text><View style={styles.meta}>{todo.isRequired ? <Pill label={t("必須", "Must-do")} color={COLORS.forest} /> : null}{due ? <Text style={[styles.due, dueStatus === "overdue" && styles.overdue]}>{due}</Text> : null}{subtasks.length ? <Text style={styles.metaText}>{subtasks.filter((subtask) => subtask.completed).length}/{subtasks.length} {t("手順", "steps")}</Text> : null}</View></TouchableOpacity>{progress ? <View style={styles.progressControl}><TouchableOpacity accessibilityLabel={t("進捗を減らす", "Decrease progress")} hitSlop={7} onPress={() => onProgress(-1)} style={styles.progressButton}><MaterialIcons name="remove" size={15} color={COLORS.forest} /></TouchableOpacity><Text style={styles.progressText}>{progress}</Text><TouchableOpacity accessibilityLabel={t("進捗を増やす", "Increase progress")} hitSlop={7} onPress={() => onProgress(1)} style={styles.progressButton}><MaterialIcons name="add" size={15} color={COLORS.forest} /></TouchableOpacity></View> : null}{subtasks.length ? <View style={styles.subtasks}>{subtasks.slice(0, 2).map((subtask) => <TouchableOpacity key={subtask.id} accessibilityRole="checkbox" accessibilityState={{ checked: subtask.completed }} onPress={() => onSubtask(subtask.id)} style={styles.subtask}><View style={[styles.subtaskCheck, subtask.completed && styles.subtaskCheckDone]}>{subtask.completed ? <MaterialIcons name="check" size={10} color={COLORS.white} /> : null}</View><Text style={[styles.subtaskText, subtask.completed && styles.subtaskTextDone]} numberOfLines={1}>{subtask.title}</Text></TouchableOpacity>)}{subtasks.length > 2 ? <TouchableOpacity onPress={onEdit}><Text style={styles.moreSteps}>+{subtasks.length - 2} {t("件の手順", "more steps")}</Text></TouchableOpacity> : null}</View> : null}</View><TouchableOpacity accessibilityLabel={t("Todoを削除", "Delete task")} hitSlop={8} onPress={onDelete} style={styles.delete}><MaterialIcons name="delete-outline" size={20} color={COLORS.muted} /></TouchableOpacity></View>;
+}
+
+const styles = StyleSheet.create({ content: { paddingTop: 16, paddingBottom: 24, flexGrow: 1 }, summary: { backgroundColor: "#EAF6F1", borderWidth: 1, borderColor: "#B9DDD1", borderRadius: 20, padding: 14, marginTop: -4, marginBottom: 13 }, summaryTop: { flexDirection: "row", alignItems: "center", gap: 10 }, summaryIcon: { width: 38, height: 38, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: "#D8EEE6" }, summaryCopy: { flex: 1, minWidth: 0 }, summaryEyebrow: { color: "#397765", fontSize: 10, letterSpacing: 0.5, fontWeight: "900" }, summaryTitle: { color: "#173F36", fontSize: 14, lineHeight: 20, fontWeight: "800", marginTop: 1 }, summaryPercent: { color: COLORS.forest, fontSize: 22, fontWeight: "900" }, progressTrack: { height: 6, borderRadius: 4, overflow: "hidden", backgroundColor: "#C9E7DD", marginTop: 12 }, progressFill: { height: "100%", borderRadius: 4, backgroundColor: COLORS.forest }, summaryHint: { color: "#42675D", fontSize: 11, lineHeight: 16, marginTop: 8 }, segmented: { flexDirection: "row", gap: 7, marginBottom: 13 }, segment: { flex: 1, minHeight: 42, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, borderRadius: 13, backgroundColor: "#E8EEF0" }, segmentActive: { backgroundColor: COLORS.forest }, segmentText: { color: COLORS.muted, fontSize: 12, fontWeight: "800" }, segmentTextActive: { color: COLORS.white }, segmentCount: { color: "#6F817A", fontSize: 11, fontWeight: "800" }, segmentCountActive: { color: "#D7EEE6" }, groupHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 9, marginBottom: 7 }, groupTitle: { color: COLORS.text, fontSize: 16, lineHeight: 22, fontWeight: "900" }, groupCount: { minWidth: 23, height: 23, textAlign: "center", textAlignVertical: "center", overflow: "hidden", borderRadius: 12, color: COLORS.forest, backgroundColor: "#E4F1EB", fontSize: 12, fontWeight: "800" }, taskRow: { position: "relative", flexDirection: "row", alignItems: "flex-start", backgroundColor: "rgba(255,255,255,0.9)", borderColor: COLORS.border, borderWidth: 1, borderRadius: 17, paddingVertical: 13, paddingLeft: 14, paddingRight: 4, marginBottom: 8, overflow: "hidden" }, taskRowDone: { opacity: 0.68 }, priorityRail: { position: "absolute", left: 0, top: 0, bottom: 0, width: 4 }, check: { width: 28, height: 28, borderRadius: 10, borderWidth: 1.5, borderColor: "#AFC0B7", alignItems: "center", justifyContent: "center", marginTop: 1, marginRight: 10 }, checkDone: { borderColor: COLORS.success, backgroundColor: COLORS.success }, taskCopy: { flex: 1, minWidth: 0 }, taskTitle: { color: COLORS.text, fontSize: 15, lineHeight: 21, fontWeight: "800" }, taskTitleDone: { color: COLORS.muted, textDecorationLine: "line-through" }, meta: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 6 }, due: { color: COLORS.muted, fontSize: 11, lineHeight: 16, fontWeight: "800" }, overdue: { color: COLORS.error }, metaText: { color: COLORS.muted, fontSize: 11, lineHeight: 16, fontWeight: "700" }, progressControl: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 7, borderRadius: 10, backgroundColor: "#EAF4F1", marginTop: 8, paddingHorizontal: 5, paddingVertical: 3 }, progressButton: { width: 25, height: 25, alignItems: "center", justifyContent: "center", borderRadius: 7, backgroundColor: COLORS.white }, progressText: { minWidth: 48, color: COLORS.forest, textAlign: "center", fontSize: 11, fontWeight: "900" }, subtasks: { marginTop: 8, gap: 5 }, subtask: { minHeight: 26, flexDirection: "row", alignItems: "center", gap: 6 }, subtaskCheck: { width: 16, height: 16, borderRadius: 5, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#AFC0B7" }, subtaskCheckDone: { borderColor: COLORS.success, backgroundColor: COLORS.success }, subtaskText: { flex: 1, color: COLORS.muted, fontSize: 11, fontWeight: "700" }, subtaskTextDone: { textDecorationLine: "line-through" }, moreSteps: { color: COLORS.forest, fontSize: 11, fontWeight: "800", marginLeft: 22 }, delete: { width: 34, height: 38, alignItems: "center", justifyContent: "center", marginLeft: 2 } });

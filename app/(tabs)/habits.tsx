@@ -11,93 +11,37 @@ import { useFocusFlow } from "@/lib/focus-flow/provider";
 import type { Habit } from "@/lib/focus-flow/types";
 import { dayKey, dayKeyOffset, habitProgressLabel, habitStreak, isHabitCompleteOn, shortWeekday, weeklyHabitProgress } from "@/lib/focus-flow/utils";
 
+type ViewMode = "today" | "all";
+
 export default function HabitsScreen() {
   const { habits, displaySettings, isReady, addHabit, updateHabit, toggleHabit, adjustHabitProgress, deleteHabit } = useFocusFlow();
-  const language = getAppLanguage(displaySettings);
-  const t = (ja: string, en: string) => localized(language, ja, en);
-  const [formOpen, setFormOpen] = useState(false);
-  const [editingHabit, setEditingHabit] = useState<Habit | undefined>();
-  const [newHabitDefaultRequired, setNewHabitDefaultRequired] = useState(false);
+  const language = getAppLanguage(displaySettings); const t = (ja: string, en: string) => localized(language, ja, en); const today = dayKey();
+  const [viewMode, setViewMode] = useState<ViewMode>("today"); const [formOpen, setFormOpen] = useState(false); const [editingHabit, setEditingHabit] = useState<Habit | undefined>(); const [newHabitDefaultRequired, setNewHabitDefaultRequired] = useState(false);
   const week = useMemo(() => Array.from({ length: 7 }, (_, index) => dayKeyOffset(index - 6)), []);
+  const visibleHabits = useMemo(() => [...habits].sort((left, right) => {
+    if (viewMode === "all") return left.title.localeCompare(right.title);
+    const score = (habit: Habit) => (isHabitCompleteOn(habit, today) ? 2 : 0) + (habit.isRequired ? 0 : 1);
+    return score(left) - score(right) || left.title.localeCompare(right.title);
+  }), [habits, today, viewMode]);
+  const totalToday = habits.length; const doneToday = habits.filter((habit) => isHabitCompleteOn(habit, today)).length; const mustTotal = habits.filter((habit) => habit.isRequired).length; const mustDone = habits.filter((habit) => habit.isRequired && isHabitCompleteOn(habit, today)).length; const percent = totalToday ? Math.round((doneToday / totalToday) * 100) : 0;
   const openForm = (habit?: Habit, defaultRequired = false) => { setEditingHabit(habit); setNewHabitDefaultRequired(defaultRequired); setFormOpen(true); };
-  const remove = (habit: Habit) => {
-    const confirm = () => deleteHabit(habit.id);
-    if (Platform.OS === "web") confirm();
-    else Alert.alert(t("習慣を削除しますか？", "Delete this habit?"), t(`「${habit.title}」の記録も削除されます。`, `The records for “${habit.title}” will also be deleted.`), [{ text: t("キャンセル", "Cancel"), style: "cancel" }, { text: t("削除", "Delete"), style: "destructive", onPress: confirm }]);
-  };
+  const remove = (habit: Habit) => { const confirm = () => deleteHabit(habit.id); if (Platform.OS === "web") confirm(); else Alert.alert(t("習慣を削除しますか？", "Delete this habit?"), t(`「${habit.title}」の記録も削除されます。`, `The records for “${habit.title}” will also be deleted.`), [{ text: t("キャンセル", "Cancel"), style: "cancel" }, { text: t("削除", "Delete"), style: "destructive", onPress: confirm }]); };
   if (!isReady) return <ScreenContainer><LoadingScreen /></ScreenContainer>;
-
-  return (
-    <ScreenContainer className="px-5" containerClassName="bg-background">
-      <FlatList
-        data={habits}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={<><ScreenHeading eyebrow={t("続ける仕組み", "Build consistency")} title={t("習慣", "Habits")} action={<IconButton icon="add" label={t("習慣を追加", "Add habit")} onPress={() => openForm()} variant="filled" />} /><View style={styles.explainer}><MaterialIcons name="lock-outline" size={17} color={COLORS.forest} /><Text style={styles.explainerText}>{t("必須の習慣は、アプリ制限を解除する条件になります。", "Must-do habits become an unlock condition for your selected apps.")}</Text></View></>}
-        ListEmptyComponent={<EmptyState icon="repeat" title={t("最初の習慣を作りましょう", "Create your first habit")} description={t("登録時に「必須の習慣」を選ぶと、毎日のアプリ制限の解除条件にできます。", "Choose Must-do when you create a habit to use it as a daily unlock condition.")} actionLabel={t("必須習慣を作る", "Create a must-do habit")} onAction={() => openForm(undefined, true)} />}
-        renderItem={({ item }) => {
-          const progress = weeklyHabitProgress(item);
-          const todayDone = isHabitCompleteOn(item, dayKey());
-          const progressLabel = habitProgressLabel(item, dayKey(), language);
-          return (
-            <View style={styles.habitCard}>
-              <View style={styles.cardTop}>
-                <TouchableOpacity onPress={() => openForm(item)} activeOpacity={0.72} style={styles.habitTitleArea}>
-                  <View style={[styles.habitMark, { backgroundColor: `${item.color}18` }]}><MaterialIcons name="auto-awesome" size={18} color={item.color} /></View>
-                  <View style={styles.habitTitleCopy}><Text style={styles.habitTitle} numberOfLines={1}>{item.title}</Text><View style={styles.habitMetaRow}>{item.isRequired ? <Pill label={t("必須", "Must-do")} color={COLORS.forest} /> : null}<Text style={styles.habitMeta} numberOfLines={1}>{t(`週 ${progress.completed}/${progress.target} ・ ${habitStreak(item)}日連続`, `${progress.completed}/${progress.target} this week · ${habitStreak(item)}-day streak`)}</Text></View></View>
-                </TouchableOpacity>
-                <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: todayDone }} accessibilityLabel={t("今日の習慣を記録", "Record today's habit")} onPress={() => { safeHaptic(todayDone ? "light" : "success"); toggleHabit(item.id); }} style={[styles.todayCheck, todayDone && { backgroundColor: item.color, borderColor: item.color }]}>
-                  {todayDone ? <MaterialIcons name="check" size={19} color={COLORS.white} /> : <Text style={[styles.todayCheckText, { color: item.color }]}>{t("今日", "Today")}</Text>}
-                </TouchableOpacity>
-              </View>
-              <View style={styles.daysRow}>
-                {week.map((key) => {
-                  const done = isHabitCompleteOn(item, key);
-                  const isToday = key === dayKey();
-                  return (
-                    <TouchableOpacity key={key} accessibilityLabel={t(`${shortWeekday(key)}曜日を記録`, `Record ${shortWeekday(key, language)}`)} onPress={() => { safeHaptic(done ? "light" : "success"); toggleHabit(item.id, key); }} style={styles.dayButton}>
-                      <Text style={[styles.dayLabel, isToday && { color: item.color }]}>{shortWeekday(key, language)}</Text>
-                      <View style={[styles.dayDot, done && { backgroundColor: item.color, borderColor: item.color }, isToday && !done && { borderColor: item.color }]}>{done ? <MaterialIcons name="check" size={13} color={COLORS.white} /> : null}</View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-              {progressLabel ? <View style={[styles.dailyProgress, { backgroundColor: `${item.color}14` }]}><TouchableOpacity accessibilityLabel={t("今日の進捗を減らす", "Decrease today's progress")} onPress={() => adjustHabitProgress(item.id, -1)} style={styles.progressButton}><MaterialIcons name="remove" size={16} color={item.color} /></TouchableOpacity><Text style={[styles.dailyProgressText, { color: item.color }]}>{t("今日", "Today")} {progressLabel}</Text><TouchableOpacity accessibilityLabel={t("今日の進捗を増やす", "Increase today's progress")} onPress={() => { safeHaptic("light"); adjustHabitProgress(item.id, 1); }} style={styles.progressButton}><MaterialIcons name="add" size={16} color={item.color} /></TouchableOpacity></View> : null}
-              <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${Math.round(progress.ratio * 100)}%`, backgroundColor: item.color }]} /></View>
-              <TouchableOpacity accessibilityLabel={t("習慣を削除", "Delete habit")} onPress={() => remove(item)} style={styles.removeLink}><Text style={styles.removeLinkText}>{t("削除", "Delete")}</Text></TouchableOpacity>
-            </View>
-          );
-        }}
-      />
-      <HabitForm visible={formOpen} habit={editingHabit} defaultRequired={newHabitDefaultRequired} onClose={() => { setFormOpen(false); setEditingHabit(undefined); setNewHabitDefaultRequired(false); }} onSave={(input) => editingHabit ? updateHabit(editingHabit.id, input) : addHabit(input)} />
-    </ScreenContainer>
-  );
+  return <ScreenContainer className="px-5" containerClassName="bg-background"><FlatList data={visibleHabits} keyExtractor={(item) => item.id} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}
+    ListHeaderComponent={<><ScreenHeading eyebrow={t("続ける仕組み", "Build consistency")} title={t("習慣", "Habits")} action={<IconButton icon="add" label={t("習慣を追加", "Add habit")} onPress={() => openForm()} variant="filled" />} />
+      <View style={styles.summary}><View style={styles.summaryTop}><View style={styles.summaryIcon}><MaterialIcons name="auto-awesome" size={19} color={COLORS.forest} /></View><View style={styles.summaryCopy}><Text style={styles.summaryEyebrow}>{t("今日の達成", "TODAY'S PROGRESS")}</Text><Text style={styles.summaryTitle}>{totalToday ? t(`${doneToday}/${totalToday}件を記録`, `${doneToday}/${totalToday} complete`) : t("最初の習慣を作りましょう", "Create your first habit")}</Text></View><Text style={styles.summaryPercent}>{percent}%</Text></View><View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${percent}%` }]} /></View><Text style={styles.summaryHint}>{mustTotal ? t(`必須習慣 ${mustDone}/${mustTotal}件を達成すると、アプリ解除条件が進みます。`, `${mustDone}/${mustTotal} must-do habits complete. Each one moves your unlock condition forward.`) : t("必須にした習慣だけが、アプリ制限の解除条件になります。", "Only must-do habits become an App limits unlock condition.")}</Text></View>
+      <View style={styles.segmented}>{([{ key: "today", label: t("今日", "Today") }, { key: "all", label: t("すべて", "All") }] as const).map((tab) => <TouchableOpacity key={tab.key} accessibilityRole="button" accessibilityState={{ selected: viewMode === tab.key }} onPress={() => setViewMode(tab.key)} style={[styles.segment, viewMode === tab.key && styles.segmentActive]}><Text style={[styles.segmentText, viewMode === tab.key && styles.segmentTextActive]}>{tab.label}</Text></TouchableOpacity>)}</View>
+    </>}
+    ListEmptyComponent={<EmptyState icon="repeat" title={t("最初の習慣を作りましょう", "Create your first habit")} description={t("必須の習慣は、日次目標を達成するとアプリ制限の解除条件になります。", "A must-do habit becomes an unlock condition when you meet today's goal.")} actionLabel={t("必須習慣を作る", "Create a must-do habit")} onAction={() => openForm(undefined, true)} />}
+    renderItem={({ item }) => <HabitRow habit={item} week={week} language={language} t={t} onEdit={() => openForm(item)} onToggle={(date) => { safeHaptic(isHabitCompleteOn(item, date ?? today) ? "light" : "success"); toggleHabit(item.id, date); }} onProgress={(delta) => { if (delta > 0) safeHaptic("light"); adjustHabitProgress(item.id, delta); }} onDelete={() => remove(item)} />}
+  />
+  <HabitForm visible={formOpen} habit={editingHabit} defaultRequired={newHabitDefaultRequired} onClose={() => { setFormOpen(false); setEditingHabit(undefined); setNewHabitDefaultRequired(false); }} onSave={(input) => editingHabit ? updateHabit(editingHabit.id, input) : addHabit(input)} />
+  </ScreenContainer>;
 }
 
-const styles = StyleSheet.create({
-  content: { paddingTop: 16, paddingBottom: 24, flexGrow: 1 },
-  habitCard: { backgroundColor: "rgba(255,255,255,0.86)", borderColor: COLORS.border, borderWidth: 1, borderRadius: 20, padding: 15, marginBottom: 10 },
-  cardTop: { flexDirection: "row", alignItems: "center", gap: 12 },
-  habitTitleArea: { flexDirection: "row", alignItems: "center", flex: 1, minWidth: 0 },
-  habitMark: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 13, marginRight: 11 },
-  habitTitleCopy: { flex: 1, minWidth: 0 },
-  habitTitle: { color: COLORS.text, fontSize: 16, lineHeight: 22, fontWeight: "800" },
-  habitMetaRow: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 5 },
-  habitMeta: { color: COLORS.muted, flex: 1, minWidth: 0, fontSize: 12, lineHeight: 17, fontWeight: "700" },
-  explainer: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#E9F4F1", borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, marginTop: -6, marginBottom: 12 },
-  explainerText: { color: "#245D52", flex: 1, fontSize: 12, lineHeight: 18, fontWeight: "700" },
-  todayCheck: { minWidth: 50, height: 38, borderRadius: 13, borderWidth: 1, borderColor: COLORS.border, alignItems: "center", justifyContent: "center", paddingHorizontal: 8 },
-  todayCheckText: { fontSize: 12, fontWeight: "800" },
-  daysRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 18 },
-  dayButton: { width: 30, alignItems: "center", gap: 6 },
-  dayLabel: { color: COLORS.muted, fontSize: 11, lineHeight: 14, fontWeight: "800" },
-  dayDot: { width: 26, height: 26, borderRadius: 13, borderWidth: 1, borderColor: "#CBD7D0", alignItems: "center", justifyContent: "center" },
-  dailyProgress: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 3, marginTop: 14 },
-  progressButton: { width: 28, height: 28, alignItems: "center", justifyContent: "center", borderRadius: 8, backgroundColor: COLORS.white },
-  dailyProgressText: { minWidth: 58, textAlign: "center", fontSize: 12, fontWeight: "800" },
-  progressTrack: { height: 5, borderRadius: 3, backgroundColor: "#E7EEEA", overflow: "hidden", marginTop: 16 },
-  progressFill: { height: "100%", borderRadius: 3 },
-  removeLink: { minHeight: 30, alignSelf: "flex-end", justifyContent: "flex-end", marginTop: 4 },
-  removeLinkText: { color: COLORS.error, fontSize: 12, fontWeight: "700" },
-});
+function HabitRow({ habit, week, language, t, onEdit, onToggle, onProgress, onDelete }: { habit: Habit; week: string[]; language: "ja" | "en"; t: (ja: string, en: string) => string; onEdit: () => void; onToggle: (date?: string) => void; onProgress: (delta: number) => void; onDelete: () => void }) {
+  const today = dayKey(); const done = isHabitCompleteOn(habit, today); const weekly = weeklyHabitProgress(habit); const progress = habitProgressLabel(habit, today, language);
+  return <View style={[styles.habitRow, done && styles.habitRowDone]}><View style={[styles.colorRail, { backgroundColor: habit.color }]} /><TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: done }} accessibilityLabel={t(`「${habit.title}」を今日の習慣として記録`, `Record “${habit.title}” for today`)} hitSlop={8} onPress={() => onToggle()} style={[styles.todayCheck, done && { backgroundColor: habit.color, borderColor: habit.color }]}>{done ? <MaterialIcons name="check" size={17} color={COLORS.white} /> : <Text style={[styles.todayText, { color: habit.color }]}>{t("今日", "Today")}</Text>}</TouchableOpacity><View style={styles.habitCopy}><TouchableOpacity accessibilityRole="button" onPress={onEdit}><Text style={[styles.habitTitle, done && styles.habitTitleDone]} numberOfLines={1}>{habit.title}</Text><View style={styles.meta}>{habit.isRequired ? <Pill label={t("必須", "Must-do")} color={COLORS.forest} /> : null}<Text style={styles.metaText}>{t(`週 ${weekly.completed}/${weekly.target}`, `${weekly.completed}/${weekly.target} this week`)} · {habitStreak(habit)}{t("日連続", "-day streak")}</Text></View></TouchableOpacity><View style={styles.weekRow}>{week.map((key) => { const marked = isHabitCompleteOn(habit, key); const current = key === today; return <TouchableOpacity key={key} accessibilityLabel={t(`${shortWeekday(key)}曜日を記録`, `Record ${shortWeekday(key, language)}`)} hitSlop={7} onPress={() => onToggle(key)} style={[styles.dayDot, current && { borderColor: habit.color }, marked && { backgroundColor: habit.color, borderColor: habit.color }]}>{marked ? <MaterialIcons name="check" size={10} color={COLORS.white} /> : <Text style={[styles.dayLetter, current && { color: habit.color }]}>{shortWeekday(key, language)}</Text>}</TouchableOpacity>})}</View>{progress ? <View style={styles.progressControl}><TouchableOpacity accessibilityLabel={t("今日の進捗を減らす", "Decrease today's progress")} hitSlop={7} onPress={() => onProgress(-1)} style={styles.progressButton}><MaterialIcons name="remove" size={15} color={habit.color} /></TouchableOpacity><Text style={[styles.progressText, { color: habit.color }]}>{progress}</Text><TouchableOpacity accessibilityLabel={t("今日の進捗を増やす", "Increase today's progress")} hitSlop={7} onPress={() => onProgress(1)} style={styles.progressButton}><MaterialIcons name="add" size={15} color={habit.color} /></TouchableOpacity></View> : null}</View><TouchableOpacity accessibilityLabel={t("習慣を削除", "Delete habit")} hitSlop={8} onPress={onDelete} style={styles.delete}><MaterialIcons name="delete-outline" size={20} color={COLORS.muted} /></TouchableOpacity></View>;
+}
+
+const styles = StyleSheet.create({ content: { paddingTop: 16, paddingBottom: 24, flexGrow: 1 }, summary: { backgroundColor: "#EAF6F1", borderWidth: 1, borderColor: "#B9DDD1", borderRadius: 20, padding: 14, marginTop: -4, marginBottom: 13 }, summaryTop: { flexDirection: "row", alignItems: "center", gap: 10 }, summaryIcon: { width: 38, height: 38, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: "#D8EEE6" }, summaryCopy: { flex: 1, minWidth: 0 }, summaryEyebrow: { color: "#397765", fontSize: 10, letterSpacing: 0.5, fontWeight: "900" }, summaryTitle: { color: "#173F36", fontSize: 14, lineHeight: 20, fontWeight: "800", marginTop: 1 }, summaryPercent: { color: COLORS.forest, fontSize: 22, fontWeight: "900" }, progressTrack: { height: 6, borderRadius: 4, overflow: "hidden", backgroundColor: "#C9E7DD", marginTop: 12 }, progressFill: { height: "100%", borderRadius: 4, backgroundColor: COLORS.forest }, summaryHint: { color: "#42675D", fontSize: 11, lineHeight: 16, marginTop: 8 }, segmented: { flexDirection: "row", gap: 7, marginBottom: 13 }, segment: { flex: 1, minHeight: 42, alignItems: "center", justifyContent: "center", borderRadius: 13, backgroundColor: "#E8EEF0" }, segmentActive: { backgroundColor: COLORS.forest }, segmentText: { color: COLORS.muted, fontSize: 12, fontWeight: "800" }, segmentTextActive: { color: COLORS.white }, habitRow: { position: "relative", flexDirection: "row", alignItems: "flex-start", backgroundColor: "rgba(255,255,255,0.9)", borderColor: COLORS.border, borderWidth: 1, borderRadius: 17, paddingVertical: 13, paddingLeft: 14, paddingRight: 4, marginBottom: 8, overflow: "hidden" }, habitRowDone: { opacity: 0.7 }, colorRail: { position: "absolute", left: 0, top: 0, bottom: 0, width: 4 }, todayCheck: { minWidth: 39, height: 30, paddingHorizontal: 5, borderRadius: 10, borderWidth: 1.2, borderColor: "#B4C4BD", alignItems: "center", justifyContent: "center", marginTop: 1, marginRight: 10 }, todayText: { fontSize: 10, fontWeight: "900" }, habitCopy: { flex: 1, minWidth: 0 }, habitTitle: { color: COLORS.text, fontSize: 15, lineHeight: 21, fontWeight: "800" }, habitTitleDone: { color: COLORS.muted, textDecorationLine: "line-through" }, meta: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 5 }, metaText: { color: COLORS.muted, fontSize: 11, lineHeight: 16, fontWeight: "700" }, weekRow: { flexDirection: "row", gap: 6, marginTop: 10 }, dayDot: { width: 23, height: 23, borderRadius: 12, borderWidth: 1, borderColor: "#D0DBD6", alignItems: "center", justifyContent: "center" }, dayLetter: { color: COLORS.muted, fontSize: 9, fontWeight: "800" }, progressControl: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 7, borderRadius: 10, backgroundColor: "#F0F4F2", marginTop: 9, paddingHorizontal: 5, paddingVertical: 3 }, progressButton: { width: 25, height: 25, alignItems: "center", justifyContent: "center", borderRadius: 7, backgroundColor: COLORS.white }, progressText: { minWidth: 48, textAlign: "center", fontSize: 11, fontWeight: "900" }, delete: { width: 34, height: 38, alignItems: "center", justifyContent: "center", marginLeft: 2 } });
