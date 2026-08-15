@@ -17,8 +17,9 @@ export default function HabitsScreen() {
   const t = (ja: string, en: string) => localized(language, ja, en);
   const [formOpen, setFormOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | undefined>();
+  const [newHabitDefaultRequired, setNewHabitDefaultRequired] = useState(false);
   const week = useMemo(() => Array.from({ length: 7 }, (_, index) => dayKeyOffset(index - 6)), []);
-  const openForm = (habit?: Habit) => { setEditingHabit(habit); setFormOpen(true); };
+  const openForm = (habit?: Habit, defaultRequired = false) => { setEditingHabit(habit); setNewHabitDefaultRequired(defaultRequired); setFormOpen(true); };
   const remove = (habit: Habit) => {
     const confirm = () => deleteHabit(habit.id);
     if (Platform.OS === "web") confirm();
@@ -34,7 +35,7 @@ export default function HabitsScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={<><ScreenHeading eyebrow={t("続ける仕組み", "Build consistency")} title={t("習慣", "Habits")} action={<IconButton icon="add" label={t("習慣を追加", "Add habit")} onPress={() => openForm()} variant="filled" />} /><View style={styles.explainer}><MaterialIcons name="lock-outline" size={17} color={COLORS.forest} /><Text style={styles.explainerText}>{t("必須の習慣は、アプリ制限を解除する条件になります。", "Must-do habits become an unlock condition for your selected apps.")}</Text></View></>}
-        ListEmptyComponent={<EmptyState icon="repeat" title={t("最初の習慣を作りましょう", "Create your first habit")} description={t("登録時に「必須の習慣」を選ぶと、毎日のアプリ制限の解除条件にできます。", "Choose Must-do when you create a habit to use it as a daily unlock condition.")} actionLabel={t("習慣を作る", "Create habit")} onAction={() => openForm()} />}
+        ListEmptyComponent={<EmptyState icon="repeat" title={t("最初の習慣を作りましょう", "Create your first habit")} description={t("登録時に「必須の習慣」を選ぶと、毎日のアプリ制限の解除条件にできます。", "Choose Must-do when you create a habit to use it as a daily unlock condition.")} actionLabel={t("必須習慣を作る", "Create a must-do habit")} onAction={() => openForm(undefined, true)} />}
         renderItem={({ item }) => {
           const progress = weeklyHabitProgress(item);
           const todayDone = isHabitCompleteOn(item, dayKey());
@@ -69,7 +70,7 @@ export default function HabitsScreen() {
           );
         }}
       />
-      <HabitForm visible={formOpen} habit={editingHabit} onClose={() => { setFormOpen(false); setEditingHabit(undefined); }} onSave={(input) => editingHabit ? updateHabit(editingHabit.id, input) : addHabit(input)} />
+      <HabitForm visible={formOpen} habit={editingHabit} defaultRequired={newHabitDefaultRequired} onClose={() => { setFormOpen(false); setEditingHabit(undefined); setNewHabitDefaultRequired(false); }} onSave={(input) => editingHabit ? updateHabit(editingHabit.id, input) : addHabit(input)} />
     </ScreenContainer>
   );
 }
