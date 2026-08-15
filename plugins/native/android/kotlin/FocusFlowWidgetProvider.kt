@@ -15,9 +15,14 @@ internal abstract class FocusFlowBaseWidgetProvider : AppWidgetProvider() {
   abstract fun layoutResource(): Int
   abstract fun bind(views: RemoteViews, state: JSONObject)
   open fun bindAction(context: Context, id: Int, views: RemoteViews, state: JSONObject) = Unit
+  open fun adaptForSize(context: Context, id: Int, views: RemoteViews, state: JSONObject) = Unit
 
   override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
     ids.forEach { updateWidget(context, manager, it) }
+  }
+
+  override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: android.os.Bundle) {
+    updateWidget(context, manager, id)
   }
 
   override fun onReceive(context: Context, intent: Intent) {
@@ -38,6 +43,7 @@ internal abstract class FocusFlowBaseWidgetProvider : AppWidgetProvider() {
     val views = RemoteViews(context.packageName, layoutResource())
     bind(views, current)
     bindAction(context, id, views, current)
+    adaptForSize(context, id, views, current)
     views.setOnClickPendingIntent(R.id.focus_flow_widget_root, launchIntent(context, id))
     manager.updateAppWidget(id, views)
   }
@@ -54,6 +60,7 @@ internal abstract class FocusFlowBaseWidgetProvider : AppWidgetProvider() {
 
   protected fun en(state: JSONObject) = state.optString("language", "ja") == "en"
   protected fun active(state: JSONObject) = state.optBoolean("active", false)
+  protected fun isExpanded(context: Context, id: Int): Boolean = AppWidgetManager.getInstance(context).getAppWidgetOptions(id).getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0) >= 220
 
   protected fun completeIntent(context: Context, id: Int, targetId: String, kind: String): PendingIntent {
     return PendingIntent.getBroadcast(context, (id.toString() + targetId + kind).hashCode(), Intent(context, javaClass).apply {
@@ -238,6 +245,7 @@ class FocusFlowProgressWidgetProvider : FocusFlowBaseWidgetProvider() {
     views.setTextViewText(R.id.focus_flow_widget_main, if (total == 0) if (english) "Add a must-do" else "必須項目を追加" else "$done / $total")
     views.setTextViewText(R.id.focus_flow_widget_detail, if (english) "Tasks ${state.optInt("completedTodoTotal", 0)}/${state.optInt("requiredTodoTotal", 0)} · Habits ${state.optInt("completedHabitTotal", 0)}/${state.optInt("requiredHabitTotal", 0)}" else "Todo ${state.optInt("completedTodoTotal", 0)}/${state.optInt("requiredTodoTotal", 0)} ・ 習慣 ${state.optInt("completedHabitTotal", 0)}/${state.optInt("requiredHabitTotal", 0)}")
   }
+  override fun adaptForSize(context: Context, id: Int, views: RemoteViews, state: JSONObject) { views.setViewVisibility(R.id.focus_flow_widget_detail, if (isExpanded(context, id)) View.VISIBLE else View.GONE) }
 }
 
 class FocusFlowNextWidgetProvider : FocusFlowBaseWidgetProvider() {
@@ -259,6 +267,7 @@ class FocusFlowNextWidgetProvider : FocusFlowBaseWidgetProvider() {
     views.setTextViewText(R.id.focus_flow_widget_action, if (english) "Mark complete" else "完了にする")
     if (targetId.isNotBlank() && (kind == "todo" || kind == "habit")) views.setOnClickPendingIntent(R.id.focus_flow_widget_action, completeIntent(context, id, targetId, kind))
   }
+  override fun adaptForSize(context: Context, id: Int, views: RemoteViews, state: JSONObject) { views.setViewVisibility(R.id.focus_flow_widget_detail, if (isExpanded(context, id)) View.VISIBLE else View.GONE) }
 }
 
 class FocusFlowHabitWidgetProvider : FocusFlowBaseWidgetProvider() {
@@ -279,6 +288,7 @@ class FocusFlowHabitWidgetProvider : FocusFlowBaseWidgetProvider() {
     views.setTextViewText(R.id.focus_flow_widget_action, if (english) "Complete habit" else "習慣を完了")
     if (targetId.isNotBlank()) views.setOnClickPendingIntent(R.id.focus_flow_widget_action, completeIntent(context, id, targetId, "habit"))
   }
+  override fun adaptForSize(context: Context, id: Int, views: RemoteViews, state: JSONObject) { views.setViewVisibility(R.id.focus_flow_widget_detail, if (isExpanded(context, id)) View.VISIBLE else View.GONE) }
 }
 
 class FocusFlowRoutineWidgetProvider : FocusFlowBaseWidgetProvider() {
@@ -291,4 +301,5 @@ class FocusFlowRoutineWidgetProvider : FocusFlowBaseWidgetProvider() {
     views.setTextViewText(R.id.focus_flow_widget_main, if (!active(state)) if (english) "App limits are off" else "アプリ制限はオフ" else if (routineOn) if (label.isBlank()) if (english) "Routine active" else "日課を適用中" else label else if (english) "No routine active" else "日課の時間外です")
     views.setTextViewText(R.id.focus_flow_widget_detail, if (!active(state)) if (english) "Turn on App limits in Settings" else "設定からアプリ制限をオンにできます" else if (routineOn) if (english) "Tap to review today’s unlock progress" else "タップして今日の解除進捗を確認" else if (english) "Your next routine will resume automatically" else "次の日課の時間になると自動で再開")
   }
+  override fun adaptForSize(context: Context, id: Int, views: RemoteViews, state: JSONObject) { views.setViewVisibility(R.id.focus_flow_widget_detail, if (isExpanded(context, id)) View.VISIBLE else View.GONE) }
 }
