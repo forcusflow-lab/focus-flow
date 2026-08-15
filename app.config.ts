@@ -86,6 +86,7 @@ const config: ExpoConfig = {
   plugins: [
     "./plugins/with-focus-flow-android",
     "expo-router",
+    "expo-notifications",
     [
       "expo-audio",
       {

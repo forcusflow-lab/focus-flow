@@ -80,6 +80,8 @@ export type DisplaySettings = {
   cardOpacity: "solid" | "soft" | "glass";
   language?: "auto" | "ja" | "en";
   deviceSetupCompletedAt?: string;
+  dailyReminderEnabled?: boolean;
+  dailyReminderTime?: string;
 };
 
 export const DEFAULT_GATE_CONFIG: GateConfig = { enabled: false, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, accessibilityDisclosureAcceptedAt: undefined, schedules: [] };
@@ -89,6 +91,8 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   theme: "mist",
   cardOpacity: "solid",
   language: "auto",
+  dailyReminderEnabled: false,
+  dailyReminderTime: "19:00",
 };
 
 export type FocusFlowData = {

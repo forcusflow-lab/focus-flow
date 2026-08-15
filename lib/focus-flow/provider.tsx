@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import { syncAndroidGate } from "./android-gate";
+import { cancelDailyReminder } from "./reminders";
 import { createId, dayKey, getTodoSubtasks, isTodoAchieved, nextRecurringDueDate } from "./utils";
 import { DEFAULT_DISPLAY_SETTINGS, DEFAULT_GATE_CONFIG, DisplaySettings, EMPTY_FOCUS_FLOW_DATA, FocusFlowData, GateConfig, Habit, Memo, Priority, ProgressUnit, RepeatRule, Todo, TodoSubtask } from "./types";
 
@@ -226,6 +227,7 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
   const clearAllData = useCallback(() => {
     setData({ todos: [], habits: [], memos: [], focusSessions: [], gateConfig: { ...DEFAULT_GATE_CONFIG, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], schedules: [] }, displaySettings: { ...DEFAULT_DISPLAY_SETTINGS } });
     void AsyncStorage.removeItem(STORAGE_KEY);
+    void cancelDailyReminder();
   }, []);
 
   useEffect(() => { if (isReady) void syncAndroidGate(data); }, [data, isReady]);

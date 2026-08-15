@@ -8,6 +8,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { getAccessibilityStatus, getGateDiagnostics, getLaunchableApps, isNativeGateAvailable, openAccessibilitySettings, openAppDetailsSettings, type GateDiagnostics, type LaunchableApp } from "@/lib/focus-flow/android-gate";
 import { isEnglish } from "@/lib/focus-flow/i18n";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
+import { cancelDailyReminder, getReminderPermissionGranted, requestReminderPermission, scheduleDailyReminder, sendReminderTest } from "@/lib/focus-flow/reminders";
 import type { DisplaySettings, GateSchedule } from "@/lib/focus-flow/types";
 import { getGateSummary, isGateTimeActive } from "@/lib/focus-flow/utils";
 
@@ -23,6 +24,8 @@ export default function SettingsScreen() {
   const [diagnostics, setDiagnostics] = useState<GateDiagnostics>();
   const [loadingApps, setLoadingApps] = useState(false);
   const [disclosureOpen, setDisclosureOpen] = useState(false);
+  const [reminderPermission, setReminderPermission] = useState(false);
+  const [reminderBusy, setReminderBusy] = useState(false);
   const english = isEnglish(displaySettings);
   const t = (ja: string, en: string) => english ? en : ja;
   const isIOS = Platform.OS === "ios";
@@ -42,6 +45,10 @@ export default function SettingsScreen() {
       setLoadingApps(false);
     };
     void load();
+  }, []);
+
+  useEffect(() => {
+    void getReminderPermissionGranted().then(setReminderPermission).catch(() => setReminderPermission(false));
   }, []);
 
   if (!isReady) return <ScreenContainer><LoadingScreen /></ScreenContainer>;
@@ -67,6 +74,37 @@ export default function SettingsScreen() {
   const acceptDisclosureAndEnableGate = () => {
     setGateConfig({ enabled: true, accessibilityDisclosureAcceptedAt: new Date().toISOString() });
     setDisclosureOpen(false);
+  };
+  const updateReminderTime = async (time: string) => {
+    setDisplaySettings({ dailyReminderTime: time });
+    if (!displaySettings.dailyReminderEnabled) return;
+    setReminderBusy(true);
+    const scheduled = await scheduleDailyReminder({ english, time });
+    setReminderPermission(scheduled);
+    setReminderBusy(false);
+  };
+  const toggleReminder = async (enabled: boolean) => {
+    if (Platform.OS === "web") return;
+    setReminderBusy(true);
+    if (!enabled) {
+      await cancelDailyReminder();
+      setDisplaySettings({ dailyReminderEnabled: false });
+      setReminderBusy(false);
+      return;
+    }
+    const permitted = await requestReminderPermission();
+    setReminderPermission(permitted);
+    if (permitted) {
+      const scheduled = await scheduleDailyReminder({ english, time: displaySettings.dailyReminderTime ?? "19:00" });
+      setDisplaySettings({ dailyReminderEnabled: scheduled });
+    }
+    setReminderBusy(false);
+  };
+  const testReminder = async () => {
+    setReminderBusy(true);
+    const sent = await sendReminderTest(english);
+    setReminderPermission(sent || reminderPermission);
+    setReminderBusy(false);
   };
 
   return (
@@ -104,6 +142,12 @@ export default function SettingsScreen() {
               <View style={[styles.scheduleState, scheduleActive ? styles.scheduleStateOn : styles.scheduleStateOff]}><MaterialIcons name={scheduleActive ? "schedule" : "schedule-send"} size={17} color={scheduleActive ? COLORS.forest : COLORS.muted} /><Text style={[styles.scheduleStateText, { color: scheduleActive ? COLORS.forest : COLORS.muted }]}>{gateConfig.schedules.length === 0 ? t("常時適用", "Always active") : scheduleActive ? t("現在は時間帯の範囲内です", "A routine is active now") : t("現在は時間帯の範囲外です", "No routine is active now")}</Text></View>
               {gateConfig.schedules.map((schedule) => <SimpleScheduleCard key={schedule.id} schedule={schedule} apps={apps} nativeReady={nativeReady} loadingApps={loadingApps} fallbackPackages={gateConfig.blockedPackages} onChange={(input) => updateSchedule(schedule.id, input)} onRemove={() => removeSchedule(schedule.id)} />)}
               <TouchableOpacity onPress={addSchedule} activeOpacity={0.75} style={styles.addSchedule}><MaterialIcons name="add" size={18} color={COLORS.forest} /><Text style={styles.addScheduleText}>{t("時間帯を追加", "Add a routine")}</Text></TouchableOpacity>
+            </View>
+
+            <SectionLabel title={t("毎日のリマインダー", "Daily reminders")} detail={t("通知は1日1回だけです。時間になったら、今日の必須Todoと習慣を確認するようやさしくお知らせします。", "One gentle notification a day helps you review today’s must-dos and habits. It never creates a task or changes App limits.")} />
+            <View style={styles.card}>
+              <View style={styles.row}><View style={styles.rowCopy}><Text style={styles.rowTitle}>{t("日課を確認する", "Daily check-in")}</Text><Text style={styles.rowDescription}>{Platform.OS === "web" ? t("通知はインストールしたAndroidまたはiPhoneのアプリで設定できます。", "Set notifications in the installed Android or iPhone app.") : reminderPermission ? t("通知は許可されています。", "Notifications are allowed.") : t("オンにすると端末の通知許可を確認します。", "Turning this on asks for notification permission.")}</Text></View><Switch value={Boolean(displaySettings.dailyReminderEnabled)} disabled={Platform.OS === "web" || reminderBusy} onValueChange={(enabled) => void toggleReminder(enabled)} trackColor={{ false: "#CCD7D1", true: "#91C3B3" }} thumbColor={displaySettings.dailyReminderEnabled ? COLORS.forest : "#F7F8F5"} /></View>
+              {displaySettings.dailyReminderEnabled ? <><View style={styles.timeRow}><TimeControl label={t("通知時刻", "Reminder time")} value={displaySettings.dailyReminderTime ?? "19:00"} onChange={(time) => void updateReminderTime(time)} /></View><View style={styles.status}><MaterialIcons name="notifications-active" size={17} color={COLORS.success} /><Text style={[styles.statusText, { color: "#2A7552" }]}>{t(`${displaySettings.dailyReminderTime ?? "19:00"} に毎日1回通知します。完了状況を問わない中立的な確認通知です。`, `One neutral daily check-in is scheduled for ${displaySettings.dailyReminderTime ?? "19:00"}, whether or not you have finished your list.`)}</Text></View><TouchableOpacity accessibilityRole="button" disabled={reminderBusy} onPress={() => void testReminder()} style={[styles.permissionButton, { alignSelf: "flex-start", marginTop: 4 }]}><Text style={styles.permissionButtonText}>{reminderBusy ? t("準備中…", "Preparing…") : t("今すぐ試す", "Send a test")}</Text></TouchableOpacity></> : null}
             </View>
 
             <View style={styles.disclosureCard}>
