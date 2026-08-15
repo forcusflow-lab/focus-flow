@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.view.View
 import android.widget.RemoteViews
 import org.json.JSONArray
@@ -13,6 +14,7 @@ import org.json.JSONObject
 
 internal abstract class FocusFlowBaseWidgetProvider : AppWidgetProvider() {
   abstract fun layoutResource(): Int
+  abstract fun widgetKey(): String
   abstract fun bind(views: RemoteViews, state: JSONObject)
   open fun bindAction(context: Context, id: Int, views: RemoteViews, state: JSONObject) = Unit
   open fun adaptForSize(context: Context, id: Int, views: RemoteViews, state: JSONObject) = Unit
@@ -43,6 +45,7 @@ internal abstract class FocusFlowBaseWidgetProvider : AppWidgetProvider() {
     val views = RemoteViews(context.packageName, layoutResource())
     bind(views, current)
     bindAction(context, id, views, current)
+    applyTheme(context, views, current)
     adaptForSize(context, id, views, current)
     views.setOnClickPendingIntent(R.id.focus_flow_widget_root, launchIntent(context, id))
     manager.updateAppWidget(id, views)
@@ -61,6 +64,33 @@ internal abstract class FocusFlowBaseWidgetProvider : AppWidgetProvider() {
   protected fun en(state: JSONObject) = state.optString("language", "ja") == "en"
   protected fun active(state: JSONObject) = state.optBoolean("active", false)
   protected fun isExpanded(context: Context, id: Int): Boolean = AppWidgetManager.getInstance(context).getAppWidgetOptions(id).getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0) >= 220
+
+  private fun applyTheme(context: Context, views: RemoteViews, state: JSONObject) {
+    val selection = state.optJSONObject("widgetThemes")?.optJSONObject(widgetKey())
+    val background = selection?.optString("background", "default") ?: "default"
+    val requestedAccent = selection?.optString("accent", "auto") ?: "auto"
+    val accent = if (requestedAccent == "auto") autoAccent(background) else requestedAccent
+    val lightBackground = background == "amber" || (background == "default" && widgetKey() == "next")
+    val primary = Color.parseColor(if (lightBackground) "#3F310B" else "#FFFFFF")
+    val title = Color.parseColor(if (lightBackground) "#775300" else "#DDF1EB")
+    val detail = Color.parseColor(if (lightBackground) "#65541F" else "#E8F6F1")
+    views.setInt(R.id.focus_flow_widget_root, "setBackgroundResource", backgroundResource(background))
+    if (widgetKey() == "overview") {
+      views.setInt(R.id.focus_flow_widget_count, "setBackgroundResource", countResource(accent))
+      views.setTextColor(R.id.focus_flow_widget_count, primary)
+      views.setTextColor(R.id.focus_flow_widget_status, primary)
+    } else {
+      views.setTextColor(R.id.focus_flow_widget_title, title)
+      views.setTextColor(R.id.focus_flow_widget_main, primary)
+      views.setTextColor(R.id.focus_flow_widget_detail, detail)
+      if (widgetKey() == "next" || widgetKey() == "habit") views.setInt(R.id.focus_flow_widget_action, "setBackgroundResource", accentResource(accent))
+    }
+  }
+
+  private fun autoAccent(background: String): String = when (background) { "ocean" -> "sky"; "violet" -> "violet"; "amber" -> "gold"; "blush" -> "coral"; "ink" -> "ink"; else -> when (widgetKey()) { "progress" -> "sky"; "next" -> "gold"; "habit" -> "violet"; else -> "mint" } }
+  private fun backgroundResource(background: String): Int = when (background) { "forest" -> R.drawable.focus_flow_widget_background_forest; "ocean" -> R.drawable.focus_flow_widget_background_ocean; "violet" -> R.drawable.focus_flow_widget_background_violet; "amber" -> R.drawable.focus_flow_widget_background_amber; "blush" -> R.drawable.focus_flow_widget_background_blush; "ink" -> R.drawable.focus_flow_widget_background_ink; else -> when (widgetKey()) { "overview" -> R.drawable.focus_flow_widget_background; "progress" -> R.drawable.focus_flow_widget_background_progress; "next" -> R.drawable.focus_flow_widget_background_next; "habit" -> R.drawable.focus_flow_widget_background_habit; else -> R.drawable.focus_flow_widget_background_routine } }
+  private fun accentResource(accent: String): Int = when (accent) { "sky" -> R.drawable.focus_flow_widget_accent_sky; "violet" -> R.drawable.focus_flow_widget_accent_violet; "coral" -> R.drawable.focus_flow_widget_accent_coral; "gold" -> R.drawable.focus_flow_widget_accent_gold; "ink" -> R.drawable.focus_flow_widget_accent_ink; else -> R.drawable.focus_flow_widget_accent_mint }
+  private fun countResource(accent: String): Int = when (accent) { "sky" -> R.drawable.focus_flow_widget_count_sky; "violet" -> R.drawable.focus_flow_widget_count_violet; "coral" -> R.drawable.focus_flow_widget_count_coral; "gold" -> R.drawable.focus_flow_widget_count_gold; "ink" -> R.drawable.focus_flow_widget_count_ink; else -> R.drawable.focus_flow_widget_count_mint }
 
   protected fun completeIntent(context: Context, id: Int, targetId: String, kind: String): PendingIntent {
     return PendingIntent.getBroadcast(context, (id.toString() + targetId + kind).hashCode(), Intent(context, javaClass).apply {
@@ -217,6 +247,7 @@ internal abstract class FocusFlowBaseWidgetProvider : AppWidgetProvider() {
 
 class FocusFlowWidgetProvider : FocusFlowBaseWidgetProvider() {
   override fun layoutResource() = R.layout.focus_flow_widget
+  override fun widgetKey() = "overview"
   override fun bind(views: RemoteViews, state: JSONObject) {
     val pending = state.optInt("pendingCount", 0)
     val english = en(state)
@@ -237,6 +268,7 @@ class FocusFlowWidgetProvider : FocusFlowBaseWidgetProvider() {
 
 class FocusFlowProgressWidgetProvider : FocusFlowBaseWidgetProvider() {
   override fun layoutResource() = R.layout.focus_flow_widget_progress
+  override fun widgetKey() = "progress"
   override fun bind(views: RemoteViews, state: JSONObject) {
     val english = en(state)
     val total = state.optInt("requiredTodoTotal", 0) + state.optInt("requiredHabitTotal", 0)
@@ -250,6 +282,7 @@ class FocusFlowProgressWidgetProvider : FocusFlowBaseWidgetProvider() {
 
 class FocusFlowNextWidgetProvider : FocusFlowBaseWidgetProvider() {
   override fun layoutResource() = R.layout.focus_flow_widget_next
+  override fun widgetKey() = "next"
   override fun bind(views: RemoteViews, state: JSONObject) {
     val english = en(state)
     val title = state.optString("nextRequiredTitle", "")
@@ -272,6 +305,7 @@ class FocusFlowNextWidgetProvider : FocusFlowBaseWidgetProvider() {
 
 class FocusFlowHabitWidgetProvider : FocusFlowBaseWidgetProvider() {
   override fun layoutResource() = R.layout.focus_flow_widget_habit
+  override fun widgetKey() = "habit"
   override fun bind(views: RemoteViews, state: JSONObject) {
     val english = en(state)
     val total = state.optInt("requiredHabitTotal", 0)
@@ -293,6 +327,7 @@ class FocusFlowHabitWidgetProvider : FocusFlowBaseWidgetProvider() {
 
 class FocusFlowRoutineWidgetProvider : FocusFlowBaseWidgetProvider() {
   override fun layoutResource() = R.layout.focus_flow_widget_routine
+  override fun widgetKey() = "routine"
   override fun bind(views: RemoteViews, state: JSONObject) {
     val english = en(state)
     val label = state.optString("routineLabel", "")

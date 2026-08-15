@@ -1,6 +1,10 @@
 export type Priority = "high" | "medium" | "low";
 export type ProgressUnit = "check" | "count" | "minutes";
 export type RepeatRule = "none" | "daily" | "weekly";
+export type WidgetThemeKind = "overview" | "progress" | "next" | "habit" | "routine";
+export type WidgetBackgroundTheme = "default" | "forest" | "ocean" | "violet" | "amber" | "blush" | "ink";
+export type WidgetAccentTheme = "auto" | "mint" | "sky" | "violet" | "coral" | "gold" | "ink";
+export type WidgetThemeSelection = { background: WidgetBackgroundTheme; accent: WidgetAccentTheme };
 
 export type TodoSubtask = {
   id: string;
@@ -82,6 +86,7 @@ export type DisplaySettings = {
   deviceSetupCompletedAt?: string;
   dailyReminderEnabled?: boolean;
   dailyReminderTime?: string;
+  widgetThemes?: Partial<Record<WidgetThemeKind, WidgetThemeSelection>>;
 };
 
 export const DEFAULT_GATE_CONFIG: GateConfig = { enabled: false, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, accessibilityDisclosureAcceptedAt: undefined, schedules: [] };
