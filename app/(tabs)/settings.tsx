@@ -1,6 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Modal, Platform, StyleSheet, Switch, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, FlatList, Modal, Platform, ScrollView, StyleSheet, Switch, TextInput, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ScaledText } from "@/components/focus-flow/scaled-text";
 import { COLORS, LoadingScreen, ScreenHeading } from "@/components/focus-flow/ui";
@@ -34,6 +35,7 @@ export default function SettingsScreen() {
   const summary = useMemo(() => getGateSummary({ todos, habits, memos, focusSessions, gateConfig, displaySettings }, new Date(), english ? "en" : "ja"), [todos, habits, memos, focusSessions, gateConfig, displaySettings, english]);
   const scheduleActive = useMemo(() => isGateTimeActive(gateConfig), [gateConfig]);
   const isPlus = Boolean(displaySettings.plusEntitlement && plusStatus.active);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     const load = async () => {
@@ -139,7 +141,7 @@ export default function SettingsScreen() {
   return (
     <ScreenContainer className="px-5" containerClassName="bg-background">
       <Modal visible={disclosureOpen} transparent animationType="fade" onRequestClose={() => setDisclosureOpen(false)}>
-        <View style={styles.modalBackdrop}><View style={styles.modalCard}>
+        <View style={styles.modalBackdrop}><View style={styles.modalCard}><ScrollView contentContainerStyle={styles.modalScrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.modalIcon}><MaterialIcons name="privacy-tip" size={23} color="#215B83" /></View>
           <Text style={styles.modalTitle}>{english ? "Before you turn on a focus rule" : "集中ルールを有効にする前に"}</Text>
           <Text style={styles.modalText}>{english ? "Focus Flow only detects when a selected app comes to the foreground and applies your chosen rule when must-dos remain. It does not read screen text, messages, typed content, or screenshots, and it does not send your tasks, notes, or app activity off this device." : "Focus Flowは、選択したアプリが前面に開いたことだけを検知し、未完了の必須項目がある場合に集中ルールを適用します。画面の文字、メッセージ、入力内容、スクリーンショットは読み取りません。Todo、メモ、アプリの利用状況を端末外へ送信しません。"}</Text>
@@ -147,13 +149,13 @@ export default function SettingsScreen() {
           {!english ? <Text style={styles.modalEnglish}>Focus Flow only detects when a selected app comes to the foreground to apply your chosen rule. It does not read screen text, messages, typed content, or screenshots, and does not send your tasks, notes, or app activity off-device. You can turn it off anytime in Android settings.</Text> : null}
           <TouchableOpacity accessibilityRole="button" onPress={acceptDisclosureAndEnableGate} style={styles.modalPrimary}><Text style={styles.modalPrimaryText}>{english ? "I understand — turn on App limits" : "内容を理解して集中ルールをオンにする"}</Text></TouchableOpacity>
           <TouchableOpacity accessibilityRole="button" onPress={() => setDisclosureOpen(false)} style={styles.modalSecondary}><Text style={styles.modalSecondaryText}>{english ? "Not now" : "今は設定しない"}</Text></TouchableOpacity>
-        </View></View>
+        </ScrollView></View></View>
       </Modal>
       <FlatList
         data={[]}
         renderItem={() => null}
         keyExtractor={() => "settings"}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: Math.max(88, insets.bottom + 48) }]}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <>
@@ -309,4 +311,8 @@ Object.assign(styles, StyleSheet.create({
   plusNote: { color: COLORS.muted, fontSize: 11, lineHeight: 16, marginVertical: 12 },
   preferenceHeader: { marginTop: 18 },
   appearanceDivider: { height: 1, backgroundColor: "#EAF0ED", marginTop: 22, marginBottom: 2 },
+}));
+
+Object.assign(styles, StyleSheet.create({
+  modalScrollContent: { paddingBottom: 2 },
 }));
