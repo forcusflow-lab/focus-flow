@@ -46,6 +46,8 @@ const config: ExpoConfig = {
   userInterfaceStyle: "automatic",
   newArchEnabled: true,
   ios: {
+    // Match Android's temporary JSC fallback until the Hermes bytecode toolchain supports private fields.
+    jsEngine: "jsc",
     supportsTablet: true,
     bundleIdentifier: env.iosBundleId,
     "infoPlist": {
@@ -53,6 +55,9 @@ const config: ExpoConfig = {
       }
   },
   android: {
+    // The current Android export toolchain cannot compile a dependency's private fields to Hermes bytecode.
+    // Keep the iOS default while using JavaScriptCore for Android release bundles.
+    jsEngine: "jsc",
     adaptiveIcon: {
       backgroundColor: "#246B5A",
       foregroundImage: "./assets/images/android-icon-foreground.png",
