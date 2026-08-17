@@ -7,8 +7,6 @@ import { getPlusStatus as readPlusStatus, purchasePlus as startPlusPurchase, res
 import { cancelDailyReminder } from "./reminders";
 import { createId, dayKey, getTodoSubtasks, isTodoAchieved, isTodoRequiredForGate, nextRecurringDueDate } from "./utils";
 import { DEFAULT_DISPLAY_SETTINGS, DEFAULT_GATE_CONFIG, DisplaySettings, EMPTY_FOCUS_FLOW_DATA, FocusFlowData, GateConfig, Habit, Memo, Priority, ProgressUnit, RepeatRule, Todo, TodoSubtask } from "./types";
-import { isPremiumAppTheme } from "./app-themes";
-import { isPremiumAppFont } from "./app-fonts";
 
 const STORAGE_KEY = "@focus-flow/data-v1";
 
@@ -232,14 +230,7 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
   }, [commit]);
 
   const setGateConfig = useCallback((input: Partial<GateConfig>) => commit((current) => ({ ...current, gateConfig: { ...current.gateConfig, ...input } })), [commit]);
-  const setDisplaySettings = useCallback((input: Partial<DisplaySettings>) => commit((current) => {
-    const requestedTheme = input.appTheme ?? current.displaySettings.appTheme ?? current.displaySettings.theme;
-    const canUseTheme = !isPremiumAppTheme(requestedTheme) || Boolean(current.displaySettings.plusEntitlement);
-    const requestedFont = input.fontFamily ?? current.displaySettings.fontFamily ?? "system";
-    const canUseFont = !isPremiumAppFont(requestedFont) || Boolean(current.displaySettings.plusEntitlement);
-    const nextInput = { ...input, ...(canUseTheme ? {} : { appTheme: current.displaySettings.appTheme ?? current.displaySettings.theme }), ...(canUseFont ? {} : { fontFamily: current.displaySettings.fontFamily ?? "system" }) };
-    return { ...current, displaySettings: { ...current.displaySettings, ...nextInput } };
-  }), [commit]);
+  const setDisplaySettings = useCallback((input: Partial<DisplaySettings>) => commit((current) => ({ ...current, displaySettings: { ...current.displaySettings, ...input } })), [commit]);
   const clearAllData = useCallback(() => {
     setData({ todos: [], habits: [], memos: [], focusSessions: [], gateConfig: { ...DEFAULT_GATE_CONFIG, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], schedules: [] }, displaySettings: { ...DEFAULT_DISPLAY_SETTINGS } });
     void AsyncStorage.removeItem(STORAGE_KEY);
