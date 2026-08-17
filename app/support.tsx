@@ -20,7 +20,7 @@ const FAQS: Record<"ja" | "en", Record<"android" | "ios", Faq[]>> = {
       { question: "集中ルールを止めるには？", answer: "管理から設定を開き、集中ルールをオフにしてください。Androidの設定でアクセシビリティを無効にすることもできます。" },
       { question: "なぜアクセシビリティが必要ですか？", answer: "選んだアプリが前面に開いたことを検知して集中ルールを適用するためです。画面の文字、メッセージ、入力内容、スクリーンショットは読み取りません。" },
       { question: "端末外に送信されるデータはありますか？", answer: "Todo、メモ、日課、アプリの利用状況は端末内に保管されます。Focus Flowは広告SDKや行動追跡SDKを使用しません。" },
-      { question: "誤って制限された場合は？", answer: "制限画面で「10分だけ安全停止する」を選び、その後に設定から時間帯、対象アプリ、端末の診断結果を確認してください。" },
+      { question: "時間管理の項目を早く完了したい場合は？", answer: "分を目標にしたTodo・習慣は、計測を開始して設定時間が経過すると完了します。時間前に完了する場合は、対象項目の画面からストアが表示する1回限りの早期完了を利用できます。集中ルールを止める場合は、設定からオフにしてください。" },
       { question: "不具合を報告するには？", answer: "下のテンプレートを共有してください。端末と権限の情報だけを含め、Todoやメモの内容は送らないでください。" },
     ],
     ios: [
@@ -38,7 +38,7 @@ const FAQS: Record<"ja" | "en", Record<"android" | "ios", Faq[]>> = {
       { question: "How do I turn off App limits?", answer: "Open Manage, then Settings. You can turn off App limits at any time. You can also disable Accessibility in Android settings." },
       { question: "Why does Focus Flow need Accessibility?", answer: "Accessibility lets Focus Flow detect when a selected app opens so it can apply your App limits. It does not read screen text, messages, typed content, or screenshots." },
       { question: "What data leaves my device?", answer: "Your tasks, notes, routines, and app activity stay on your device. Focus Flow does not use advertising or behavioral-tracking SDKs." },
-      { question: "What if I am locked out by mistake?", answer: "On the limit screen, choose Pause limits for 10 minutes. Then open Settings to check your schedule, selected apps, and device diagnostics." },
+      { question: "What if I need to finish a timed item early?", answer: "Tasks and habits measured in minutes complete after you start their timer and the scheduled time passes. To finish sooner, use the one-time early completion shown by your store from that item. To stop App limits, turn them off in Settings." },
       { question: "How can I report a problem?", answer: "Use the template below. It includes non-sensitive device and permission details to help reproduce the issue. Do not include task or note content." },
     ],
     ios: [
@@ -86,7 +86,6 @@ export default function SupportScreen() {
           `- ${t("アクセシビリティ有効", "Accessibility enabled")}: ${status(diagnostics?.accessibilityEnabled, english)}`,
           `- ${t("バッテリー最適化の対象外", "Battery optimization ignored")}: ${status(diagnostics?.batteryOptimizationIgnored, english)}`,
           `- ${t("バックグラウンド実行の制限", "Background restricted")}: ${status(diagnostics?.backgroundRestricted, english)}`,
-          `- ${t("安全停止が有効", "Temporary pause active")}: ${diagnostics?.safetyPauseUntil && diagnostics.safetyPauseUntil > Date.now() ? (english ? "Yes" : "はい") : (english ? "No" : "いいえ")}`,
         ]
       : [t("- Androidのアクセシビリティ: iPhoneでは使用しません", "- Android Accessibility: Not used on iPhone"), t("- アプリ制限: このiPhoneビルドでは利用できません", "- App limits: Not available in this iPhone build")];
     return english

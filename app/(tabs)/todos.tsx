@@ -7,7 +7,7 @@ import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
 import { COLORS, EmptyState, IconButton, LoadingScreen, Pill, safeHaptic, ScreenHeading } from "@/components/focus-flow/ui";
 import { ScreenContainer } from "@/components/screen-container";
 import { getAppLanguage, localized } from "@/lib/focus-flow/i18n";
-import { useFocusFlow } from "@/lib/focus-flow/provider";
+import { useFocusFlow, type EarlyCompletionTarget, type MutationResult } from "@/lib/focus-flow/provider";
 import type { Todo } from "@/lib/focus-flow/types";
 import { formatJapaneseDate, getTodoDueStatus, getTodoSubtasks, isTodoAchieved, todoProgressLabel } from "@/lib/focus-flow/utils";
 
@@ -18,7 +18,7 @@ const priorityRank = { high: 0, medium: 1, low: 2 } as const;
 const dueRank = (todo: Todo) => { const status = todo.dueDate ? getTodoDueStatus(todo) : undefined; return status === "overdue" ? 0 : status === "today" ? 1 : todo.dueDate ? 2 : 3; };
 
 export default function TodosScreen() {
-  const { todos, displaySettings, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo } = useFocusFlow();
+  const { todos, displaySettings, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo, purchaseEarlyCompletion, earlyCompletionPrice } = useFocusFlow();
   const language = getAppLanguage(displaySettings);
   const t = useCallback((ja: string, en: string) => localized(language, ja, en), [language]);
   const [viewMode, setViewMode] = useState<ViewMode>("focus");
@@ -47,6 +47,12 @@ export default function TodosScreen() {
   }, [doneTodos, openTodos, t, viewMode]);
 
   const openForm = (todo?: Todo) => { setEditingTodo(todo); setFormOpen(true); };
+  const showMutationResult = (result: MutationResult, target?: EarlyCompletionTarget) => {
+    if (result.ok) return;
+    if (result.reason === "FREE_LIMIT_REACHED") { Alert.alert(t("無料版の上限です", "Free plan limit"), t("Todoは無料版では2件までです。Plusでは無制限に追加できます。", "The free plan allows up to 2 tasks. Plus removes this limit.")); return; }
+    if (result.reason === "TIMER_STARTED") { Alert.alert(t("計測を開始しました", "Timer started"), t("設定した時間が経過すると完了扱いになります。", "This item becomes complete after its scheduled time has elapsed.")); return; }
+    if (result.reason === "TIME_NOT_READY" && target) Alert.alert(t("設定時間がまだ経過していません", "The scheduled time has not elapsed"), t("時間管理項目は設定時間が経過すると完了扱いになります。今すぐ完了する場合は、1回限りの早期完了を購入できます。", "Timed items become complete after their scheduled time. To finish now, you can buy one early completion."), [{ text: t("待つ", "Wait"), style: "cancel" }, { text: t(`${earlyCompletionPrice ?? "¥100"} で早期完了`, `Finish early for ${earlyCompletionPrice ?? "¥100"}`), onPress: () => void purchaseEarlyCompletion(target) }]);
+  };
   const remove = (todo: Todo) => {
     const confirm = () => deleteTodo(todo.id);
     if (Platform.OS === "web") confirm();
@@ -65,9 +71,9 @@ export default function TodosScreen() {
       <View style={styles.segmented}>{([{ key: "focus", label: t("フォーカス", "Focus"), count: openTodos.length }, { key: "all", label: t("すべて", "All"), count: openTodos.length }, { key: "done", label: t("完了", "Done"), count: doneTodos.length }] as const).map((tab) => <TouchableOpacity key={tab.key} accessibilityRole="button" accessibilityState={{ selected: viewMode === tab.key }} onPress={() => setViewMode(tab.key)} style={[styles.segment, viewMode === tab.key && styles.segmentActive]}><Text style={[styles.segmentText, viewMode === tab.key && styles.segmentTextActive]}>{tab.label}</Text><Text style={[styles.segmentCount, viewMode === tab.key && styles.segmentCountActive]}>{tab.count}</Text></TouchableOpacity>)}</View>
     </>}
     ListEmptyComponent={<EmptyState icon={viewMode === "done" ? "task-alt" : "playlist-add"} title={viewMode === "done" ? t("完了したTodoはまだありません", "No completed tasks yet") : t("最初のTodoを追加しましょう", "Add your first task")} description={viewMode === "done" ? t("完了したTodoはここで振り返れます。", "Finished tasks will appear here.") : t("必須を選ぶと、日課ルールに含めなくてもアプリ制限の解除条件になります。", "Choose Must-do to make a task an unlock condition.")} actionLabel={viewMode === "done" ? t("フォーカスを表示", "Show focus") : t("Todoを追加", "Add task")} onAction={() => viewMode === "done" ? setViewMode("focus") : openForm()} />}
-    renderItem={({ item }) => item.type === "heading" ? <View style={styles.groupHeading}><Text style={styles.groupTitle}>{item.title}</Text><Text style={styles.groupCount}>{item.count}</Text></View> : <TaskRow todo={item.todo} language={language} t={t} onEdit={() => openForm(item.todo)} onToggle={() => { safeHaptic(isTodoAchieved(item.todo) ? "light" : "success"); toggleTodo(item.todo.id); }} onProgress={(delta) => { if (delta > 0) safeHaptic("light"); adjustTodoProgress(item.todo.id, delta); }} onSubtask={(subtaskId) => { const subtask = getTodoSubtasks(item.todo).find((candidate) => candidate.id === subtaskId); safeHaptic(subtask?.completed ? "light" : "success"); toggleSubtask(item.todo.id, subtaskId); }} onDelete={() => remove(item.todo)} />}
+    renderItem={({ item }) => item.type === "heading" ? <View style={styles.groupHeading}><Text style={styles.groupTitle}>{item.title}</Text><Text style={styles.groupCount}>{item.count}</Text></View> : <TaskRow todo={item.todo} language={language} t={t} onEdit={() => openForm(item.todo)} onToggle={() => { const result = toggleTodo(item.todo.id); if (result.ok) safeHaptic(isTodoAchieved(item.todo) ? "light" : "success"); showMutationResult(result, { kind: "todo", id: item.todo.id }); }} onProgress={(delta) => { const result = adjustTodoProgress(item.todo.id, delta); if (result.ok && delta > 0) safeHaptic("light"); showMutationResult(result, { kind: "todo", id: item.todo.id }); }} onSubtask={(subtaskId) => { const subtask = getTodoSubtasks(item.todo).find((candidate) => candidate.id === subtaskId); const result = toggleSubtask(item.todo.id, subtaskId); if (result.ok) safeHaptic(subtask?.completed ? "light" : "success"); showMutationResult(result, { kind: "todo", id: item.todo.id }); }} onDelete={() => remove(item.todo)} />}
   />
-  <TaskForm visible={formOpen} todo={editingTodo} onClose={() => { setFormOpen(false); setEditingTodo(undefined); }} onSave={(input) => editingTodo ? updateTodo(editingTodo.id, input) : addTodo(input)} />
+  <TaskForm visible={formOpen} todo={editingTodo} onClose={() => { setFormOpen(false); setEditingTodo(undefined); }} onSave={(input) => { const result = editingTodo ? updateTodo(editingTodo.id, input) : addTodo(input); showMutationResult(result); return result; }} />
   </ScreenContainer>;
 }
 

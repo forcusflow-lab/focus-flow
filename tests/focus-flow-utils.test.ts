@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { FocusFlowData, GateSchedule, Habit } from "../lib/focus-flow/types";
-import { dayKey, getGateRuleSummaries, getGateSummary, habitStreak, isScheduleActive, isTodoAchieved, nextRecurringDueDate, reorderSubtasks, weeklyHabitProgress, weeklyFocusMinutes } from "../lib/focus-flow/utils";
+import { dayKey, getGateRuleSummaries, getGateSummary, habitStreak, isHabitCompleteOn, isScheduleActive, isTodoAchieved, nextRecurringDueDate, reorderSubtasks, weeklyHabitProgress, weeklyFocusMinutes } from "../lib/focus-flow/utils";
 
 const base = new Date(2026, 7, 13, 12, 0, 0);
 
@@ -116,7 +116,7 @@ describe("Focus Flowの日付・習慣計算", () => {
   });
 
   it("必須Todoは時間目標とサブタスクの両方を満たすまで制限を解除しない", () => {
-    const todo = { id: "t-progress", title: "報告書", priority: "high" as const, isRequired: true, completed: false, progressUnit: "minutes" as const, targetValue: 20, progressValue: 20, repeatRule: "none" as const, subtasks: [{ id: "s-1", title: "下書き", completed: false }], createdAt: "2026-08-13T00:00:00.000Z" };
+    const todo = { id: "t-progress", title: "報告書", priority: "high" as const, isRequired: true, completed: false, progressUnit: "minutes" as const, targetValue: 20, progressValue: 20, repeatRule: "none" as const, subtasks: [{ id: "s-1", title: "下書き", completed: false }], createdAt: "2026-08-13T00:00:00.000Z", timerStartedAt: "2026-08-13T01:00:00.000Z" };
     const data: FocusFlowData = { todos: [todo], habits: [], memos: [], focusSessions: [], gateConfig: { enabled: true, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, schedules: [] }, displaySettings: { fontScale: "standard", theme: "mist", cardOpacity: "solid" } };
     expect(isTodoAchieved(todo)).toBe(false);
     expect(getGateSummary(data, base).pendingCount).toBe(1);
@@ -132,6 +132,20 @@ describe("Focus Flowの日付・習慣計算", () => {
     expect(getGateSummary(data, base).pendingCount).toBe(1);
     habit.dailyProgress!["2026-08-13"] = 3;
     expect(getGateSummary(data, base).pendingCount).toBe(0);
+  });
+
+  it("時間管理Todoは設定時間の経過前には完了扱いにしない", () => {
+    const todo = { id: "t-timer", title: "読書", priority: "medium" as const, isRequired: true, completed: true, progressUnit: "minutes" as const, targetValue: 20, timerStartedAt: "2026-08-13T02:00:00.000Z", createdAt: "2026-08-13T00:00:00.000Z" };
+    expect(isTodoAchieved(todo, new Date("2026-08-13T02:10:00.000Z"))).toBe(false);
+    expect(isTodoAchieved(todo, new Date("2026-08-13T02:20:00.000Z"))).toBe(true);
+    expect(isTodoAchieved({ ...todo, earlyCompletionAt: "2026-08-13T02:05:00.000Z" })).toBe(true);
+  });
+
+  it("時間管理習慣は当日の設定時間が経過するか早期完了時だけ達成扱いにする", () => {
+    const habit: Habit = { id: "h-timer", title: "散歩", color: "#246B5A", goalPerWeek: 5, isRequired: true, completedDates: [], progressUnit: "minutes", targetValue: 15, timerStartedAtByDate: { "2026-08-13": "2026-08-13T02:00:00.000Z" }, createdAt: "2026-08-13T00:00:00.000Z" };
+    expect(isHabitCompleteOn(habit, "2026-08-13", new Date("2026-08-13T02:10:00.000Z"))).toBe(false);
+    expect(isHabitCompleteOn(habit, "2026-08-13", new Date("2026-08-13T02:15:00.000Z"))).toBe(true);
+    expect(isHabitCompleteOn({ ...habit, earlyCompletionDates: ["2026-08-13"] }, "2026-08-13")).toBe(true);
   });
 
   it("毎日・毎週の反復Todoは完了後に次回の将来日へ進む", () => {

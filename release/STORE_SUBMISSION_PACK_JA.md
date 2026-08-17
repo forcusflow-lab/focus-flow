@@ -20,9 +20,9 @@
 
 Focus Flowは、今日やるべきことを落ち着いて整理し、習慣と日課を続けるためのローカル完結型プランナーです。Todo、習慣、メモ、日課ルール、1日1回のリマインダーを一つにまとめ、進捗を振り返れます。
 
-Androidでは、任意の「集中ルール」を使えます。あなたが選んだアプリを開いたとき、未完了の必須項目がある場合だけルールを適用します。画面の文字、メッセージ、入力内容、スクリーンショットは読み取りません。いつでもAndroidの設定から無効にでき、間違えたときは10分間の安全停止も使えます。iPhoneでは、Todo、習慣、メモ、日課、リマインダー、振り返りを追加の端末権限なしで利用できます。
+Androidでは、任意の「集中ルール」を使えます。あなたが選んだアプリを開いたとき、未完了の必須項目がある場合だけルールを適用します。画面の文字、メッセージ、入力内容、スクリーンショットは読み取りません。いつでもFocus FlowまたはAndroidの設定から無効にできます。iPhoneでは、Todo、習慣、メモ、日課、リマインダー、振り返りを追加の端末権限なしで利用できます。
 
-言語、配色、ライト／ダーク表示、文字、文字サイズ、カード表示、ホーム画面ウィジェットの見た目は無料です。Focus Flow Plusは、現在の配色・文字・ウィジェット設定を名前付きテーマセットとして保存・呼び出すための任意の定期購入です。
+無料版ではTodo・習慣・メモを各2件、制限対象アプリを合計5件まで使えます。言語、配色、ライト／ダーク表示、文字、文字サイズ、カード表示、ホーム画面ウィジェットの見た目は無料です。Focus Flow Plusは、これらの件数上限を解除し、名前付きテーマセットを保存・呼び出すための任意の定期購入です。分を目標にしたTodo・習慣は設定時間の経過後に完了し、時間前に完了する場合は1回限りの消費型早期完了商品を使えます。
 
 ### Apple App Store 詳細説明（英語）
 
@@ -30,18 +30,18 @@ Focus Flow is a private, on-device planner for the things you need to do today. 
 
 On iPhone, Focus Flow gives you planning, routines, reminders, notes, and progress review without requiring extra device permissions. Language, color, light or dark appearance, type, text size, card style, and widget styling are free for everyone.
 
-Focus Flow Plus is an optional subscription for saving and reusing named appearance sets. Your App Store purchase sheet shows the current price, billing period, and renewal terms before you confirm. Restore or manage a previous subscription at any time from Settings.
+The free plan includes 2 tasks, 2 habits, 2 notes, and 5 limited apps in total. Focus Flow Plus is an optional subscription that removes these limits and lets people save and reuse named appearance sets. Your App Store purchase sheet shows the current price, billing period, and renewal terms before you confirm. Restore or manage a previous subscription at any time from Settings. Timed tasks and habits complete only after their configured time elapses; customers can buy a one-time consumable early completion for one item when needed.
 
 ## 審査メモ
 
 | 提出先 | 入力すべき審査メモ |
 |---|---|
-| Google Play | Focus Flow uses AccessibilityService only after an in-app disclosure and affirmative user action. It observes only foreground-window changes for apps the user selected to apply an optional focus rule. The service has `canRetrieveWindowContent=false`; it does not read screen text, messages, typed content, or screenshots. Users can disable the service in Android Settings and can use a 10-minute safety pause. `QUERY_ALL_PACKAGES` is used to present the launcher-app picker required for user-selected focus rules; installed-app data is neither transmitted off-device nor used for ads or analytics. |
-| App Store | This iPhone build provides tasks, habits, notes, routines, reminders, and progress review. It does not restrict other apps and does not request Android Accessibility permissions. Focus Flow Plus is an optional auto-renewable subscription for named appearance-set storage. Provide a TestFlight sandbox account only if App Review requests store-account testing; the app has no separate user-login requirement. |
+| Google Play | Focus Flow uses AccessibilityService only after an in-app disclosure and affirmative user action. It observes only foreground-window changes for apps the user selected to apply an optional focus rule. The service has `canRetrieveWindowContent=false`; it does not read screen text, messages, typed content, or screenshots. Users can disable the service in Focus Flow or Android Settings. `QUERY_ALL_PACKAGES` is used to present the launcher-app picker required for user-selected focus rules; installed-app data is neither transmitted off-device nor used for ads or analytics. `focus_flow_early_complete_100` is a consumable one-time product that completes one timed task or habit before its timer expires. |
+| App Store | This iPhone build provides tasks, habits, notes, routines, reminders, and progress review. It does not restrict other apps and does not request Android Accessibility permissions. Focus Flow Plus is an optional auto-renewable subscription that removes content limits and enables named appearance-set storage. `focus_flow_early_complete_100` is a consumable one-time purchase for early completion of one timed item; it is not restorable. Provide a TestFlight sandbox account only if App Review requests store-account testing; the app has no separate user-login requirement. |
 
 ## 収益化の商品設定
 
-両ストアで同じ商品ID **`focus_flow_plus`** を使用します。商品種別は、テーマセットの保存という継続的な追加価値を提供するため、**自動更新サブスクリプション**とします。App Store Connectではサブスクリプショングループを一つ作り、Google Play Consoleでは少なくとも一つのベースプランと有効なオファーを設定します。価格、請求期間、無料トライアルの有無は、法的・事業上の責任を持つアカウント所有者が決めます。
+両ストアで **`focus_flow_plus`** を自動更新サブスクリプションとして作成し、Plusの価格・請求期間・無料トライアルの有無を設定します。さらに **`focus_flow_early_complete_100`** を消費型の1回限り商品として作成し、日本の価格を¥100に設定します。早期完了商品は購入成功後に対象項目1件へ付与し、復元対象にはしません。詳しい手順は [ONE_TIME_UNLOCK_PRODUCT_SETUP_JA.md](./ONE_TIME_UNLOCK_PRODUCT_SETUP_JA.md) を参照してください。
 
 アプリは購入、復元、有効状態の再照会、ストアのサブスクリプション管理画面への遷移を実装しています。ストアの商品を設定する前は商品が見つからない旨を表示し、Expo Goではネイティブ課金を利用しません。公開前に、ライセンステスター／TestFlightサンドボックスで、購入成功、購入キャンセル、復元、更新、支払い失敗、解約後の満了を確認してください。[1] [2]
 
@@ -72,7 +72,7 @@ AppleではプライバシーポリシーURLが必須であり、AppleとGoogle�
 |---|---|
 | `com.app.focusflow` の識別子を継続保有できることを確認する | アカウント所有者 |
 | App Store Connect・Play Consoleの契約、税務、銀行情報を完了する | アカウント所有者 |
-| `focus_flow_plus` を両ストアで作成し、価格と請求期間を決める | アカウント所有者 |
+| `focus_flow_plus` と `focus_flow_early_complete_100` を両ストアで作成し、価格・請求期間・消費型設定を決める | アカウント所有者 |
 | PlayのData safety、Accessibility、`QUERY_ALL_PACKAGES`申告を完了する | アカウント所有者 |
 | App StoreのApp Privacy、年齢レーティング、サポートURL、プライバシーURLを完了する | アカウント所有者 |
 | TestFlightとPlay内部テストでIAPの全ケースを実機検証する | アカウント所有者・テスター |

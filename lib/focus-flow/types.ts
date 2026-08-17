@@ -28,6 +28,10 @@ export type Todo = {
   progressUnit?: ProgressUnit;
   targetValue?: number;
   progressValue?: number;
+  /** 開始後、設定した分数が経過するまで達成扱いにしない時間管理用の開始時刻。 */
+  timerStartedAt?: string;
+  /** 消費型の早期完了商品が使われた時刻。 */
+  earlyCompletionAt?: string;
   repeatRule?: RepeatRule;
   subtasks?: TodoSubtask[];
   createdAt: string;
@@ -43,6 +47,10 @@ export type Habit = {
   progressUnit?: ProgressUnit;
   targetValue?: number;
   dailyProgress?: Record<string, number>;
+  /** 日ごとの時間管理開始時刻。キーは YYYY-MM-DD。 */
+  timerStartedAtByDate?: Record<string, string>;
+  /** 消費型の早期完了商品が使われた日付。 */
+  earlyCompletionDates?: string[];
   createdAt: string;
 };
 

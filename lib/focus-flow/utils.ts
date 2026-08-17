@@ -52,12 +52,35 @@ export function getTodoSubtasks(todo: Todo) {
   return todo.subtasks ?? [];
 }
 
-export function isTodoAchieved(todo: Todo) {
+export function isTimedTodo(todo: Todo) {
+  return (todo.progressUnit ?? "check") === "minutes";
+}
+
+export function todoTimerEndsAt(todo: Todo) {
+  if (!isTimedTodo(todo) || !todo.timerStartedAt) return undefined;
+  const startedAt = new Date(todo.timerStartedAt).getTime();
+  if (!Number.isFinite(startedAt)) return undefined;
+  return startedAt + getTodoTarget(todo) * 60_000;
+}
+
+export function isTodoTimeReady(todo: Todo, base = new Date()) {
+  if (!isTimedTodo(todo)) return true;
+  if (todo.earlyCompletionAt) return true;
+  const endsAt = todoTimerEndsAt(todo);
+  return endsAt !== undefined && endsAt <= base.getTime();
+}
+
+export function todoTimerRemainingMs(todo: Todo, base = new Date()) {
+  const endsAt = todoTimerEndsAt(todo);
+  return endsAt === undefined ? undefined : Math.max(0, endsAt - base.getTime());
+}
+
+export function isTodoAchieved(todo: Todo, base = new Date()) {
   const unit = todo.progressUnit ?? "check";
-  const progressMet = unit === "check" || getTodoProgress(todo) >= getTodoTarget(todo);
+  const progressMet = unit === "check" || unit === "minutes" ? isTodoTimeReady(todo, base) : getTodoProgress(todo) >= getTodoTarget(todo);
   const subtasks = getTodoSubtasks(todo);
   const subtasksMet = subtasks.length === 0 || subtasks.every((subtask) => subtask.completed);
-  return todo.completed && progressMet && subtasksMet;
+  return (todo.completed || (unit === "minutes" && isTodoTimeReady(todo, base))) && progressMet && subtasksMet;
 }
 
 export function todoProgressLabel(todo: Todo, language: ContentLanguage = "ja") {
@@ -81,10 +104,32 @@ export function isTodoRequiredForGate(todo: Todo, autoRequireDueToday: boolean, 
   return (todo.isRequired && repeatingInstanceIsDue) || (autoRequireDueToday && getTodoDueStatus(todo, base) === "today");
 }
 
-export function isHabitCompleteOn(habit: Habit, value: string) {
+export function isHabitCompleteOn(habit: Habit, value: string, base = new Date()) {
   const unit = habit.progressUnit ?? "check";
+  if (unit === "minutes") return isHabitTimeReady(habit, value, base);
   if (unit !== "check") return (habit.dailyProgress?.[value] ?? 0) >= Math.max(habit.targetValue ?? 1, 1);
   return habit.completedDates.includes(value);
+}
+
+export function habitTimerEndsAt(habit: Habit, value: string) {
+  if ((habit.progressUnit ?? "check") !== "minutes") return undefined;
+  const startedAt = habit.timerStartedAtByDate?.[value];
+  if (!startedAt) return undefined;
+  const startedMs = new Date(startedAt).getTime();
+  if (!Number.isFinite(startedMs)) return undefined;
+  return startedMs + Math.max(habit.targetValue ?? 1, 1) * 60_000;
+}
+
+export function isHabitTimeReady(habit: Habit, value: string, base = new Date()) {
+  if ((habit.progressUnit ?? "check") !== "minutes") return true;
+  if (habit.earlyCompletionDates?.includes(value)) return true;
+  const endsAt = habitTimerEndsAt(habit, value);
+  return endsAt !== undefined && endsAt <= base.getTime();
+}
+
+export function habitTimerRemainingMs(habit: Habit, value: string, base = new Date()) {
+  const endsAt = habitTimerEndsAt(habit, value);
+  return endsAt === undefined ? undefined : Math.max(0, endsAt - base.getTime());
 }
 
 export function habitProgressLabel(habit: Habit, value = dayKey(), language: ContentLanguage = "ja") {

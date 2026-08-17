@@ -6,6 +6,8 @@ export type IapSubscription = {
   subscriptionOffers?: Array<{ offerTokenAndroid?: string | null }> | null;
 };
 
+export type IapProduct = { id: string; displayPrice?: string };
+
 export type IapActiveSubscription = {
   productId?: string;
   isActive?: boolean;
@@ -17,7 +19,7 @@ export type IapBridgeOptions = {
   onError: () => void;
 };
 
-export async function finishPlatformPurchase(_purchase: unknown): Promise<void> {
+export async function finishPlatformPurchase(_purchase: unknown, _isConsumable = false): Promise<void> {
   return undefined;
 }
 
@@ -29,6 +31,7 @@ export type IapBridge = {
   activeSubscriptions: IapActiveSubscription[];
   connected: boolean;
   subscriptions: IapSubscription[];
+  products: IapProduct[];
   fetchProducts: (request: any) => Promise<void>;
   getActiveSubscriptions: (skus?: string[]) => Promise<void>;
   reconnect: () => Promise<void>;
@@ -41,11 +44,11 @@ export function usePlatformIAP(_options: IapBridgeOptions): IapBridge {
     activeSubscriptions: [],
     connected: false,
     subscriptions: [],
+    products: [],
     fetchProducts: async () => undefined,
     getActiveSubscriptions: async () => undefined,
     reconnect: async () => undefined,
     requestPurchase: async () => undefined,
     restorePurchases: async () => undefined,
-    finishPurchase: async () => undefined,
   }), []);
 }

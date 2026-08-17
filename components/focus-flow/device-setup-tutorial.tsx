@@ -74,12 +74,12 @@ export function DeviceSetupTutorial({ visible, english, onComplete }: DeviceSetu
     { icon: "flag", eyebrow: "STEP 1 OF 4", title: "Pick one must-do", body: "Create one small task or habit that matters today. Must-dos are the only items that can unlock your selected apps." },
     { icon: "apps", eyebrow: "STEP 2 OF 4", title: "Choose a safe test app", body: "In Settings, choose one non-essential app to limit. Avoid banking, payment, messaging, or navigation apps while testing." },
     { icon: "accessibility-new", eyebrow: "STEP 3 OF 4", title: "Allow App limits", body: nativeAndroid ? "Open Android Accessibility settings, select Focus Flow, and allow the service. Focus Flow only checks when a selected app comes to the foreground." : "App limits work only in the installed Android build. After installing it, return here and allow the Focus Flow accessibility service.", note: nativeAndroid ? "You can turn this off anytime in Android settings." : "This preview cannot request Android permissions." },
-    { icon: "shield", eyebrow: "STEP 4 OF 4", title: "Test with a way back", body: "Open your selected test app before you complete the must-do. If you need to get out, the limit screen offers a 10-minute safety pause. You can always reopen this guide from Manage." },
+    { icon: "shield", eyebrow: "STEP 4 OF 4", title: "Test with a way back", body: "Open your selected test app before you complete the must-do. To stop App limits, turn them off in Focus Flow Settings or in Android Accessibility settings. You can always reopen this guide from Manage." },
   ] : [
     { icon: "flag", eyebrow: "ステップ 1 / 4", title: "必須項目を1つ決める", body: "今日大切なTodoまたは習慣を1つ作ります。選択したアプリの解除条件になるのは「必須」にした項目だけです。" },
     { icon: "apps", eyebrow: "ステップ 2 / 4", title: "テスト用アプリを選ぶ", body: "設定から、制限するアプリを1つだけ選びます。テスト中は銀行・決済・連絡・地図アプリを選ばないでください。" },
     { icon: "accessibility-new", eyebrow: "ステップ 3 / 4", title: "アプリ制限を許可する", body: nativeAndroid ? "Androidのアクセシビリティ設定を開き、Focus Flowを選んで許可します。Focus Flowは、選択アプリが前面に開いたことだけを確認します。" : "アプリ制限は、インストール済みのAndroidビルドで利用できます。インストール後にこの画面へ戻り、Focus Flowのアクセシビリティサービスを許可してください。", note: nativeAndroid ? "Androidの設定からいつでもオフにできます。" : "このプレビューではAndroid権限を要求できません。" },
-    { icon: "shield", eyebrow: "ステップ 4 / 4", title: "安全な戻り方も確認する", body: "必須項目を完了する前にテスト用アプリを開きます。もし誤って制限されたら、制限画面の「10分だけ安全停止する」を使えます。管理画面からこの案内をいつでも開き直せます。" },
+    { icon: "shield", eyebrow: "ステップ 4 / 4", title: "止め方も確認する", body: "必須項目を完了する前にテスト用アプリを開きます。集中ルールを止める場合は、Focus Flowの設定でオフにするか、Androidのアクセシビリティ設定から無効にできます。管理画面からこの案内をいつでも開き直せます。" },
   ], [english, nativeAndroid]);
 
   const steps = useMemo<SetupStep[]>(() => isIOS ? (english ? [

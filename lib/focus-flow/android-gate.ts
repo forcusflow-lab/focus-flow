@@ -1,12 +1,12 @@
 import { NativeModules, Platform } from "react-native";
 
-import { dayKey, getGateRuleSummaries, getGateSummary, isHabitCompleteOn, isTodoAchieved, isTodoRequiredForGate } from "./utils";
+import { dayKey, getGateRuleSummaries, getGateSummary, getTodoSubtasks, habitTimerEndsAt, isHabitCompleteOn, isHabitTimeReady, isTimedTodo, isTodoAchieved, isTodoRequiredForGate, isTodoTimeReady, todoTimerEndsAt } from "./utils";
 import type { GateConfig } from "./types";
 import type { FocusFlowData } from "./types";
 import { getAppLanguage } from "./i18n";
 
 type LaunchableApp = { packageName: string; label: string };
-export type GateDiagnostics = { accessibilityEnabled: boolean; batteryOptimizationIgnored: boolean | null; backgroundRestricted: boolean; apiLevel: number; manufacturer: string; model: string; lastGateStateUpdatedAt: number; safetyPauseUntil: number };
+export type GateDiagnostics = { accessibilityEnabled: boolean; batteryOptimizationIgnored: boolean | null; backgroundRestricted: boolean; apiLevel: number; manufacturer: string; model: string; lastGateStateUpdatedAt: number };
 
 type FocusGateNativeModule = {
   saveGateState: (serialized: string) => Promise<void>;
@@ -38,8 +38,14 @@ export async function syncAndroidGate(data: FocusFlowData) {
   const priorityRank = { high: 0, medium: 1, low: 2 } as const;
   const nextTodo = [...pendingTodoItems].sort((left, right) => priorityRank[left.priority] - priorityRank[right.priority] || (left.dueDate ?? "9999-12-31").localeCompare(right.dueDate ?? "9999-12-31"))[0];
   const nextHabit = pendingHabitItems[0];
-  const activeRoutine = rules.find((rule) => rule.isActive);
-  await module.saveGateState(JSON.stringify({ active: data.gateConfig.enabled, language, pendingCount: summary.pendingCount, pendingTodos: summary.pendingTodos, pendingHabits: summary.pendingHabits, message: summary.message, rules, widgetThemes: data.displaySettings.widgetThemes ?? {}, widgetTextSizes: data.displaySettings.widgetTextSizes ?? {}, requiredTodoTotal: requiredTodos.length, requiredHabitTotal: requiredHabits.length, completedTodoTotal: requiredTodos.length - pendingTodoItems.length, completedHabitTotal: requiredHabits.length - pendingHabitItems.length, todoQueue: [...pendingTodoItems].sort((left, right) => priorityRank[left.priority] - priorityRank[right.priority] || (left.dueDate ?? "9999-12-31").localeCompare(right.dueDate ?? "9999-12-31")).map((todo) => ({ id: todo.id, title: todo.title })), habitQueue: pendingHabitItems.map((habit) => ({ id: habit.id, title: habit.title })), nextTodoId: nextTodo?.id ?? "", nextTodoTitle: nextTodo?.title ?? "", nextHabitId: nextHabit?.id ?? "", nextHabitTitle: nextHabit?.title ?? "", nextRequiredId: nextTodo?.id ?? nextHabit?.id ?? "", nextRequiredTitle: nextTodo?.title ?? nextHabit?.title ?? "", nextRequiredKind: nextTodo ? "todo" : nextHabit ? "habit" : "", routineActive: Boolean(activeRoutine?.isActive), routineLabel: activeRoutine?.label ?? "" }));
+  const timedUnlocks = new Map<string, number>();
+  requiredTodos.forEach((todo) => { const endsAt = todoTimerEndsAt(todo); if (isTimedTodo(todo) && !isTodoTimeReady(todo) && endsAt && getTodoSubtasks(todo).every((subtask) => subtask.completed)) timedUnlocks.set(todo.id, endsAt); });
+  requiredHabits.forEach((habit) => { const endsAt = habitTimerEndsAt(habit, today); if ((habit.progressUnit ?? "check") === "minutes" && !isHabitTimeReady(habit, today) && endsAt) timedUnlocks.set(habit.id, endsAt); });
+  const rulesWithTimedUnlocks = rules.map((rule) => ({ ...rule, timedUnlocks: [...new Set([...rule.pendingTodoIds, ...rule.pendingHabitIds])].flatMap((id) => timedUnlocks.has(id) ? [{ id, endsAt: timedUnlocks.get(id) }] : []) }));
+  const timedLockedTodoIds = pendingTodoItems.filter((todo) => isTimedTodo(todo) && !isTodoTimeReady(todo)).map((todo) => todo.id);
+  const timedLockedHabitIds = pendingHabitItems.filter((habit) => (habit.progressUnit ?? "check") === "minutes" && !isHabitTimeReady(habit, today)).map((habit) => habit.id);
+  const activeRoutine = rulesWithTimedUnlocks.find((rule) => rule.isActive);
+  await module.saveGateState(JSON.stringify({ active: data.gateConfig.enabled, language, pendingCount: summary.pendingCount, pendingTodos: summary.pendingTodos, pendingHabits: summary.pendingHabits, message: summary.message, rules: rulesWithTimedUnlocks, timedLockedTodoIds, timedLockedHabitIds, widgetThemes: data.displaySettings.widgetThemes ?? {}, widgetTextSizes: data.displaySettings.widgetTextSizes ?? {}, requiredTodoTotal: requiredTodos.length, requiredHabitTotal: requiredHabits.length, completedTodoTotal: requiredTodos.length - pendingTodoItems.length, completedHabitTotal: requiredHabits.length - pendingHabitItems.length, todoQueue: [...pendingTodoItems].sort((left, right) => priorityRank[left.priority] - priorityRank[right.priority] || (left.dueDate ?? "9999-12-31").localeCompare(right.dueDate ?? "9999-12-31")).map((todo) => ({ id: todo.id, title: todo.title })), habitQueue: pendingHabitItems.map((habit) => ({ id: habit.id, title: habit.title })), nextTodoId: nextTodo?.id ?? "", nextTodoTitle: nextTodo?.title ?? "", nextHabitId: nextHabit?.id ?? "", nextHabitTitle: nextHabit?.title ?? "", nextRequiredId: nextTodo?.id ?? nextHabit?.id ?? "", nextRequiredTitle: nextTodo?.title ?? nextHabit?.title ?? "", nextRequiredKind: nextTodo ? "todo" : nextHabit ? "habit" : "", routineActive: Boolean(activeRoutine?.isActive), routineLabel: activeRoutine?.label ?? "" }));
 }
 
 export async function getAccessibilityStatus() { return (await nativeModule()?.getAccessibilityStatus()) ?? false; }

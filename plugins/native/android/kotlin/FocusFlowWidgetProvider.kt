@@ -144,6 +144,8 @@ internal abstract class FocusFlowBaseWidgetProvider : AppWidgetProvider() {
     if (targetId.isBlank() || (kind != "todo" && kind != "habit")) return false
     val preferences = context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE)
     val state = state(context)
+    val lockedIds = state.optJSONArray(if (kind == "todo") "timedLockedTodoIds" else "timedLockedHabitIds")
+    if (lockedIds != null) for (index in 0 until lockedIds.length()) if (lockedIds.optString(index) == targetId) return false
     val expectedId = if (kind == "todo") state.optString("nextRequiredId") else state.optString("nextHabitId")
     if (targetId != expectedId) return false
     val queued = try { JSONArray(preferences.getString(FocusGateModule.WIDGET_COMPLETIONS, "[]") ?: "[]") } catch (_: Exception) { JSONArray() }

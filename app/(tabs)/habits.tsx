@@ -7,14 +7,14 @@ import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
 import { COLORS, EmptyState, IconButton, LoadingScreen, Pill, safeHaptic, ScreenHeading } from "@/components/focus-flow/ui";
 import { ScreenContainer } from "@/components/screen-container";
 import { getAppLanguage, localized } from "@/lib/focus-flow/i18n";
-import { useFocusFlow } from "@/lib/focus-flow/provider";
+import { useFocusFlow, type EarlyCompletionTarget, type MutationResult } from "@/lib/focus-flow/provider";
 import type { Habit } from "@/lib/focus-flow/types";
 import { dayKey, dayKeyOffset, habitProgressLabel, habitStreak, isHabitCompleteOn, shortWeekday, weeklyHabitProgress } from "@/lib/focus-flow/utils";
 
 type ViewMode = "today" | "all";
 
 export default function HabitsScreen() {
-  const { habits, displaySettings, isReady, addHabit, updateHabit, toggleHabit, adjustHabitProgress, deleteHabit } = useFocusFlow();
+  const { habits, displaySettings, isReady, addHabit, updateHabit, toggleHabit, adjustHabitProgress, deleteHabit, purchaseEarlyCompletion, earlyCompletionPrice } = useFocusFlow();
   const language = getAppLanguage(displaySettings); const t = (ja: string, en: string) => localized(language, ja, en); const today = dayKey();
   const [viewMode, setViewMode] = useState<ViewMode>("today"); const [formOpen, setFormOpen] = useState(false); const [editingHabit, setEditingHabit] = useState<Habit | undefined>(); const [newHabitDefaultRequired, setNewHabitDefaultRequired] = useState(false);
   const week = useMemo(() => Array.from({ length: 7 }, (_, index) => dayKeyOffset(index - 6)), []);
@@ -25,6 +25,12 @@ export default function HabitsScreen() {
   }), [habits, today, viewMode]);
   const totalToday = habits.length; const doneToday = habits.filter((habit) => isHabitCompleteOn(habit, today)).length; const mustTotal = habits.filter((habit) => habit.isRequired).length; const mustDone = habits.filter((habit) => habit.isRequired && isHabitCompleteOn(habit, today)).length; const percent = totalToday ? Math.round((doneToday / totalToday) * 100) : 0;
   const openForm = (habit?: Habit, defaultRequired = false) => { setEditingHabit(habit); setNewHabitDefaultRequired(defaultRequired); setFormOpen(true); };
+  const showMutationResult = (result: MutationResult, target?: EarlyCompletionTarget) => {
+    if (result.ok) return;
+    if (result.reason === "FREE_LIMIT_REACHED") { Alert.alert(t("無料版の上限です", "Free plan limit"), t("習慣は無料版では2件までです。Plusでは無制限に追加できます。", "The free plan allows up to 2 habits. Plus removes this limit.")); return; }
+    if (result.reason === "TIMER_STARTED") { Alert.alert(t("計測を開始しました", "Timer started"), t("設定した時間が経過すると、今日の習慣として完了します。", "This habit is complete for today after its scheduled time has elapsed.")); return; }
+    if (result.reason === "TIME_NOT_READY" && target) Alert.alert(t("設定時間がまだ経過していません", "The scheduled time has not elapsed"), t("時間管理の習慣は設定時間が経過すると完了扱いになります。今すぐ完了する場合は、1回限りの早期完了を購入できます。", "Timed habits become complete after their scheduled time. To finish now, you can buy one early completion."), [{ text: t("待つ", "Wait"), style: "cancel" }, { text: t(`${earlyCompletionPrice ?? "¥100"} で早期完了`, `Finish early for ${earlyCompletionPrice ?? "¥100"}`), onPress: () => void purchaseEarlyCompletion(target) }]);
+  };
   const remove = (habit: Habit) => { const confirm = () => deleteHabit(habit.id); if (Platform.OS === "web") confirm(); else Alert.alert(t("習慣を削除しますか？", "Delete this habit?"), t(`「${habit.title}」の記録も削除されます。`, `The records for “${habit.title}” will also be deleted.`), [{ text: t("キャンセル", "Cancel"), style: "cancel" }, { text: t("削除", "Delete"), style: "destructive", onPress: confirm }]); };
   if (!isReady) return <ScreenContainer><LoadingScreen /></ScreenContainer>;
   return <ScreenContainer className="px-5" containerClassName="bg-background"><FlatList data={visibleHabits} keyExtractor={(item) => item.id} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}
@@ -33,9 +39,9 @@ export default function HabitsScreen() {
       <View style={styles.segmented}>{([{ key: "today", label: t("今日", "Today") }, { key: "all", label: t("すべて", "All") }] as const).map((tab) => <TouchableOpacity key={tab.key} accessibilityRole="button" accessibilityState={{ selected: viewMode === tab.key }} onPress={() => setViewMode(tab.key)} style={[styles.segment, viewMode === tab.key && styles.segmentActive]}><Text style={[styles.segmentText, viewMode === tab.key && styles.segmentTextActive]}>{tab.label}</Text></TouchableOpacity>)}</View>
     </>}
     ListEmptyComponent={<EmptyState icon="repeat" title={t("最初の習慣を作りましょう", "Create your first habit")} description={t("必須の習慣は、日次目標を達成するとアプリ制限の解除条件になります。", "A must-do habit becomes an unlock condition when you meet today's goal.")} actionLabel={t("必須習慣を作る", "Create a must-do habit")} onAction={() => openForm(undefined, true)} />}
-    renderItem={({ item }) => <HabitRow habit={item} week={week} language={language} t={t} onEdit={() => openForm(item)} onToggle={(date) => { safeHaptic(isHabitCompleteOn(item, date ?? today) ? "light" : "success"); toggleHabit(item.id, date); }} onProgress={(delta) => { if (delta > 0) safeHaptic("light"); adjustHabitProgress(item.id, delta); }} onDelete={() => remove(item)} />}
+    renderItem={({ item }) => <HabitRow habit={item} week={week} language={language} t={t} onEdit={() => openForm(item)} onToggle={(date) => { const result = toggleHabit(item.id, date); if (result.ok) safeHaptic(isHabitCompleteOn(item, date ?? today) ? "light" : "success"); showMutationResult(result, { kind: "habit", id: item.id, date: date ?? today }); }} onProgress={(delta) => { const result = adjustHabitProgress(item.id, delta); if (result.ok && delta > 0) safeHaptic("light"); showMutationResult(result, { kind: "habit", id: item.id, date: today }); }} onDelete={() => remove(item)} />}
   />
-  <HabitForm visible={formOpen} habit={editingHabit} defaultRequired={newHabitDefaultRequired} onClose={() => { setFormOpen(false); setEditingHabit(undefined); setNewHabitDefaultRequired(false); }} onSave={(input) => editingHabit ? updateHabit(editingHabit.id, input) : addHabit(input)} />
+  <HabitForm visible={formOpen} habit={editingHabit} defaultRequired={newHabitDefaultRequired} onClose={() => { setFormOpen(false); setEditingHabit(undefined); setNewHabitDefaultRequired(false); }} onSave={(input) => { const result = editingHabit ? updateHabit(editingHabit.id, input) : addHabit(input); showMutationResult(result); return result; }} />
   </ScreenContainer>;
 }
 
