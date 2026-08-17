@@ -1,9 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { AppState } from "react-native";
+import { AppState, Platform } from "react-native";
+import { deepLinkToSubscriptions, finishTransaction as finishIapTransaction, useIAP, type ProductSubscription, type Purchase } from "expo-iap";
 
 import { consumeWidgetCompletions, syncAndroidGate } from "./android-gate";
-import { getPlusStatus as readPlusStatus, purchasePlus as startPlusPurchase, restorePlus as restorePlusPurchase, type PlusStatus } from "./billing";
+import { PLUS_PRODUCT_ID, type PlusStatus } from "./billing";
 import { cancelDailyReminder } from "./reminders";
 import { createId, dayKey, getTodoSubtasks, isTodoAchieved, isTodoRequiredForGate, nextRecurringDueDate } from "./utils";
 import { DEFAULT_DISPLAY_SETTINGS, DEFAULT_GATE_CONFIG, DisplaySettings, EMPTY_FOCUS_FLOW_DATA, FocusFlowData, GateConfig, Habit, Memo, Priority, ProgressUnit, RepeatRule, Todo, TodoSubtask } from "./types";
@@ -37,6 +38,7 @@ type FocusFlowContextValue = FocusFlowData & {
   refreshPlusStatus: () => Promise<void>;
   purchasePlus: () => Promise<void>;
   restorePlus: () => Promise<void>;
+  managePlus: () => Promise<void>;
 };
 
 const FocusFlowContext = createContext<FocusFlowContextValue | null>(null);
@@ -124,6 +126,29 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
       return next;
     });
   }, []);
+
+  const applyPlusStatus = useCallback((status: PlusStatus) => {
+    setPlusStatus(status);
+    commit((current) => current.displaySettings.plusEntitlement === status.active ? current : { ...current, displaySettings: { ...current.displaySettings, plusEntitlement: status.active } });
+  }, [commit]);
+
+  const completePlusPurchase = useCallback(async (purchase: Purchase) => {
+    try {
+      await finishIapTransaction({ purchase, isConsumable: false });
+      applyPlusStatus({ status: "active", active: true, productId: PLUS_PRODUCT_ID });
+    } catch {
+      applyPlusStatus({ status: "error", active: false, productId: PLUS_PRODUCT_ID, reason: "TRANSACTION_FINISH_FAILED" });
+    }
+  }, [applyPlusStatus]);
+
+  const iap = useIAP({
+    onPurchaseSuccess: (purchase) => { void completePlusPurchase(purchase); },
+    onPurchaseError: () => applyPlusStatus({ status: "error", active: false, productId: PLUS_PRODUCT_ID, reason: "PURCHASE_FAILED" }),
+    onError: () => applyPlusStatus({ status: "error", active: false, productId: PLUS_PRODUCT_ID, reason: "STORE_UNAVAILABLE" }),
+  });
+
+  const { activeSubscriptions, connected, fetchProducts, getActiveSubscriptions, reconnect, requestPurchase, restorePurchases, subscriptions } = iap;
+  const plusProduct = useMemo(() => subscriptions.find((product) => product.id === PLUS_PRODUCT_ID) as ProductSubscription | undefined, [subscriptions]);
 
   const addTodo = useCallback((input: TodoInput) => {
     const title = input.title.trim();
@@ -237,13 +262,44 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
     void cancelDailyReminder();
   }, []);
 
-  const applyPlusStatus = useCallback((status: PlusStatus) => {
-    setPlusStatus(status);
-    commit((current) => current.displaySettings.plusEntitlement === status.active ? current : { ...current, displaySettings: { ...current.displaySettings, plusEntitlement: status.active } });
-  }, [commit]);
-  const refreshPlusStatus = useCallback(async () => { applyPlusStatus(await readPlusStatus()); }, [applyPlusStatus]);
-  const purchasePlus = useCallback(async () => { setPlusStatus((current) => ({ ...current, status: "loading" })); applyPlusStatus(await startPlusPurchase()); }, [applyPlusStatus]);
-  const restorePlus = useCallback(async () => { setPlusStatus((current) => ({ ...current, status: "loading" })); applyPlusStatus(await restorePlusPurchase()); }, [applyPlusStatus]);
+  const refreshPlusStatus = useCallback(async () => {
+    if (Platform.OS === "web") { applyPlusStatus({ status: "unavailable", active: false, productId: PLUS_PRODUCT_ID, reason: "NATIVE_BUILD_REQUIRED" }); return; }
+    if (!connected) { applyPlusStatus({ status: "loading", active: false, productId: PLUS_PRODUCT_ID }); await reconnect(); return; }
+    await Promise.all([fetchProducts({ skus: [PLUS_PRODUCT_ID], type: "subs" }), getActiveSubscriptions([PLUS_PRODUCT_ID])]);
+  }, [applyPlusStatus, connected, fetchProducts, getActiveSubscriptions, reconnect]);
+
+  const purchasePlus = useCallback(async () => {
+    if (Platform.OS === "web" || !connected || !plusProduct) { applyPlusStatus({ status: "unavailable", active: false, productId: PLUS_PRODUCT_ID, reason: "STORE_PRODUCT_UNAVAILABLE" }); return; }
+    const offerToken = plusProduct.subscriptionOffers?.find((offer) => offer.offerTokenAndroid)?.offerTokenAndroid;
+    if (Platform.OS === "android" && !offerToken) { applyPlusStatus({ status: "unavailable", active: false, productId: PLUS_PRODUCT_ID, reason: "ANDROID_OFFER_UNAVAILABLE" }); return; }
+    setPlusStatus((current) => ({ ...current, status: "loading" }));
+    await requestPurchase({ type: "subs", request: { apple: { sku: PLUS_PRODUCT_ID }, google: { skus: [PLUS_PRODUCT_ID], subscriptionOffers: offerToken ? [{ sku: PLUS_PRODUCT_ID, offerToken }] : [] } } });
+  }, [applyPlusStatus, connected, plusProduct, requestPurchase]);
+
+  const restorePlus = useCallback(async () => {
+    if (Platform.OS === "web" || !connected) { applyPlusStatus({ status: "unavailable", active: false, productId: PLUS_PRODUCT_ID, reason: "NATIVE_BUILD_REQUIRED" }); return; }
+    setPlusStatus((current) => ({ ...current, status: "loading" }));
+    await restorePurchases();
+    await getActiveSubscriptions([PLUS_PRODUCT_ID]);
+  }, [applyPlusStatus, connected, getActiveSubscriptions, restorePurchases]);
+
+  const managePlus = useCallback(async () => {
+    if (Platform.OS === "web") return;
+    await deepLinkToSubscriptions({ skuAndroid: PLUS_PRODUCT_ID, packageNameAndroid: "com.app.focusflow" });
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS === "web") { applyPlusStatus({ status: "unavailable", active: false, productId: PLUS_PRODUCT_ID, reason: "NATIVE_BUILD_REQUIRED" }); return; }
+    if (!connected) return;
+    void fetchProducts({ skus: [PLUS_PRODUCT_ID], type: "subs" });
+    void getActiveSubscriptions([PLUS_PRODUCT_ID]);
+  }, [applyPlusStatus, connected, fetchProducts, getActiveSubscriptions]);
+
+  useEffect(() => {
+    if (Platform.OS === "web" || !connected) return;
+    const active = activeSubscriptions.some((subscription) => subscription.productId === PLUS_PRODUCT_ID && subscription.isActive);
+    applyPlusStatus({ status: active ? "active" : "eligible", active, productId: PLUS_PRODUCT_ID, price: plusProduct?.displayPrice });
+  }, [activeSubscriptions, applyPlusStatus, connected, plusProduct?.displayPrice]);
 
   const applyWidgetCompletions = useCallback(async () => {
     const actions = await consumeWidgetCompletions();
@@ -276,7 +332,7 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { if (isReady) void syncAndroidGate(data); }, [data, isReady]);
 
-  const value = useMemo(() => ({ ...data, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo, addHabit, updateHabit, toggleHabit, adjustHabitProgress, deleteHabit, addMemo, updateMemo, deleteMemo, addFocusSession, setGateConfig, setDisplaySettings, clearAllData, plusStatus, refreshPlusStatus, purchasePlus, restorePlus }), [data, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo, addHabit, updateHabit, toggleHabit, adjustHabitProgress, deleteHabit, addMemo, updateMemo, deleteMemo, addFocusSession, setGateConfig, setDisplaySettings, clearAllData, plusStatus, refreshPlusStatus, purchasePlus, restorePlus]);
+  const value = useMemo(() => ({ ...data, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo, addHabit, updateHabit, toggleHabit, adjustHabitProgress, deleteHabit, addMemo, updateMemo, deleteMemo, addFocusSession, setGateConfig, setDisplaySettings, clearAllData, plusStatus, refreshPlusStatus, purchasePlus, restorePlus, managePlus }), [data, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo, addHabit, updateHabit, toggleHabit, adjustHabitProgress, deleteHabit, addMemo, updateMemo, deleteMemo, addFocusSession, setGateConfig, setDisplaySettings, clearAllData, plusStatus, refreshPlusStatus, purchasePlus, restorePlus, managePlus]);
 
   return <FocusFlowContext.Provider value={value}>{children}</FocusFlowContext.Provider>;
 }

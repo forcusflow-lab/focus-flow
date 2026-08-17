@@ -1,4 +1,4 @@
-const { AndroidConfig, createRunOncePlugin, withAndroidManifest, withAppBuildGradle, withDangerousMod } = require("expo/config-plugins");
+const { AndroidConfig, createRunOncePlugin, withAndroidManifest, withDangerousMod } = require("expo/config-plugins");
 const fs = require("fs");
 const path = require("path");
 const PLUGIN_NAME = "with-focus-flow-android";
@@ -25,13 +25,6 @@ function withFocusFlowAndroid(config) {
     widgets.forEach(([name, label, resource]) => addComponent(application, "receiver", { $: { "android:name": `${nativePackage}.${name}`, "android:exported": "true", "android:label": label }, "intent-filter": [{ action: [{ $: { "android:name": "android.appwidget.action.APPWIDGET_UPDATE" } }] }], "meta-data": [{ $: { "android:name": "android.appwidget.provider", "android:resource": `@xml/${resource}` } }] }));
     return config;
   });
-  config = withAppBuildGradle(config, (config) => {
-    const dependency = 'implementation("com.android.billingclient:billing-ktx:9.1.0")';
-    if (!config.modResults.contents.includes("com.android.billingclient:billing-ktx")) {
-      config.modResults.contents = config.modResults.contents.replace("dependencies {", `dependencies {\n    ${dependency}`);
-    }
-    return config;
-  });
   return withDangerousMod(config, ["android", async (config) => {
     const projectRoot = config.modRequest.projectRoot;
     const androidRoot = path.join(projectRoot, "android");
@@ -41,7 +34,7 @@ function withFocusFlowAndroid(config) {
     const kotlinTarget = path.join(androidRoot, "app", "src", "main", "java", ...packagePath, "focusflow");
     const resourceTarget = path.join(androidRoot, "app", "src", "main", "res");
     fs.mkdirSync(kotlinTarget, { recursive: true });
-    for (const file of ["FocusGateActivity.kt", "FocusGateModule.kt", "FocusGatePackage.kt", "FocusGateService.kt", "FocusFlowWidgetProvider.kt", "FocusBillingModule.kt"]) fs.writeFileSync(path.join(kotlinTarget, file), fs.readFileSync(path.join(templateRoot, "kotlin", file), "utf8").replaceAll("$PACKAGE_NAME", packageName));
+    for (const file of ["FocusGateActivity.kt", "FocusGateModule.kt", "FocusGatePackage.kt", "FocusGateService.kt", "FocusFlowWidgetProvider.kt"]) fs.writeFileSync(path.join(kotlinTarget, file), fs.readFileSync(path.join(templateRoot, "kotlin", file), "utf8").replaceAll("$PACKAGE_NAME", packageName));
     const themeDrawables = ["background_forest", "background_ocean", "background_violet", "background_amber", "background_blush", "background_ink", "accent_mint", "accent_sky", "accent_violet", "accent_coral", "accent_gold", "accent_ink", "count_mint", "count_sky", "count_violet", "count_coral", "count_gold", "count_ink"].map((name) => ["drawable", `focus_flow_widget_${name}.xml`]);
     for (const [directory, file] of [["layout", "focus_flow_widget.xml"], ["layout", "focus_flow_widget_progress.xml"], ["layout", "focus_flow_widget_next.xml"], ["layout", "focus_flow_widget_habit.xml"], ["layout", "focus_flow_widget_routine.xml"], ["xml", "focus_flow_accessibility_service.xml"], ["xml", "focus_flow_widget_info.xml"], ["xml", "focus_flow_widget_progress_info.xml"], ["xml", "focus_flow_widget_next_info.xml"], ["xml", "focus_flow_widget_habit_info.xml"], ["xml", "focus_flow_widget_routine_info.xml"], ["values", "focus_flow_styles.xml"], ["drawable", "focus_flow_widget_background.xml"], ["drawable", "focus_flow_widget_background_progress.xml"], ["drawable", "focus_flow_widget_background_next.xml"], ["drawable", "focus_flow_widget_background_habit.xml"], ["drawable", "focus_flow_widget_background_routine.xml"], ["drawable", "focus_flow_widget_action_background.xml"], ["drawable", "focus_flow_widget_count_background.xml"], ...themeDrawables]) { const destination = path.join(resourceTarget, directory, file); fs.mkdirSync(path.dirname(destination), { recursive: true }); fs.copyFileSync(path.join(templateRoot, "res", directory, file), destination); }
     const mainApplication = path.join(androidRoot, "app", "src", "main", "java", ...packagePath, "MainApplication.kt");
