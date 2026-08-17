@@ -1,4 +1,5 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Modal, Platform, ScrollView, StyleSheet, Switch, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,6 +20,7 @@ import { APP_FONT_OPTIONS, getAppFontStyle } from "@/lib/focus-flow/app-fonts";
 const Text = ScaledText;
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const { todos, habits, memos, focusSessions, gateConfig, displaySettings, isReady, setGateConfig, setDisplaySettings, plusStatus, purchasePlus, restorePlus, refreshPlusStatus, managePlus } = useFocusFlow();
   const [apps, setApps] = useState<LaunchableApp[]>([]);
   const [nativeReady, setNativeReady] = useState(false);
@@ -211,6 +213,7 @@ export default function SettingsScreen() {
             <View style={styles.card}>
               <View style={styles.themePlanRow}><View style={styles.rowCopy}><Text style={styles.rowTitle}>{isPlus ? t("保存したテーマセットを利用できます", "Saved theme sets are available") : t("外観設定は無料です", "Appearance settings are free")}</Text><Text style={styles.rowDescription}>{isPlus ? t("保存したテーマセットをいつでも呼び出せます。基本の配色・文字・表示設定はすべて無料です。", "Your saved theme sets are ready to use. Core color, type, and display settings are all free.") : t("言語、配色、外観モード、文字、文字サイズ、ウィジェットの見た目はすべて無料です。Plusはテーマセットの保存を便利にします。", "Language, color, appearance mode, type, text size, and widget styling are all free. Plus makes saved theme sets more convenient.")}</Text></View><View style={[styles.plusPill, isPlus && styles.plusPillActive]}><Text style={styles.plusPillText}>{isPlus ? t("有効", "Active") : t("任意の拡張", "Optional")}</Text></View></View>
               {!isPlus ? <View style={styles.plusActionArea}>{plusStatus.status === "eligible" ? <TouchableOpacity accessibilityRole="button" onPress={() => void purchasePlus()} style={styles.plusPrimary}><Text style={styles.plusPrimaryText}>{plusStatus.price ? t(`${plusStatus.price} で Plus を開始`, `Get Plus for ${plusStatus.price}`) : t("Plus を開始", "Get Plus")}</Text></TouchableOpacity> : plusStatus.status === "loading" || plusStatus.status === "pending" ? <View style={styles.plusBusy}><ActivityIndicator color={COLORS.forest} /><Text style={styles.plusBusyText}>{plusStatus.status === "pending" ? t("ストアで購入を完了し、アプリへ戻ってください。", "Finish the purchase in your store, then return here.") : t("ストアの商品を確認しています…", "Checking store products…")}</Text></View> : <Text style={styles.plusUnavailable}>{plusStatus.status === "error" ? t("ストアに接続できません。ネットワークを確認して再試行してください。", "The store could not be reached. Check your connection and try again.") : plusStatus.reason === "NATIVE_BUILD_REQUIRED" ? t("Plusの購入・復元は、Expo Goではなくストア用のAndroidまたはiPhoneビルドで利用できます。", "Plus purchase and restore are available in an Android or iPhone store build, not Expo Go.") : t("このビルドではPlusの商品が未設定です。App Store ConnectまたはPlay Consoleにテスト商品を設定すると、ここに実際の価格が表示されます。", "Plus is not configured for this build. Set up a test product in App Store Connect or Play Console to show its live price here.")}</Text>}<View style={styles.plusSecondaryRow}><TouchableOpacity accessibilityRole="button" onPress={() => void restorePlus()} style={styles.plusSecondary}><Text style={styles.plusSecondaryText}>{t("購入を復元", "Restore purchases")}</Text></TouchableOpacity><TouchableOpacity accessibilityRole="button" onPress={() => void refreshPlusStatus()} style={styles.plusSecondary}><Text style={styles.plusSecondaryText}>{t("再確認", "Check again")}</Text></TouchableOpacity></View></View> : <View style={styles.plusSecondaryRow}><TouchableOpacity accessibilityRole="button" onPress={() => void managePlus()} style={styles.plusSecondary}><Text style={styles.plusSecondaryText}>{t("サブスクリプションを管理", "Manage subscription")}</Text></TouchableOpacity><TouchableOpacity accessibilityRole="button" onPress={() => void restorePlus()} style={styles.plusSecondary}><Text style={styles.plusSecondaryText}>{t("購入を復元", "Restore purchases")}</Text></TouchableOpacity></View>}
+              <View style={styles.plusLegalLinks}><TouchableOpacity accessibilityRole="link" onPress={() => router.push("/legal" as never)} style={styles.plusLegalLink}><Text style={styles.plusLegalLinkText}>{t("利用条件とサブスクリプション", "Terms & subscriptions")}</Text></TouchableOpacity><TouchableOpacity accessibilityRole="link" onPress={() => router.push("/privacy" as never)} style={styles.plusLegalLink}><Text style={styles.plusLegalLinkText}>{t("プライバシーとデータ", "Privacy & data")}</Text></TouchableOpacity></View>
               <PreferenceHeader title={t("アプリの配色", "App color")} detail={t("画面全体の背景・カード・主要操作の色を選びます。", "Choose the colors for screens, cards, and primary actions.")} />
               <View style={styles.appThemeChoices}>{(Object.keys(APP_THEMES) as AppThemeId[]).map((theme) => <AppThemeChoice key={theme} theme={theme} selected={resolvedAppTheme(displaySettings) === theme} english={english} locked={false} onPress={() => setDisplaySettings({ appTheme: theme })} />)}</View>
               <PreferenceHeader title={t("外観モード", "Appearance mode")} detail={t("ライト・ダーク、または端末設定に合わせた表示を選びます。", "Use light, dark, or follow your device setting.")} />
@@ -306,6 +309,9 @@ Object.assign(styles, StyleSheet.create({
   themeSetMeta: { color: COLORS.muted, fontSize: 11, marginTop: 2 },
   themeSetRemove: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   plusNote: { color: COLORS.muted, fontSize: 11, lineHeight: 16, marginVertical: 12 },
+  plusLegalLinks: { flexDirection: "row", flexWrap: "wrap", gap: 13, paddingTop: 12, paddingBottom: 2 },
+  plusLegalLink: { minHeight: 30, justifyContent: "center" },
+  plusLegalLinkText: { color: COLORS.blue, fontSize: 11, fontWeight: "800", textDecorationLine: "underline" },
   preferenceHeader: { marginTop: 18 },
   appearanceDivider: { height: 1, backgroundColor: "#EAF0ED", marginTop: 22, marginBottom: 2 },
 }));
