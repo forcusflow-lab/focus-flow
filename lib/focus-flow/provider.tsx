@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { AppState, Platform } from "react-native";
-import { deepLinkToSubscriptions, finishTransaction as finishIapTransaction, useIAP, type ProductSubscription, type Purchase } from "expo-iap";
+import { finishPlatformPurchase, openSubscriptionManagement, usePlatformIAP, type IapSubscription } from "./iap-bridge";
 
 import { consumeWidgetCompletions, syncAndroidGate } from "./android-gate";
 import { PLUS_PRODUCT_ID, type PlusStatus } from "./billing";
@@ -132,23 +132,23 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
     commit((current) => current.displaySettings.plusEntitlement === status.active ? current : { ...current, displaySettings: { ...current.displaySettings, plusEntitlement: status.active } });
   }, [commit]);
 
-  const completePlusPurchase = useCallback(async (purchase: Purchase) => {
+  const completePlusPurchase = useCallback(async (purchase: unknown) => {
     try {
-      await finishIapTransaction({ purchase, isConsumable: false });
+      await finishPlatformPurchase(purchase);
       applyPlusStatus({ status: "active", active: true, productId: PLUS_PRODUCT_ID });
     } catch {
       applyPlusStatus({ status: "error", active: false, productId: PLUS_PRODUCT_ID, reason: "TRANSACTION_FINISH_FAILED" });
     }
   }, [applyPlusStatus]);
 
-  const iap = useIAP({
+  const iap = usePlatformIAP({
     onPurchaseSuccess: (purchase) => { void completePlusPurchase(purchase); },
     onPurchaseError: () => applyPlusStatus({ status: "error", active: false, productId: PLUS_PRODUCT_ID, reason: "PURCHASE_FAILED" }),
     onError: () => applyPlusStatus({ status: "error", active: false, productId: PLUS_PRODUCT_ID, reason: "STORE_UNAVAILABLE" }),
   });
 
   const { activeSubscriptions, connected, fetchProducts, getActiveSubscriptions, reconnect, requestPurchase, restorePurchases, subscriptions } = iap;
-  const plusProduct = useMemo(() => subscriptions.find((product) => product.id === PLUS_PRODUCT_ID) as ProductSubscription | undefined, [subscriptions]);
+  const plusProduct = useMemo(() => subscriptions.find((product) => product.id === PLUS_PRODUCT_ID) as IapSubscription | undefined, [subscriptions]);
 
   const addTodo = useCallback((input: TodoInput) => {
     const title = input.title.trim();
@@ -285,7 +285,7 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
 
   const managePlus = useCallback(async () => {
     if (Platform.OS === "web") return;
-    await deepLinkToSubscriptions({ skuAndroid: PLUS_PRODUCT_ID, packageNameAndroid: "com.app.focusflow" });
+    await openSubscriptionManagement();
   }, []);
 
   useEffect(() => {
