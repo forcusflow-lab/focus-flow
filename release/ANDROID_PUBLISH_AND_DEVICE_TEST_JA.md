@@ -2,13 +2,13 @@
 
 ## この手順で行うこと
 
-この手順では、Manusの**Publish**機能でFocus FlowのAndroidパッケージを生成し、自分のAndroid端末へインストールして、Todo・習慣・アプリ制限・安全停止・ウィジェットを確認します。ここでのPublishはGoogle Playへの審査提出ではありません。Google Play Consoleへの登録や一般公開は、この手順では行いません。
+この手順では、Manusの**Publish**機能でFocus FlowのAndroidパッケージを生成し、自分のAndroid端末へインストールして、Todo・習慣・時間管理・アプリ制限・ウィジェットを確認します。ここでのPublishはGoogle Playへの審査提出ではありません。Google Play Consoleへの登録や一般公開は、この手順では行いません。
 
 | 項目 | 使用する内容 |
 | --- | --- |
-| 使用する版 | 最新チェックポイント `cea13203` |
+| 使用する版 | 最新チェックポイント `b102d946` 以降 |
 | 対象端末 | Android 7.0以上の実機 |
-| 確認する主機能 | Todo、習慣、アプリ制限、10分安全停止、ホーム画面ウィジェット |
+| 確認する主機能 | Todo、習慣、時間管理、アプリ制限、ホーム画面ウィジェット |
 | 注意 | アプリ制限はAndroid専用です。iPhoneでは利用できません。 |
 
 ## 1. Publishを開始する
@@ -44,7 +44,7 @@
 ## 4. アプリ制限を確認する
 
 1. 必須タスクを未完了のまま、制限対象に選んだアプリを開きます。
-2. Focus Flowの制限画面が表示され、「Review today’s must-dos」と「Pause limits for 10 minutes」が見えることを確認します。
+2. Focus Flowの制限画面が表示され、「Review today’s must-dos」が見えることを確認します。
 3. **Review today’s must-dos**を押すとFocus Flowへ戻ることを確認します。
 4. 必須タスクを完了にします。
 5. もう一度制限対象アプリを開き、通常どおり開けることを確認します。
@@ -53,7 +53,7 @@
 | --- | --- |
 | 必須項目が未完了 | 選択アプリを開くと制限画面へ戻る |
 | 必須項目を完了 | 選択アプリを開ける |
-| 10分安全停止 | 誤設定時でも一時的に選択アプリを開ける |
+| ルールの停止 | Focus Flow設定でルールをオフにするか、Android設定でAccessibilityを無効にすると制限が止まる |
 | 設定のDevice check | Accessibilityと省電力状態を確認できる |
 
 ## 5. 時間帯とウィジェットを確認する
@@ -64,4 +64,4 @@
 
 ## 6. 問題が起きたとき
 
-アプリ制限が動かない場合は、Focus Flowの**Manage → Settings → Device check**を開き、AccessibilityがOnか、省電力・バックグラウンド制限が問題になっていないか確認します。FAQ & supportの**Report a problem**には、端末・Android API・権限・安全停止状態を含めた報告テンプレートがあります。タスク名やメモ本文などの個人情報は、報告へ含めないでください。
+アプリ制限が動かない場合は、Focus Flowの**Manage → Settings → Device check**を開き、AccessibilityがOnか、省電力・バックグラウンド制限が問題になっていないか確認します。FAQ & supportの**Report a problem**には、端末・Android API・権限・ルール状態を含めた報告テンプレートがあります。タスク名やメモ本文などの個人情報は、報告へ含めないでください。

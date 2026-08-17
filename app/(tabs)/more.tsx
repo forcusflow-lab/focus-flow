@@ -13,19 +13,19 @@ export default function MoreScreen() {
   const { displaySettings, setDisplaySettings } = useFocusFlow();
   const english = isEnglish(displaySettings);
   const items = english ? [
-    { route: "setup" as const, icon: "play-circle-outline" as const, title: "Device setup guide", description: "Review app limits, Android access, and the safety pause", tint: "#FFF4E3", color: "#A56812" },
+    { route: "setup" as const, icon: "play-circle-outline" as const, title: "Device setup guide", description: "Review app limits, Android access, and how to stop a rule", tint: "#FFF4E3", color: "#A56812" },
     { route: "/(tabs)/insights", icon: "bar-chart" as const, title: "Review", description: "See this week's completion and required-item progress", tint: "#E7F0FF", color: COLORS.blue },
     { route: "/(tabs)/settings", icon: "tune" as const, title: "Settings", description: "Set app limits, routines, language, and appearance", tint: "#E3F3EF", color: COLORS.forest },
     { route: "/privacy", icon: "privacy-tip" as const, title: "Privacy & data", description: "Review accessibility, on-device data, and deletion controls", tint: "#E9F3FA", color: COLORS.blue },
     { route: "/legal", icon: "receipt-long" as const, title: "Terms & subscriptions", description: "See what is free, what Plus includes, and how to manage it", tint: "#FFF4E3", color: "#A56812" },
     { route: "/support", icon: "help-outline" as const, title: "FAQ & support", description: "Get help and share a structured beta bug report", tint: "#F0F5E9", color: COLORS.forest },
   ] : [
-    { route: "setup" as const, icon: "play-circle-outline" as const, title: "端末セットアップガイド", description: "アプリ制限、Androidの許可、安全停止を確認する", tint: "#FFF4E3", color: "#A56812" },
+    { route: "setup" as const, icon: "play-circle-outline" as const, title: "端末セットアップガイド", description: "アプリ制限、Androidの許可、ルールの止め方を確認する", tint: "#FFF4E3", color: "#A56812" },
     { route: "/(tabs)/insights", icon: "bar-chart" as const, title: "振り返り", description: "今週の完了状況と必須項目の進み方を見る", tint: "#E7F0FF", color: COLORS.blue },
     { route: "/(tabs)/settings", icon: "tune" as const, title: "設定", description: "アプリ制限、日課ルール、言語、表示を整える", tint: "#E3F3EF", color: COLORS.forest },
     { route: "/privacy", icon: "privacy-tip" as const, title: "プライバシーとデータ", description: "アクセシビリティの利用目的、端末内データ、削除操作を確認する", tint: "#E9F3FA", color: COLORS.blue },
     { route: "/legal", icon: "receipt-long" as const, title: "利用条件とサブスクリプション", description: "無料の範囲、Plusの対象、管理と復元の方法を確認する", tint: "#FFF4E3", color: "#A56812" },
-    { route: "/support", icon: "help-outline" as const, title: "FAQ・サポート", description: "英語FAQと、ベータ版の不具合報告テンプレートを開く", tint: "#F0F5E9", color: COLORS.forest },
+    { route: "/support", icon: "help-outline" as const, title: "FAQ・サポート", description: "選択中の言語のFAQと、不具合報告テンプレートを開く", tint: "#F0F5E9", color: COLORS.forest },
   ];
   const openItem = (route: (typeof items)[number]["route"]) => {
     if (route === "setup") { setDisplaySettings({ deviceSetupCompletedAt: undefined }); router.push("/(tabs)" as never); return; }

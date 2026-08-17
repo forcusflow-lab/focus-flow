@@ -4,8 +4,8 @@
 
 | Field | Copy |
 | --- | --- |
-| App name | Focus Flow: Finish to Unlock |
-| Short description | Finish your must-dos, then unlock the apps that distract you. |
+| App name | Focus Flow |
+| Short description | Plan daily essentials, build habits, and protect your focus. |
 | Primary category | Productivity |
 | Primary audience | People who want a deliberate, Android-first way to finish daily commitments before using selected distracting apps. |
 
@@ -41,17 +41,21 @@ Capture notes before they become tasks, then convert them into a regular To-do w
 
 Your tasks, habits, notes, schedules, and display settings stay on your device. No account is required to begin, and you can delete all Focus Flow data from the Privacy & data screen.
 
+### Free plan, Plus, and timed items
+
+The free plan includes up to 2 tasks, 2 habits, 2 notes, and 5 limited apps in total. Focus Flow Plus is an optional subscription that removes these limits and lets you save named appearance sets. Timed tasks and habits complete after their configured time elapses. If you need to finish one early, the app can show a one-time consumable product from your store for that item.
+
 Focus Flow is a self-management tool, not a parental-control, device-management, or security application. The Android focus gate is optional and cannot guarantee uninterrupted restriction under every device, operating-system, or user-configuration condition.
 
 ## Screenshot storyboards
 
 | Order | Screen | Caption | Visual focus |
 | --- | --- | --- | --- |
-| 1 | Today | Finish your essentials, then unlock your time. | Required-item progress and clear lock status. |
+| 1 | Today | Start with today’s essential. | Required-item progress and clear focus-rule status. |
 | 2 | Required Todo | Make one task count. | Required vs normal classification, progress goals, subtasks. |
 | 3 | Routine rule | Your routine, your hours, your apps. | Named schedule, days, times, selected apps. |
 | 4 | Accessibility disclosure | Clear permission. Clear control. | Plain-language explanation and Android settings entry point. |
-| 5 | Habits and notes | Build a system that lasts. | Habit progress, notes, and calm visual customization. |
+| 5 | Timed habit and notes | Build a system that lasts. | Timed completion, habit progress, notes, and calm visual customization. |
 
 ## Prepared feature graphic
 

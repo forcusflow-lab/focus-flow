@@ -9,7 +9,7 @@
 | Application ID | `com.app.focusflow` | Create the Play Console application with this immutable package ID. |
 | Version name | `1.0.0` | Increment before every uploaded release. |
 | Android version code | `1` | Increment before every uploaded AAB; never reuse an uploaded value. |
-| App name | Focus Flow: Finish to Unlock | Validate availability and localize after first English release. |
+| App name | Focus Flow | Validate availability and localize after first English release. |
 | Category | Productivity | Set in Store settings. |
 | Core value | Complete must-dos before selected distracting apps become available. | Keep all marketing claims consistent with this limited, user-configured behavior. |
 
@@ -26,7 +26,7 @@ The Console declaration and a 60–120 second landscape review video should demo
 | 0:35–0:55 | In-app Accessibility explanation and affirmative action. | The disclosure is prominent, specific, optional, and accepted before settings open. |
 | 0:55–1:10 | Android Accessibility settings; enable Focus Flow. | The OS consent screen is the final device-level opt-in. |
 | 1:10–1:25 | Open the selected app while the must-do remains incomplete. | The configured rule is applied. |
-| 1:25–1:40 | Use the 10-minute safety pause, then return to Settings. | The user can safely recover from an incorrect or unwanted restriction. |
+| 1:25–1:40 | Use “Review today’s must-dos”, then show that the user can turn App limits off in Settings or Android Accessibility settings. | Rules are user-configured, transparent, and can be stopped by the user. |
 | 1:40–1:55 | Privacy & data screen. | Local storage, optional service, and deletion control are explained. |
 
 Do not describe the feature as parental controls, monitoring, device management, unbreakable blocking, or a guarantee of uninterrupted restriction. Google Play requires a declaration for non-accessibility-tool uses of the AccessibilityService API and expects a clear, prominent in-app disclosure.[1]
@@ -64,14 +64,14 @@ The publisher should create an internal test first, then a closed test. Before a
 | Test | Pass criterion | Stop condition |
 | --- | --- | --- |
 | First setup | A new tester can create one must-do, select one app, understand the disclosure, and return from Android settings. | Accessibility entry or status detection is confusing or fails. |
-| Rule application | The selected app redirects only while required items remain open and the routine is active. | Any non-selected app is redirected or a selected app loops without safety pause. |
+| Rule application | The selected app redirects only while required items remain open and the routine is active. | Any non-selected app is redirected, or the user cannot stop a rule from Settings or Android Accessibility settings. |
 | Release | Completing the must-do releases the configured app without delay. | Completion does not release the app in a stable configuration. |
-| Safety pause | The 10-minute pause restores access; normal behavior resumes after expiry. | The tester cannot leave a restriction state. |
+| Timed completion | A timed required item does not complete before its timer expires; a licensed tester can purchase one early completion when the store product is configured. | An item completes before time elapses, or a completed item fails to release the rule. |
 | Data deletion | Privacy & data deletion removes local records and turns off limits. | Data remains after confirmed deletion or native gate remains enabled. |
 
 ## Commercial launch gate
 
-Do not sell Plus until these conditions are all met: the above safety tests pass on multiple devices, the public policy URL and support inbox are active, the Data safety and Accessibility declarations match the final AAB, and Play Billing has been verified using license testers for purchase, pending state, restoration, cancellation, and expiry. See `PLUS_COMMERCIAL_SPEC.md` for the product boundary and state contract.
+Do not sell Plus or the one-time early completion until these conditions are all met: the above tests pass on multiple devices, the public policy URL and support inbox are active, the Data safety and Accessibility declarations match the final AAB, and Play Billing has been verified using license testers. Verify Plus purchase, restoration, cancellation, and expiry; verify `focus_flow_early_complete_100` purchase, cancellation, consumption, and repurchase. See `PLUS_COMMERCIAL_SPEC.md` for the product boundary and state contract.
 
 ## References
 

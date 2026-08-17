@@ -2,13 +2,13 @@
 
 **対象:** Focus Flow 1.0.0  
 **Bundle ID:** `com.app.focusflow`  
-**課金商品ID:** `focus_flow_plus`  
+**課金商品ID:** `focus_flow_plus`、`focus_flow_early_complete_100`  
 **作成日:** 2026-08-17  
 **編集者:** Manus AI
 
 ## 提出方針
 
-Focus Flowは、Todo、習慣、メモ、日課、通知、振り返りを端末内で使える無料の集中支援アプリです。**Focus Flow Plusは、現在の配色・文字・ウィジェット設定を名前付きテーマセットとして保存・呼び出すためだけの任意の自動更新サブスクリプション**です。基本的な計画機能、言語、配色、外観モード、文字サイズ、ウィジェットの見た目を課金で制限しません。
+Focus Flowは、Todo、習慣、メモ、日課、通知、振り返りを端末内で使える集中支援アプリです。無料版ではTodo・習慣・メモを各2件、制限対象アプリを合計5件まで利用できます。**Focus Flow Plusは、これらの上限を解除し、名前付きテーマセットを保存・呼び出す任意の自動更新サブスクリプション**です。言語、配色、外観モード、文字サイズ、ウィジェットの見た目は無料です。時間管理項目を設定時間前に完了する場合は、消費型の1回限り商品を使います。
 
 Appleは、iOSアプリごとに公開可能なプライバシーポリシーURLと、組み込みSDKを含む実際のデータ利用に基づいたApp Privacy回答を求めています。[1] 自動更新サブスクリプションは、アプリ内で内容、期間、更新価格、復元・管理方法を明確に示す必要があります。[2]
 
@@ -34,7 +34,7 @@ Appleは、iOSアプリごとに公開可能なプライバシーポリシーURL
 >
 > On iPhone, Focus Flow gives you planning, routines, reminders, notes, and progress review without requiring extra device permissions. Language, color, light or dark appearance, type, text size, card style, and widget styling are free for everyone.
 >
-> Focus Flow Plus is an optional subscription for saving and reusing named appearance sets. Your App Store purchase sheet shows the current price, billing period, and renewal terms before you confirm. Restore or manage a previous subscription at any time from Settings.
+> The free plan includes up to 2 tasks, 2 habits, 2 notes, and 5 limited apps in total. Focus Flow Plus is an optional subscription that removes those limits and lets you save and reuse named appearance sets. Your App Store purchase sheet shows the current price, billing period, and renewal terms before you confirm. Restore or manage a previous subscription at any time from Settings. Timed tasks and habits complete after their configured time elapses; customers can buy a one-time consumable early completion for one item when needed.
 
 ### キーワード案
 
@@ -57,19 +57,34 @@ Appleは、iOSアプリごとに公開可能なプライバシーポリシーURL
 | Product ID | `focus_flow_plus` |
 | Reference Name | `Focus Flow Plus` |
 | Display Name | `Focus Flow Plus` |
-| Description | `Save and reuse named appearance sets in Focus Flow.` |
+| Description | `Remove content limits and save and reuse named appearance sets in Focus Flow.` |
 | Type | Auto-Renewable Subscription |
-| 対象機能 | 名前付きテーマセットの保存・呼び出し。基本の計画・表示設定は無料。 |
+| 対象機能 | Todo・習慣・メモ・制限対象アプリの上限解除と、名前付きテーマセットの保存・呼び出し。表示設定は無料。 |
 | 価格・期間 | アカウント所有者が最終決定。アプリ内はストアの現地価格・請求期間を表示する。 |
 | Family Sharing | オンにすると後から戻せないため、初回はオフを推奨。共有価値を提供する方針に変える場合だけ有効化する。 |
 
 商品ローカライズ、価格、審査用スクリーンショットを設定し、アプリのバージョンと一緒に審査へ提出します。Appleは、審査者に課金商品が見つかり、実際に動作するよう求めています。[3] [5]
 
+## 消費型早期完了の設定
+
+| 項目 | 提出値 |
+|---|---|
+| Product ID | `focus_flow_early_complete_100` |
+| Reference Name | `Finish early (one time)` |
+| Display Name | `Finish early (one time)` |
+| Type | Consumable In-App Purchase |
+| 日本語表示名 | `時間前に完了する（1回）` |
+| Description | `Finish one timed task or habit before its scheduled time elapses.` |
+| 価格 | 日本は¥100。その他の地域はストア価格表に従う。 |
+| 復元 | 対象外。消費型商品のため、購入を復元には含めない。 |
+
+審査時は、時間管理のTodoまたは習慣を作成し、計測開始後に早期完了を試すと購入導線が見えます。購入成功時は対象項目だけが完了し、消費型として同じ商品を再購入できます。詳細は `ONE_TIME_UNLOCK_PRODUCT_SETUP_JA.md` を参照してください。
+
 ## Notes for Review（貼り付け用）
 
 > Focus Flow is an on-device planner. No account or login is required. The core features—tasks, habits, notes, routines, reminders, and display settings—are free.
 >
-> The iPhone build does not restrict other apps and does not use Android Accessibility. Focus Flow Plus is an optional auto-renewable subscription (`focus_flow_plus`) that only enables saving and reusing named appearance sets. The purchase flow uses the App Store purchase sheet, and Settings contains Restore purchases and Manage subscription actions.
+> The iPhone build does not restrict other apps and does not use Android Accessibility. Focus Flow Plus is an optional auto-renewable subscription (`focus_flow_plus`) that removes task, habit, note, and limited-app limits and enables named appearance sets. `focus_flow_early_complete_100` is a consumable one-time purchase for one timed item before its timer expires; it is not restored. The purchase flow uses the App Store purchase sheet, and Settings contains Restore purchases and Manage subscription actions.
 >
 > To review the subscription, open Settings → Appearance → Get Plus. Please use the App Store sandbox purchase flow associated with the review environment. No demo account is required.
 
@@ -79,11 +94,12 @@ Appleは、iOSアプリごとに公開可能なプライバシーポリシーURL
 
 | 確認内容 | 期待結果 |
 |---|---|
-| 新規購入 | App Storeの購入シートに商品名、期間、現地価格、更新条件が表示され、成功後にテーマセット保存が有効になる。 |
+| Plus新規購入 | App Storeの購入シートに商品名、期間、現地価格、更新条件が表示され、成功後に件数上限解除とテーマセット保存が有効になる。 |
 | 購入キャンセル | 無料機能は引き続き利用でき、Plus状態は有効化されない。 |
 | 購入を復元 | 同一Apple Accountの有効な購入でPlus状態が復元される。 |
 | サブスクリプション管理 | 設定の管理導線からAppleの管理画面へ進める。 |
 | 無料機能 | 言語・配色・外観・文字サイズ・ウィジェット設定を購入なしで変更・保存できる。 |
+| 早期完了 | 時間管理項目は時間前に完了せず、消費型商品の購入成功時だけ対象項目が早期完了する。キャンセル時は状態を変えず、同じ商品を再購入できる。 |
 | 通知 | 明示的な許可後に、設定した時刻で1日1回の通知が動作する。 |
 
 ## アカウント所有者のみが行う最終操作
