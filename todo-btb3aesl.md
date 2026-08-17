@@ -37,3 +37,7 @@
 - [ ] アカウント所有者がApp Privacy、Data safety、Accessibility、QUERY_ALL_PACKAGESの申告を完了する
 - [ ] 実機テスターがTestFlightとPlay内部テストで購入、復元、解約、通知、集中ルール、安全停止を確認する
 - [ ] アカウント所有者がストア素材・年齢レーティング・審査メモを入力して公開を実行する
+- [x] App Store ConnectでのFocus Flow Plus商品登録の公式手順と必須項目を確認する
+- [x] Google Play ConsoleでのFocus Flow Plus商品登録の公式手順と必須項目を確認する
+- [x] Sandbox・内部テスト・審査提出時のIAP確認手順を整理する
+- [x] Focus Flow Plus向けのストア登録手順書を提供する
