@@ -79,9 +79,15 @@
 - [x] 小画面で購入・復元・再確認・法務リンクが重ならない操作導線へ改善する
 - [x] Plus比較画面の型検査、テスト、モバイル幅レイアウトを再検証する
 - [x] 実機で確認されたPlusの購入・復元・再確認ボタン表示崩れを修正する
-- [ ] Google Play Consoleのログイン状態、既存アプリ登録、必須契約の完了状況を確認する
+- [x] Google Play Consoleのログイン状態、既存アプリ登録、必須契約の完了状況を確認する
 - [ ] Focus Flowのストア掲載情報、連絡先、プライバシーポリシーURL、カテゴリ、年齢レーティングを入力する
 - [ ] Data safety、広告、アクセシビリティ、QUERY_ALL_PACKAGES、コンテンツの各申告を現行仕様で入力する
 - [ ] focus_flow_plusとfocus_flow_early_complete_100をPlay Consoleへ登録する
 - [ ] Android App Bundleを内部テストへ配布し、ライセンステスター・テスト端末を設定する
 - [ ] 実機検証と公開前チェックを完了し、審査提出に必要な最終確認を案内する
+- [x] PCのGoogle Play ConsoleでFocus Flowの登録状態を確認し、公開・収益化設定を開始する
+- [x] Focus FlowをGoogle Play Consoleへ登録し、パッケージ名com.app.focusflow、無料配布、日本語を確定する
+- [x] Google Paymentsのお支払いプロファイルをFocus Flowの公開名称、forcus.flow@gmail.comのサポート連絡先、FOCUS FLOWの明細表記で設定する
+- [ ] Play Consoleでストア掲載・コンテンツ申告・課金商品の未完了項目を入力する
+- [ ] 内部テストの配布準備とライセンステスト環境を整える
+- [ ] 審査提出または価格・契約の最終確定前にアカウント所有者の確認を得る
