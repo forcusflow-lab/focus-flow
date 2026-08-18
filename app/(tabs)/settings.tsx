@@ -163,6 +163,9 @@ export default function SettingsScreen() {
           <>
             <ScreenHeading eyebrow={t("自分に合わせる", "Make it yours")} title={t("設定", "Settings")} />
 
+            {isIOS ? <View style={styles.iosInfoCard}><View style={styles.iosInfoIcon}><MaterialIcons name="phone-iphone" size={23} color="#215B83" /></View><View style={styles.iosInfoCopy}><Text style={styles.iosInfoTitle}>{t("iPhoneでは計画機能をそのまま使えます", "Focus Flow on iPhone")}</Text><Text style={styles.iosInfoText}>{t("Todo・習慣・時間管理・日課・通知・振り返り・外観設定は、追加の端末権限なしで使えます。アプリ制限とアクセシビリティ設定はAndroid版だけの機能です。", "Tasks, habits, timed items, routines, reminders, reviews, and appearance settings work without extra device permission. App limits and Accessibility are Android-only features.")}</Text></View></View> : null}
+
+            {!isIOS ? <>
             <SectionLabel title={t("集中ルール", "App limits")} detail={isPlus ? t("Plusでは制限対象アプリを無制限に選べます。", "Plus allows unlimited limited apps.") : t("無料版では制限対象アプリを5件まで選べます。Plusでは無制限です。", "The free plan allows 5 limited apps. Plus removes this limit.")} />
             <View style={styles.card}>
               <View style={styles.row}><View style={styles.rowCopy}><Text style={styles.rowTitle}>{isIOS ? (english ? "iPhone app limits" : "iPhoneのアプリ制限") : (english ? "Limit apps until must-dos are done" : "必須項目を終えるまで制限")}</Text><Text style={styles.rowDescription}>{isIOS ? (english ? "App limits are not available in this iPhone build. Tasks, habits, and schedules still work normally." : "このiPhoneビルドではアプリ制限を利用できません。Todo・習慣・日課は通常どおり使えます。") : gateConfig.enabled ? summary.message : (english ? "App limits are off." : "集中ルールはオフです")}</Text></View><Switch value={isIOS ? false : gateConfig.enabled} disabled={isIOS} onValueChange={setGateEnabled} trackColor={{ false: "#CCD7D1", true: "#91C3B3" }} thumbColor={gateConfig.enabled ? COLORS.forest : "#F7F8F5"} /></View>
@@ -211,8 +214,10 @@ export default function SettingsScreen() {
 
             {gateConfig.schedules.length === 0 ? <><SectionLabel title={isIOS ? (english ? "App limits on iPhone" : "iPhoneのアプリ制限") : t("常時ルールの制限アプリ", "Apps limited by the always-on rule")} detail={isIOS ? (english ? "App limits are not active in this iPhone build." : "このiPhoneビルドではアプリ制限は有効になりません。") : t("時間帯ルールを登録しない場合に使います。無料版では合計5件、Plusでは無制限です。", "Use this when you do not have routines. The free plan allows 5 apps in total; Plus is unlimited.")} /><View style={styles.card}>{!nativeReady ? <Notice icon={isIOS ? "phone-iphone" : "android"} text={isIOS ? (english ? "You do not need to choose apps or enable Android Accessibility on iPhone. Focus Flow's planning features are ready to use." : "iPhoneではアプリ選択やAndroidアクセシビリティの有効化は必要ありません。Focus Flowの計画機能をそのまま使えます。") : (english ? "Install the native Android build to choose apps already on your device." : "ネイティブAndroidビルドを端末へ入れると、インストール済みアプリをここで選択できます。")} /> : loadingApps ? <View style={styles.loadingRow}><ActivityIndicator color={COLORS.forest} /><Text style={styles.loadingText}>{t("アプリ一覧を読み込んでいます", "Loading apps")}</Text></View> : apps.length ? apps.slice(0, 36).map((app) => <ChoiceRow key={app.packageName} title={app.label} detail={app.packageName} selected={gateConfig.blockedPackages.includes(app.packageName)} onPress={() => selectedApp(app.packageName)} />) : <Notice icon="apps" text={t("選択できるアプリを取得できませんでした。", "Could not load apps to choose from.")} />}</View></> : null}
 
+            </> : null}
             <SectionLabel title={t("外観", "Appearance")} detail={t("アプリ・文字・ホーム画面ウィジェットの見た目を一つの場所で整えます。", "Keep your app, type, and home screen widgets in one consistent look.")} />
             <View style={styles.card}>
+              <PlanComparison english={english} isIOS={isIOS} isPlus={isPlus} price={plusStatus.price} />
               <View style={styles.themePlanRow}><View style={styles.rowCopy}><Text style={styles.rowTitle}>{isPlus ? t("Plusは無制限で利用できます", "Plus is unlimited") : t("無料版は必要な機能を2件ずつ利用できます", "Free includes 2 of each core item")}</Text><Text style={styles.rowDescription}>{isPlus ? t("Todo・習慣・メモ・制限対象アプリを無制限に使え、保存済みテーマセットも利用できます。", "Use unlimited tasks, habits, notes, limited apps, and saved theme sets.") : t("無料版はTodo・習慣・メモを各2件、制限対象アプリを5件まで利用できます。言語・外観・文字・ウィジェット設定は無料です。", "Free includes 2 tasks, habits, and notes each plus 5 limited apps. Language, appearance, type, and widgets remain free.")}</Text></View><View style={[styles.plusPill, isPlus && styles.plusPillActive]}><Text style={styles.plusPillText}>{isPlus ? t("有効", "Active") : t("Plus", "Plus")}</Text></View></View>
               {!isPlus ? <View style={styles.plusActionArea}>{plusStatus.status === "eligible" ? <TouchableOpacity accessibilityRole="button" onPress={() => void purchasePlus()} style={styles.plusPrimary}><Text style={styles.plusPrimaryText}>{plusStatus.price ? t(`${plusStatus.price} で Plus を開始`, `Get Plus for ${plusStatus.price}`) : t("Plus を開始", "Get Plus")}</Text></TouchableOpacity> : plusStatus.status === "loading" || plusStatus.status === "pending" ? <View style={styles.plusBusy}><ActivityIndicator color={COLORS.forest} /><Text style={styles.plusBusyText}>{plusStatus.status === "pending" ? t("ストアで購入を完了し、アプリへ戻ってください。", "Finish the purchase in your store, then return here.") : t("ストアの商品を確認しています…", "Checking store products…")}</Text></View> : <Text style={styles.plusUnavailable}>{plusStatus.status === "error" ? t("ストアに接続できません。ネットワークを確認して再試行してください。", "The store could not be reached. Check your connection and try again.") : plusStatus.reason === "NATIVE_BUILD_REQUIRED" ? t("Plusの購入・復元は、Expo Goではなくストア用のAndroidまたはiPhoneビルドで利用できます。", "Plus purchase and restore are available in an Android or iPhone store build, not Expo Go.") : t("このビルドではPlusの商品が未設定です。App Store ConnectまたはPlay Consoleにテスト商品を設定すると、ここに実際の価格が表示されます。", "Plus is not configured for this build. Set up a test product in App Store Connect or Play Console to show its live price here.")}</Text>}<View style={styles.plusSecondaryRow}><TouchableOpacity accessibilityRole="button" onPress={() => void restorePlus()} style={styles.plusSecondary}><Text style={styles.plusSecondaryText}>{t("購入を復元", "Restore purchases")}</Text></TouchableOpacity><TouchableOpacity accessibilityRole="button" onPress={() => void refreshPlusStatus()} style={styles.plusSecondary}><Text style={styles.plusSecondaryText}>{t("再確認", "Check again")}</Text></TouchableOpacity></View></View> : <View style={styles.plusSecondaryRow}><TouchableOpacity accessibilityRole="button" onPress={() => void managePlus()} style={styles.plusSecondary}><Text style={styles.plusSecondaryText}>{t("サブスクリプションを管理", "Manage subscription")}</Text></TouchableOpacity><TouchableOpacity accessibilityRole="button" onPress={() => void restorePlus()} style={styles.plusSecondary}><Text style={styles.plusSecondaryText}>{t("購入を復元", "Restore purchases")}</Text></TouchableOpacity></View>}
               <View style={styles.plusLegalLinks}><TouchableOpacity accessibilityRole="link" onPress={() => router.push("/legal" as never)} style={styles.plusLegalLink}><Text style={styles.plusLegalLinkText}>{t("利用条件とサブスクリプション", "Terms & subscriptions")}</Text></TouchableOpacity><TouchableOpacity accessibilityRole="link" onPress={() => router.push("/privacy" as never)} style={styles.plusLegalLink}><Text style={styles.plusLegalLinkText}>{t("プライバシーとデータ", "Privacy & data")}</Text></TouchableOpacity></View>
@@ -242,6 +247,19 @@ export default function SettingsScreen() {
 }
 
 function SectionLabel({ title, detail }: { title: string; detail?: string }) { return <View style={styles.sectionHeading}><Text style={styles.sectionTitle}>{title}</Text>{detail ? <Text style={styles.sectionDetail}>{detail}</Text> : null}</View>; }
+function PlanComparison({ english, isIOS, isPlus, price }: { english: boolean; isIOS: boolean; isPlus: boolean; price?: string }) {
+  const t = (ja: string, en: string) => english ? en : ja;
+  return <View style={styles.planComparison}>
+    <View style={styles.planComparisonHeader}><View style={styles.planHeaderCopy}><Text style={styles.planComparisonEyebrow}>{t("プランを比較", "COMPARE PLANS")}</Text><Text style={styles.planComparisonTitle}>{isPlus ? t("Plusを利用中です", "Plus is active") : t("必要になったら、Plusへ", "Start free. Upgrade when ready.")}</Text></View>{isPlus ? <View style={styles.planActiveBadge}><MaterialIcons name="verified" size={14} color={COLORS.success} /><Text style={styles.planActiveBadgeText}>{t("有効", "Active")}</Text></View> : null}</View>
+    <View style={styles.planGrid}>
+      <View style={styles.planCard}><Text style={styles.planName}>{t("無料", "Free")}</Text><Text style={styles.planCaption}>{t("毎日の集中に必要なこと", "Everything for daily focus")}</Text><PlanFeature icon="check" text={t("Todo・習慣・メモ 各2件", "2 tasks, habits & notes each")} /><PlanFeature icon="check" text={t("制限対象アプリ 合計5件", "5 limited apps total")} /><PlanFeature icon="check" text={t("言語・外観・文字・ウィジェット", "Language, appearance, type & widgets")} /></View>
+      <View style={[styles.planCard, styles.planCardPlus]}><Text style={styles.planName}>{t("Plus", "Plus")}</Text><Text style={styles.planCaption}>{price ? t(`${price} · いつでも管理`, `${price} · manage anytime`) : t("ストアで価格を確認", "Live price in your store")}</Text><PlanFeature icon="all-inclusive" text={t("Todo・習慣・メモ 無制限", "Unlimited tasks, habits & notes")} highlighted /><PlanFeature icon="all-inclusive" text={t("制限対象アプリ 無制限", "Unlimited limited apps")} highlighted /><PlanFeature icon="palette" text={t("テーマセットを保存・呼び出し", "Save and reuse theme sets")} highlighted /></View>
+    </View>
+    <Text style={styles.planFootnote}>{t("時間管理の項目は、設定した時間を過ぎると完了します。時間前に完了する場合は、対象1件だけに使うストア商品が表示されます。", "Timed items finish after their set time. An optional one-time store item can finish one item early.")}</Text>
+    <View style={styles.planPlatformNote}><MaterialIcons name={isIOS ? "phone-iphone" : "android"} size={15} color="#46647D" /><Text style={styles.planPlatformNoteText}>{isIOS ? t("iPhoneでは、App Store版で購入・復元・サブスクリプション管理を利用できます。", "On iPhone, purchase, restore, and subscription management are available in the App Store build.") : t("Androidでは、Google Play版で購入・復元・サブスクリプション管理を利用できます。", "On Android, purchase, restore, and subscription management are available in the Google Play build.")}</Text></View>
+  </View>;
+}
+function PlanFeature({ icon, text, highlighted = false }: { icon: React.ComponentProps<typeof MaterialIcons>["name"]; text: string; highlighted?: boolean }) { return <View style={styles.planFeature}><MaterialIcons name={icon} size={15} color={highlighted ? COLORS.forest : "#557067"} /><Text style={[styles.planFeatureText, highlighted && styles.planFeatureTextPlus]}>{text}</Text></View>; }
 function PreferenceHeader({ title, detail }: { title: string; detail: string }) { return <View style={styles.preferenceHeader}><Text style={styles.preferenceLabel}>{title}</Text><Text style={styles.preferenceHint}>{detail}</Text></View>; }
 function DiagnosticRow({ icon, title, detail, good }: { icon: React.ComponentProps<typeof MaterialIcons>["name"]; title: string; detail: string; good: boolean }) { return <View style={styles.permissionCard}><View style={[styles.permissionIcon, { backgroundColor: good ? "#E7F3ED" : "#FFF2DD" }]}><MaterialIcons name={icon} size={20} color={good ? COLORS.success : COLORS.warning} /></View><View style={styles.permissionCopy}><Text style={styles.permissionTitle}>{title}</Text><Text style={styles.permissionDescription}>{detail}</Text></View></View>; }
 function Notice({ icon, text }: { icon: React.ComponentProps<typeof MaterialIcons>["name"]; text: string }) { return <View style={styles.notice}><MaterialIcons name={icon} size={20} color={COLORS.muted} /><Text style={styles.noticeText}>{text}</Text></View>; }
@@ -285,7 +303,31 @@ const styles: any = StyleSheet.create({
 });
 
 Object.assign(styles, StyleSheet.create({
-  themePlanRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: "#EAF0ED" },
+  planComparison: { paddingTop: 15, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: "#EAF0ED" },
+  planComparisonHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 12 },
+  planHeaderCopy: { flex: 1, minWidth: 0 },
+  planComparisonEyebrow: { color: COLORS.forest, fontSize: 10, fontWeight: "900", letterSpacing: 0.6 },
+  planComparisonTitle: { color: COLORS.text, fontSize: 17, lineHeight: 23, fontWeight: "900", marginTop: 2 },
+  planActiveBadge: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, minHeight: 28, borderRadius: 14, backgroundColor: "#E4F3E9" },
+  planActiveBadgeText: { color: COLORS.success, fontSize: 11, fontWeight: "900" },
+  planGrid: { flexDirection: "row", gap: 8, alignItems: "stretch" },
+  planCard: { flex: 1, minWidth: 0, borderRadius: 15, padding: 11, borderWidth: 1, borderColor: "#DCE6E0", backgroundColor: "#F8FBF9" },
+  planCardPlus: { borderColor: "#78A997", backgroundColor: "#EDF8F2" },
+  planName: { color: COLORS.text, fontSize: 15, fontWeight: "900" },
+  planCaption: { color: COLORS.muted, fontSize: 10, lineHeight: 14, minHeight: 30, marginTop: 2, marginBottom: 7 },
+  planFeature: { flexDirection: "row", alignItems: "flex-start", gap: 5, marginTop: 6 },
+  planFeatureText: { flex: 1, minWidth: 0, color: "#4F6860", fontSize: 10, lineHeight: 14, fontWeight: "700" },
+  planFeatureTextPlus: { color: "#155B45" },
+  planFootnote: { color: COLORS.muted, fontSize: 11, lineHeight: 16, marginTop: 10 },
+  planPlatformNote: { flexDirection: "row", gap: 6, alignItems: "flex-start", marginTop: 9, padding: 9, borderRadius: 11, backgroundColor: "#EEF4F8" },
+  planPlatformNoteText: { flex: 1, minWidth: 0, color: "#46647D", fontSize: 11, lineHeight: 16, fontWeight: "700" },
+  iosInfoCard: { flexDirection: "row", gap: 11, padding: 14, borderRadius: 18, borderWidth: 1, borderColor: "#B8D5E7", backgroundColor: "#EAF4FA", marginTop: 16 },
+  iosInfoIcon: { width: 42, height: 42, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: "#D7EAF6" },
+  iosInfoCopy: { flex: 1, minWidth: 0 },
+  iosInfoTitle: { color: "#173B59", fontSize: 14, lineHeight: 20, fontWeight: "900" },
+  iosInfoText: { color: "#3D6077", fontSize: 12, lineHeight: 18, marginTop: 3 },
+  themePlanRow: { display: "none" },
+  themePlanRowLegacy: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: "#EAF0ED" },
   plusPill: { minHeight: 28, paddingHorizontal: 9, alignItems: "center", justifyContent: "center", borderRadius: 14, backgroundColor: "#E7EDF3" },
   plusPillActive: { backgroundColor: "#E4F3E9" },
   plusPillText: { color: COLORS.forest, fontSize: 11, fontWeight: "900" },
@@ -319,5 +361,17 @@ Object.assign(styles, StyleSheet.create({
 }));
 
 Object.assign(styles, StyleSheet.create({
+  plusActionArea: { paddingTop: 14, gap: 10 },
+  plusPrimary: { minHeight: 50, alignItems: "center", justifyContent: "center", borderRadius: 14, backgroundColor: COLORS.forest, paddingHorizontal: 14 },
+  plusPrimaryText: { color: COLORS.white, fontSize: 14, fontWeight: "900", textAlign: "center" },
+  plusBusy: { flexDirection: "row", gap: 8, alignItems: "center", padding: 12, borderRadius: 12, backgroundColor: "#EEF4F8" },
+  plusBusyText: { flex: 1, minWidth: 0, color: "#46647D", fontSize: 12, lineHeight: 17, fontWeight: "700" },
+  plusUnavailable: { color: "#46647D", fontSize: 12, lineHeight: 18, padding: 12, borderRadius: 12, backgroundColor: "#EEF4F8" },
+  plusSecondaryRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  plusSecondary: { flexGrow: 1, minWidth: "44%", minHeight: 44, alignItems: "center", justifyContent: "center", paddingHorizontal: 10, borderRadius: 12, borderWidth: 1, borderColor: "#B9CBC1", backgroundColor: COLORS.white },
+  plusSecondaryText: { color: COLORS.forest, fontSize: 12, fontWeight: "900", textAlign: "center" },
+  plusLegalLinks: { flexDirection: "column", gap: 2, paddingTop: 12, paddingBottom: 4 },
+  plusLegalLink: { width: "100%", minHeight: 40, justifyContent: "center", paddingVertical: 5 },
+  plusLegalLinkText: { color: COLORS.blue, fontSize: 12, lineHeight: 17, fontWeight: "800", textDecorationLine: "underline" },
   modalScrollContent: { paddingBottom: 2 },
 }));
