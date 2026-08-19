@@ -93,3 +93,8 @@
 - [ ] 審査提出または価格・契約の最終確定前にアカウント所有者の確認を得る
 - [x] Expoアクセストークンを安全に登録して、ストア用Android App Bundle生成を有効化する
 - [ ] 生成されたAndroid App BundleをPlay内部テストへ追加し、課金商品の登録を再開する
+- [ ] Publish画面が要求するExpoアクセストークンの入力箇所を特定し、既存の安全な認証設定へ接続する
+- [x] Publish画面でExpo個人用アクセストークンを入力し、ストア用ビルドを開始する
+- [ ] Publish後のAndroid App Bundle生成完了を確認し、配布ファイルを取得する
+- [ ] Expoアカウント上のEASプロジェクト作成状況とFocus Flowのストア用ビルド連携を確認する
+- [x] Expoビルドのnpm ci失敗を解消して、Android App Bundle生成を再試行する
