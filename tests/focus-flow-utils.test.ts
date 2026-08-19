@@ -81,10 +81,17 @@ describe("Focus Flowの日付・習慣計算", () => {
     const morning = new Date(2026, 7, 10, 7, 30, 0);
     expect(getGateSummary(data, morning)).toMatchObject({ pendingTodos: 1, pendingHabits: 1, pendingCount: 2 });
     data.gateConfig.blockedPackages = ["com.example.global"];
-    expect(getGateRuleSummaries(data, morning).filter((rule) => rule.isActive)[0]).toMatchObject({ label: "朝の準備", blockedPackages: ["com.example.global", "com.example.news"] });
+    expect(getGateRuleSummaries(data, morning).filter((rule) => rule.isActive).find((rule) => rule.label === "朝の準備")).toMatchObject({ label: "朝の準備", blockedPackages: ["com.example.global", "com.example.news"] });
     const daytime = new Date(2026, 7, 10, 10, 0, 0);
     expect(getGateSummary(data, daytime)).toMatchObject({ pendingTodos: 1, pendingHabits: 1, pendingCount: 2 });
-    expect(getGateRuleSummaries(data, daytime).filter((rule) => rule.isActive)[0]).toMatchObject({ label: "日中の作業", blockedPackages: ["com.example.global", "com.example.video"] });
+    expect(getGateRuleSummaries(data, daytime).filter((rule) => rule.isActive).find((rule) => rule.label === "日中の作業")).toMatchObject({ label: "日中の作業", blockedPackages: ["com.example.global", "com.example.video"] });
+  });
+
+  it("時間帯を追加しても常時に選んだアプリは終日有効なルールとして残す", () => {
+    const data: FocusFlowData = { todos: [{ id: "t-core", title: "必須", priority: "high", isRequired: true, completed: false, createdAt: "2026-08-13T00:00:00.000Z" }], habits: [], memos: [], focusSessions: [], gateConfig: { enabled: true, blockedPackages: ["com.example.always"], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, schedules: [{ id: "morning", label: "朝", enabled: true, days: [1], startTime: "06:00", endTime: "09:00", blockedPackages: ["com.example.news"] }] }, displaySettings: { fontScale: "standard", theme: "mist", cardOpacity: "solid" } };
+    const outsideSchedule = new Date(2026, 7, 10, 22, 0, 0);
+    const alwaysRule = getGateRuleSummaries(data, outsideSchedule).find((rule) => rule.id === "always");
+    expect(alwaysRule).toMatchObject({ isActive: true, blockedPackages: ["com.example.always"], pendingCount: 1 });
   });
 
   it("登録時に必須にしたTodo・習慣は日課ルールに追加しなくても基本解除条件になる", () => {

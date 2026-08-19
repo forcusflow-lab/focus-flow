@@ -216,7 +216,9 @@ function getRuleSummary(data: FocusFlowData, schedule: GateSchedule | undefined,
 }
 
 export function getGateRuleSummaries(data: FocusFlowData, base = new Date(), language: ContentLanguage = "ja") {
-  const schedules = data.gateConfig.schedules.length ? data.gateConfig.schedules : [undefined];
+  // 常時制限は時間帯ルールの有無にかかわらず独立して有効にする。
+  // 時間帯ルールは追加の制限対象を重ねるためのものとし、常時ルールを置き換えない。
+  const schedules: Array<GateSchedule | undefined> = [undefined, ...data.gateConfig.schedules];
   return schedules.map((schedule) => getRuleSummary(data, schedule, base, language));
 }
 
@@ -249,7 +251,7 @@ export function isScheduleActive(schedule: GateSchedule, base = new Date()) {
 }
 
 export function isGateTimeActive(config: GateConfig, base = new Date()) {
-  return config.schedules.length === 0 || config.schedules.some((schedule) => isScheduleActive(schedule, base));
+  return config.blockedPackages.length > 0 || config.schedules.length === 0 || config.schedules.some((schedule) => isScheduleActive(schedule, base));
 }
 
 export function reorderSubtasks(items: TodoSubtask[], from: number, to: number) {

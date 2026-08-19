@@ -6,7 +6,7 @@ import type { FocusFlowData } from "./types";
 import { getAppLanguage } from "./i18n";
 
 type LaunchableApp = { packageName: string; label: string };
-export type GateDiagnostics = { accessibilityEnabled: boolean; batteryOptimizationIgnored: boolean | null; backgroundRestricted: boolean; apiLevel: number; manufacturer: string; model: string; lastGateStateUpdatedAt: number };
+export type GateDiagnostics = { accessibilityEnabled: boolean; batteryOptimizationIgnored: boolean | null; backgroundRestricted: boolean; apiLevel: number; manufacturer: string; model: string; lastGateStateUpdatedAt: number; lastGateEventAt: number; lastGateEventPackage: string; lastBlockedAt: number; lastBlockedPackage: string; gateStateActive: boolean; configuredRuleCount: number; configuredBlockedPackageCount: number };
 
 type FocusGateNativeModule = {
   saveGateState: (serialized: string) => Promise<void>;

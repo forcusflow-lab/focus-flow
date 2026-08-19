@@ -31,6 +31,10 @@ const accessibilityServiceXml = path.join(
   "focus_flow_accessibility_service.xml",
 );
 
+const generatedGateService = path.join(process.cwd(), "android", "app", "src", "main", "java", "com", "app", "focusflow", "focusflow", "FocusGateService.kt");
+const generatedGateModule = path.join(process.cwd(), "android", "app", "src", "main", "java", "com", "app", "focusflow", "focusflow", "FocusGateModule.kt");
+const generatedAccessibilityServiceXml = path.join(process.cwd(), "android", "app", "src", "main", "res", "xml", "focus_flow_accessibility_service.xml");
+
 describe("Focus Flow Androidネイティブプラグイン", () => {
   it("ウィジェットが親アプリの生成Rクラスを明示的に読み込む", () => {
     const source = fs.readFileSync(widgetTemplate, "utf8");
@@ -40,13 +44,20 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(source).not.toContain("internal abstract class FocusFlowBaseWidgetProvider");
   });
 
-  it("集中制限サービスが前面化とウィンドウ切替の両方を監視し、短い重複抑制だけで選択アプリを遮断する", () => {
-    const service = fs.readFileSync(gateServiceTemplate, "utf8");
-    const xml = fs.readFileSync(accessibilityServiceXml, "utf8");
+  it("テンプレートと生成済みサービスが同じ前面化検出・短い重複抑制・実行診断を持つ", () => {
+    const services = [gateServiceTemplate, generatedGateService].map((file) => fs.readFileSync(file, "utf8"));
+    const xmlFiles = [accessibilityServiceXml, generatedAccessibilityServiceXml].map((file) => fs.readFileSync(file, "utf8"));
 
-    expect(xml).toContain('android:accessibilityEventTypes="typeWindowStateChanged|typeWindowsChanged"');
-    expect(service).toContain("AccessibilityEvent.TYPE_WINDOWS_CHANGED");
-    expect(service).toContain("now - lastBlockedAt < 250");
-    expect(service).not.toContain("now - lastBlockedAt < 900");
+    xmlFiles.forEach((xml) => {
+      expect(xml).toContain('android:accessibilityEventTypes="typeWindowStateChanged|typeWindowsChanged"');
+      expect(xml).toContain('android:accessibilityFlags="flagRetrieveInteractiveWindows"');
+    });
+    services.forEach((service) => {
+      expect(service).toContain("AccessibilityEvent.TYPE_WINDOWS_CHANGED");
+      expect(service).toContain("now - lastBlockedAt < 250");
+      expect(service).toContain("GATE_LAST_EVENT_AT");
+      expect(service).not.toContain("now - lastBlockedAt < 900");
+    });
+    expect(fs.readFileSync(generatedGateModule, "utf8")).toContain("configuredBlockedPackageCount");
   });
 });
