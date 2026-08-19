@@ -89,7 +89,7 @@
 - [x] Focus FlowをGoogle Play Consoleへ登録し、パッケージ名com.app.focusflow、無料配布、日本語を確定する
 - [x] Google Paymentsのお支払いプロファイルをFocus Flowの公開名称、forcus.flow@gmail.comのサポート連絡先、FOCUS FLOWの明細表記で設定する
 - [ ] Play Consoleでストア掲載・コンテンツ申告・課金商品の未完了項目を入力する
-- [ ] 内部テストの配布準備とライセンステスト環境を整える
+- [x] 内部テストの配布準備とライセンステスト環境を整える
 - [ ] 審査提出または価格・契約の最終確定前にアカウント所有者の確認を得る
 - [x] Expoアクセストークンを安全に登録して、ストア用Android App Bundle生成を有効化する
 - [ ] 生成されたAndroid App BundleをPlay内部テストへ追加し、課金商品の登録を再開する
@@ -100,17 +100,24 @@
 - [x] Expoビルドのnpm ci失敗を解消して、Android App Bundle生成を再試行する
 - [x] Expo再ビルドの最新エラーログを分析し、Android App Bundle生成を阻害する設定または依存関係を修正する
 - [x] 修正後のExpo再ビルドで発生したGradleエラーを詳細ログから特定し、追加のKotlinまたはGradle修正を行う
-- [ ] 生成済みAABをGoogle Play Consoleの内部テストトラックへ追加し、リリース情報を設定する
-- [ ] 内部テスターとGoogle Playライセンステスターを設定し、課金テスト用の配布リンクを確認する
-- [ ] 成功したExpo AndroidビルドからAABを取得して、Play Consoleの内部テストへアップロードする
+- [x] 生成済みAABをGoogle Play Consoleの内部テストトラックへ追加し、リリース情報を設定する
+- [x] 内部テスターとGoogle Playライセンステスターを設定し、課金テスト用の配布リンクを確認する
+- [x] 成功したExpo AndroidビルドからAABを取得して、Play Consoleの内部テストへアップロードする
 - [ ] focus_flow_plusとfocus_flow_early_complete_100のPlay商品を下書き登録し、実機テスト準備を進める
 - [x] Expoのproduction-apk設定をGoogle Play受理可能なAndroid App Bundle出力へ変更し、AABビルドを生成する
 - [x] Publishで実行されるGradleタスクをbundleReleaseへ明示的に設定し、AAB生成を強制する
-- [ ] 最新のEAS成果物がAAB形式であることを確認し、Google Play内部テストへ追加する
-- [ ] 内部テストの配布前にテスター用Googleアカウントとライセンステスト設定を確認する
+- [x] 最新のEAS成果物がAAB形式であることを確認し、Google Play内部テストへ追加する
+- [x] 内部テストの配布前にテスター用Googleアカウントとライセンステスト設定を確認する
 - [ ] 最新EASビルドのAABを取得し、Google Play内部テストリリースへ追加する
-- [ ] Focus Flowの内部テスターとライセンステスターを設定し、課金商品の下書き登録へ進む
+- [x] Focus Flowの内部テスターとライセンステスターを設定し、課金商品の下書き登録へ進む
+- [x] Focus Flow Internal TestersをGoogle Playライセンステスト対象として保存する
 - [ ] 管理画面のPublishを使わず、EASクラウドビルドでGoogle Play用AABを生成する
 - [x] EASクラウド上でFocus FlowのAABビルドを開始し、ビルドID b0ecdc68-03d6-4557-873b-435aca8db4c1を取得する
 - [x] Play Consoleで既存のバージョンコード1のAABと下書きリリースを確認し、重複アップロードを解消する
-- [ ] 既存AABを利用するか、必要時はバージョンコードを上げたAABを再生成して内部テストへ追加する
+- [x] Androidバージョンコード2のGoogle Play用AABをEASクラウドで再生成する
+- [x] 既存AABを利用するか、必要時はバージョンコードを上げたAABを再生成して内部テストへ追加する
+- [x] Play Consoleの内部テストリリースで発生した入力エラーを確認し、原因を解消する
+- [x] forcus.flow@gmail.comを内部テスト用メーリングリストに追加し、トラックのテスターとして保存する
+- [x] 公開HTTPSドメインで利用できるFocus Flowのプライバシー・サポート・利用条件ページを実装する
+- [x] Google Play用の1024×500pxフィーチャーグラフィックを生成し、提出用ディレクトリに保存する
+- [ ] 内部テスト端末で実際の機能を示す電話用スクリーンショット5枚を撮影する

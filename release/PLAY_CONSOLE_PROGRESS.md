@@ -16,5 +16,9 @@
 | Play用AAB出力 | 設定済み・再ビルド待ち | 成功済みのEAS成果物はAPKだったため、Google Playの新規アプリ提出には使用しない。Publishが使用した`production-apk`プロファイルを`eas.json`で明示し、Android出力を`app-bundle`（AAB）へ変更した。 |
 | AAB再生成の追加対策 | 設定済み・再ビルド待ち | AAB設定後もPublishが`gradlew :app:assembleRelease`を実行してAPKを出力した。EASログで実行タスクを確認し、`production-apk`プロファイルへ`:app:bundleRelease`を明示指定してAAB生成を強制した。 |
 | EAS直接AABビルド | 完了 | EASビルドID `b0ecdc68-03d6-4557-873b-435aca8db4c1` が完了。`1.0.0 (1)`、パッケージ名 `com.app.focusflow` のAABを生成し、`/home/ubuntu/Downloads/Focus-Flow-1.0.0-1.aab` に取得済み。 |
-| 内部テストリリース | バージョンコード更新が必要 | バージョンコード `1` のAABは内部テストの未公開下書きとして登録済みだが、現在の下書きでは重複エラーが表示されてリリースを進められない。`app.config.ts` の次回Androidバージョンコードを `2` に更新し、再生成するAABをこの内部テストへ追加する。 |
+| 内部テストリリース | 公開開始済み | バージョンコード `2` のApp Bundle `2 (1.0.0)`、新規インストール21.9MB、リリースノートを確認済み。アカウント所有者の承認を得て「保存して公開」を実行し、Play Consoleで最新リリース `1.0.0 (2) internal` が「内部テスターに公開」と表示されることを確認。次はテスターを追加してオプトインURLを取得する。 |
+| 内部テスター | 設定完了 | `Focus Flow Internal Testers` メーリングリストに1ユーザーが登録され、内部テストトラックへ保存済み。Play Consoleで最新リリースが「有効」と表示されることを確認。ウェブ参加リンクは `https://play.google.com/apps/internaltest/4701206931464809469`。次にライセンステストを設定する。 |
+| ライセンステスト | 設定完了 | デベロッパーアカウント設定の「ライセンス テスト」で、`Focus Flow Internal Testers`（1ユーザー）を選択。ライセンス応答は `RESPOND_NORMALLY` とし、最終確認を経て保存済み。Play Consoleに「変更を保存しました」と表示されることを確認した。 |
+| 公開ポリシーURL | 公開前検証待ち | プロジェクトのHTTPSドメインで公開する `/policy`、`/help`、`/terms` ルートを実装した。次のチェックポイント反映後に `https://focusapp-dmnamiyd.manus.space/policy` をプライバシーポリシーURLとして外部アクセス確認し、Google Playへ入力する。 |
+| ストア掲載画像 | 一部準備完了 | Google Play用フィーチャーグラフィックを `release/store-assets/focus-flow-feature-graphic-1024x500.png`（PNG、1024×500px、RGB）として生成。アプリアイコンは `assets/images/icon.png`（PNG、512×512px）。実機の実際の機能を示す電話用スクリーンショット5枚は、内部テスト端末での動作確認時に撮影する。 |
 | 公開・テスト | 未設定 | 新規個人アカウントのため、製品版アクセスには12人以上・14日以上のクローズドテストが必要と表示されている。 |

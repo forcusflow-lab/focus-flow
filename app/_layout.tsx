@@ -92,6 +92,9 @@ export default function RootLayout() {
             <Stack.Screen name="legal" />
             <Stack.Screen name="privacy" />
             <Stack.Screen name="support" />
+            <Stack.Screen name="policy" />
+            <Stack.Screen name="help" />
+            <Stack.Screen name="terms" />
             <Stack.Screen name="oauth/callback" />
           </Stack>
           <StatusBar style="auto" />
