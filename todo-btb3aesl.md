@@ -100,3 +100,8 @@
 - [x] Expoビルドのnpm ci失敗を解消して、Android App Bundle生成を再試行する
 - [x] Expo再ビルドの最新エラーログを分析し、Android App Bundle生成を阻害する設定または依存関係を修正する
 - [x] 修正後のExpo再ビルドで発生したGradleエラーを詳細ログから特定し、追加のKotlinまたはGradle修正を行う
+- [ ] 生成済みAABをGoogle Play Consoleの内部テストトラックへ追加し、リリース情報を設定する
+- [ ] 内部テスターとGoogle Playライセンステスターを設定し、課金テスト用の配布リンクを確認する
+- [ ] 成功したExpo AndroidビルドからAABを取得して、Play Consoleの内部テストへアップロードする
+- [ ] focus_flow_plusとfocus_flow_early_complete_100のPlay商品を下書き登録し、実機テスト準備を進める
+- [x] Expoのproduction-apk設定をGoogle Play受理可能なAndroid App Bundle出力へ変更し、AABビルドを生成する

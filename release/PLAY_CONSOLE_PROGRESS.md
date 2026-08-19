@@ -13,4 +13,5 @@
 | お支払いプロファイル | 完了 | 公開名称をFocus Flow、サポートメールをforcus.flow@gmail.com、カード明細表記をFOCUS FLOWとしてGoogle Paymentsの販売者プロフィールを送信済み。 |
 | 収益化商品 | App Bundle待ち | 定期購入画面・1回限りアイテム画面は開けるが、新しいAPK／Android App Bundleのアップロードが必要と表示され、サブスクリプション `focus_flow_plus` と消費型商品 `focus_flow_early_complete_100` の登録はビルド後に進める。 |
 | Expo Androidビルド | Kotlin修正・再検証中 | Expoアカウント `force-flow` の `focus-flow` プロジェクトで、依存関係修正後の再試行はGradle工程まで到達。最初に確定したR未解決参照はテンプレートへ`import $PACKAGE_NAME.R`を追加して解消済み。次の詳細ログから、公開されたWidget Providerが`internal`な基底クラス`FocusFlowBaseWidgetProvider`を公開しているためKotlinがコンパイルを拒否したと確定。基底クラスをpublic（既定）へ修正し、再発防止テストを更新した。 |
+| Play用AAB出力 | 設定済み・再ビルド待ち | 成功済みのEAS成果物はAPKだったため、Google Playの新規アプリ提出には使用しない。Publishが使用した`production-apk`プロファイルを`eas.json`で明示し、Android出力を`app-bundle`（AAB）へ変更した。 |
 | 公開・テスト | 未設定 | 新規個人アカウントのため、製品版アクセスには12人以上・14日以上のクローズドテストが必要と表示されている。 |
