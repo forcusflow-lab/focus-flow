@@ -105,3 +105,6 @@
 - [ ] 成功したExpo AndroidビルドからAABを取得して、Play Consoleの内部テストへアップロードする
 - [ ] focus_flow_plusとfocus_flow_early_complete_100のPlay商品を下書き登録し、実機テスト準備を進める
 - [x] Expoのproduction-apk設定をGoogle Play受理可能なAndroid App Bundle出力へ変更し、AABビルドを生成する
+- [x] Publishで実行されるGradleタスクをbundleReleaseへ明示的に設定し、AAB生成を強制する
+- [ ] 最新のEAS成果物がAAB形式であることを確認し、Google Play内部テストへ追加する
+- [ ] 内部テストの配布前にテスター用Googleアカウントとライセンステスト設定を確認する

@@ -7,9 +7,10 @@ describe("Google Play向けEASビルド設定", () => {
   it("Publishが使うproduction-apkプロファイルでAABを出力する", () => {
     const configPath = path.join(process.cwd(), "eas.json");
     const config = JSON.parse(fs.readFileSync(configPath, "utf8")) as {
-      build?: { [profile: string]: { android?: { buildType?: string } } };
+      build?: { [profile: string]: { android?: { buildType?: string; gradleCommand?: string } } };
     };
 
     expect(config.build?.["production-apk"]?.android?.buildType).toBe("app-bundle");
+    expect(config.build?.["production-apk"]?.android?.gradleCommand).toBe(":app:bundleRelease");
   });
 });
