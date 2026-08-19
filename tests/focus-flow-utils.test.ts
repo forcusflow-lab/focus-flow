@@ -80,10 +80,11 @@ describe("Focus Flowの日付・習慣計算", () => {
     };
     const morning = new Date(2026, 7, 10, 7, 30, 0);
     expect(getGateSummary(data, morning)).toMatchObject({ pendingTodos: 1, pendingHabits: 1, pendingCount: 2 });
-    expect(getGateRuleSummaries(data, morning).filter((rule) => rule.isActive)[0]).toMatchObject({ label: "朝の準備", blockedPackages: ["com.example.news"] });
+    data.gateConfig.blockedPackages = ["com.example.global"];
+    expect(getGateRuleSummaries(data, morning).filter((rule) => rule.isActive)[0]).toMatchObject({ label: "朝の準備", blockedPackages: ["com.example.global", "com.example.news"] });
     const daytime = new Date(2026, 7, 10, 10, 0, 0);
     expect(getGateSummary(data, daytime)).toMatchObject({ pendingTodos: 1, pendingHabits: 1, pendingCount: 2 });
-    expect(getGateRuleSummaries(data, daytime).filter((rule) => rule.isActive)[0]).toMatchObject({ label: "日中の作業", blockedPackages: ["com.example.video"] });
+    expect(getGateRuleSummaries(data, daytime).filter((rule) => rule.isActive)[0]).toMatchObject({ label: "日中の作業", blockedPackages: ["com.example.global", "com.example.video"] });
   });
 
   it("登録時に必須にしたTodo・習慣は日課ルールに追加しなくても基本解除条件になる", () => {

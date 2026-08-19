@@ -1,10 +1,9 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Alert, FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { TaskForm } from "@/components/focus-flow/task-form";
-import { DeviceSetupTutorial } from "@/components/focus-flow/device-setup-tutorial";
 import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
 import { COLORS, IconButton, LoadingScreen, safeHaptic } from "@/components/focus-flow/ui";
 import { ScreenContainer } from "@/components/screen-container";
@@ -14,10 +13,9 @@ import { dayKey, getGateRuleSummaries, getGateSummary, isGateTimeActive, isHabit
 
 export default function TodayScreen() {
   const router = useRouter();
-  const { todos, habits, memos, focusSessions, gateConfig, displaySettings, isReady, toggleTodo, toggleHabit, addTodo, setDisplaySettings } = useFocusFlow();
+  const { todos, habits, memos, focusSessions, gateConfig, displaySettings, isReady, toggleTodo, toggleHabit, addTodo } = useFocusFlow();
   const [taskFormOpen, setTaskFormOpen] = useState(false);
   const [newTaskDefaultRequired, setNewTaskDefaultRequired] = useState(false);
-  const [deviceSetupOpen, setDeviceSetupOpen] = useState(false);
   const english = isEnglish(displaySettings);
   const today = dayKey();
   const gateSummary = useMemo(() => getGateSummary({ todos, habits, memos, focusSessions, gateConfig, displaySettings }, new Date(), english ? "en" : "ja"), [todos, habits, memos, focusSessions, gateConfig, displaySettings, english]);
@@ -53,10 +51,6 @@ export default function TodayScreen() {
   const handleTodoToggle = (id: string) => { const result = toggleTodo(id); safeHaptic(result.ok ? "success" : "light"); explainTimedResult(result.reason, "/(tabs)/todos"); };
   const handleHabitToggle = (id: string) => { const result = toggleHabit(id); safeHaptic(result.ok ? "success" : "light"); explainTimedResult(result.reason, "/(tabs)/habits"); };
 
-  useEffect(() => {
-    if (isReady && !displaySettings.deviceSetupCompletedAt) setDeviceSetupOpen(true);
-  }, [displaySettings.deviceSetupCompletedAt, isReady]);
-
   if (!isReady) return <ScreenContainer><LoadingScreen /></ScreenContainer>;
 
   return (
@@ -84,7 +78,6 @@ export default function TodayScreen() {
         </>}
       />
       <TaskForm visible={taskFormOpen} defaultRequired={newTaskDefaultRequired} onClose={() => { setTaskFormOpen(false); setNewTaskDefaultRequired(false); }} onSave={addTodo} />
-      <DeviceSetupTutorial visible={deviceSetupOpen} english={english} onComplete={() => { setDeviceSetupOpen(false); setDisplaySettings({ deviceSetupCompletedAt: new Date().toISOString() }); }} />
     </ScreenContainer>
   );
 }

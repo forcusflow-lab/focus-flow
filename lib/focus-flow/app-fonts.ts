@@ -1,11 +1,13 @@
 import { Platform, type TextStyle } from "react-native";
 import type { AppFontId } from "./types";
 
+const FONT_PREVIEW = { ja: "今日の必須項目", en: "Today’s must-dos" };
+
 export const APP_FONT_OPTIONS: Array<{ id: AppFontId; label: { ja: string; en: string }; sample: { ja: string; en: string } }> = [
-  { id: "system", label: { ja: "標準", en: "Standard" }, sample: { ja: "今日の必須項目", en: "Today’s must-dos" } },
-  { id: "reading", label: { ja: "リーディング", en: "Reading" }, sample: { ja: "ゆっくり読み返す", en: "Read with ease" } },
-  { id: "notebook", label: { ja: "ノート", en: "Notebook" }, sample: { ja: "静かな記録", en: "A quieter record" } },
-  { id: "focus", label: { ja: "フォーカス", en: "Focus" }, sample: { ja: "進捗 2 / 5", en: "Progress 2 / 5" } },
+  { id: "system", label: { ja: "標準", en: "Standard" }, sample: FONT_PREVIEW },
+  { id: "reading", label: { ja: "リーディング", en: "Reading" }, sample: FONT_PREVIEW },
+  { id: "notebook", label: { ja: "ノート", en: "Notebook" }, sample: FONT_PREVIEW },
+  { id: "focus", label: { ja: "フォーカス", en: "Focus" }, sample: FONT_PREVIEW },
 ];
 
 export function getAppFontStyle(font: AppFontId = "system"): TextStyle {

@@ -1,13 +1,22 @@
 import { NativeModules, Platform } from "react-native";
-
 import type { DisplaySettings } from "./types";
+import { appLanguageFromLocale, type AppLanguage } from "./locale";
 
-export type AppLanguage = "ja" | "en";
+export { appLanguageFromLocale, type AppLanguage } from "./locale";
+
+function getDeviceLocale() {
+  const nativeLocale = Platform.OS === "ios" ? NativeModules.SettingsManager?.settings?.AppleLocale : NativeModules.I18nManager?.localeIdentifier;
+  if (typeof nativeLocale === "string" && nativeLocale) return nativeLocale;
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().locale;
+  } catch {
+    return undefined;
+  }
+}
 
 export function getAppLanguage(settings: Pick<DisplaySettings, "language">): AppLanguage {
   if (settings.language === "ja" || settings.language === "en") return settings.language;
-  const locale = Platform.OS === "ios" ? NativeModules.SettingsManager?.settings?.AppleLocale : NativeModules.I18nManager?.localeIdentifier;
-  return typeof locale === "string" && locale.toLowerCase().startsWith("ja") ? "ja" : "en";
+  return appLanguageFromLocale(getDeviceLocale());
 }
 
 export function isEnglish(settings: Pick<DisplaySettings, "language">) {

@@ -7,8 +7,28 @@ import android.view.accessibility.AccessibilityEvent
 import org.json.JSONObject
 
 class FocusGateService : AccessibilityService() {
-  private var lastPackage = ""; private var lastBlockedAt = 0L
-  override fun onAccessibilityEvent(event: AccessibilityEvent?) { if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return; val packageName = event.packageName?.toString() ?: return; val state = readState() ?: return; val matchingRule = state.ruleBlocking(packageName) ?: return; if (!state.active || packageName == applicationContext.packageName) return; val now = System.currentTimeMillis(); if (lastPackage == packageName && now - lastBlockedAt < 900) return; lastPackage = packageName; lastBlockedAt = now; performGlobalAction(GLOBAL_ACTION_HOME); startActivity(Intent(this, FocusGateActivity::class.java).apply { putExtra(FocusGateActivity.EXTRA_MESSAGE, matchingRule.message); putExtra(FocusGateActivity.EXTRA_LANGUAGE, state.language); addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP) }) }
+  private var lastPackage = ""
+  private var lastBlockedAt = 0L
+  override fun onServiceConnected() { lastPackage = ""; lastBlockedAt = 0L }
+  override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+    val eventType = event?.eventType ?: return
+    if (eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && eventType != AccessibilityEvent.TYPE_WINDOWS_CHANGED) return
+    val packageName = event.packageName?.toString() ?: return
+    if (packageName == applicationContext.packageName) return
+    val state = readState() ?: return
+    if (!state.active) return
+    val matchingRule = state.ruleBlocking(packageName) ?: return
+    val now = System.currentTimeMillis()
+    if (lastPackage == packageName && now - lastBlockedAt < 250) return
+    lastPackage = packageName
+    lastBlockedAt = now
+    performGlobalAction(GLOBAL_ACTION_HOME)
+    startActivity(Intent(this, FocusGateActivity::class.java).apply {
+      putExtra(FocusGateActivity.EXTRA_MESSAGE, matchingRule.message)
+      putExtra(FocusGateActivity.EXTRA_LANGUAGE, state.language)
+      addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+    })
+  }
   override fun onInterrupt() = Unit
   private fun readState(): GateState? = try { val saved = getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE).getString(FocusGateModule.GATE_STATE, null) ?: return null; val json = JSONObject(saved); val rules = json.optJSONArray("rules"); GateState(json.optBoolean("active"), rules, json.optString("language", "ja")) } catch (_: Exception) { null }
 }
