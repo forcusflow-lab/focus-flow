@@ -54,10 +54,13 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     });
     services.forEach((service) => {
       expect(service).toContain("AccessibilityEvent.TYPE_WINDOWS_CHANGED");
+      expect(service).toContain("android.accessibilityservice.AccessibilityServiceInfo");
       expect(service).toContain("now - lastBlockedAt < 250");
       expect(service).toContain("GATE_LAST_EVENT_AT");
       expect(service).not.toContain("now - lastBlockedAt < 900");
     });
-    expect(fs.readFileSync(generatedGateModule, "utf8")).toContain("configuredBlockedPackageCount");
+    const module = fs.readFileSync(generatedGateModule, "utf8");
+    expect(module).toContain("configuredBlockedPackageCount");
+    expect(module).toContain("JSONObject(saved)");
   });
 });
