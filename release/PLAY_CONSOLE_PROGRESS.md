@@ -15,4 +15,6 @@
 | Expo Androidビルド | Kotlin修正・再検証中 | Expoアカウント `force-flow` の `focus-flow` プロジェクトで、依存関係修正後の再試行はGradle工程まで到達。最初に確定したR未解決参照はテンプレートへ`import $PACKAGE_NAME.R`を追加して解消済み。次の詳細ログから、公開されたWidget Providerが`internal`な基底クラス`FocusFlowBaseWidgetProvider`を公開しているためKotlinがコンパイルを拒否したと確定。基底クラスをpublic（既定）へ修正し、再発防止テストを更新した。 |
 | Play用AAB出力 | 設定済み・再ビルド待ち | 成功済みのEAS成果物はAPKだったため、Google Playの新規アプリ提出には使用しない。Publishが使用した`production-apk`プロファイルを`eas.json`で明示し、Android出力を`app-bundle`（AAB）へ変更した。 |
 | AAB再生成の追加対策 | 設定済み・再ビルド待ち | AAB設定後もPublishが`gradlew :app:assembleRelease`を実行してAPKを出力した。EASログで実行タスクを確認し、`production-apk`プロファイルへ`:app:bundleRelease`を明示指定してAAB生成を強制した。 |
+| EAS直接AABビルド | 完了 | EASビルドID `b0ecdc68-03d6-4557-873b-435aca8db4c1` が完了。`1.0.0 (1)`、パッケージ名 `com.app.focusflow` のAABを生成し、`/home/ubuntu/Downloads/Focus-Flow-1.0.0-1.aab` に取得済み。 |
+| 内部テストリリース | バージョンコード更新が必要 | バージョンコード `1` のAABは内部テストの未公開下書きとして登録済みだが、現在の下書きでは重複エラーが表示されてリリースを進められない。`app.config.ts` の次回Androidバージョンコードを `2` に更新し、再生成するAABをこの内部テストへ追加する。 |
 | 公開・テスト | 未設定 | 新規個人アカウントのため、製品版アクセスには12人以上・14日以上のクローズドテストが必要と表示されている。 |

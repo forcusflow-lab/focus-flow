@@ -108,3 +108,9 @@
 - [x] Publishで実行されるGradleタスクをbundleReleaseへ明示的に設定し、AAB生成を強制する
 - [ ] 最新のEAS成果物がAAB形式であることを確認し、Google Play内部テストへ追加する
 - [ ] 内部テストの配布前にテスター用Googleアカウントとライセンステスト設定を確認する
+- [ ] 最新EASビルドのAABを取得し、Google Play内部テストリリースへ追加する
+- [ ] Focus Flowの内部テスターとライセンステスターを設定し、課金商品の下書き登録へ進む
+- [ ] 管理画面のPublishを使わず、EASクラウドビルドでGoogle Play用AABを生成する
+- [x] EASクラウド上でFocus FlowのAABビルドを開始し、ビルドID b0ecdc68-03d6-4557-873b-435aca8db4c1を取得する
+- [x] Play Consoleで既存のバージョンコード1のAABと下書きリリースを確認し、重複アップロードを解消する
+- [ ] 既存AABを利用するか、必要時はバージョンコードを上げたAABを再生成して内部テストへ追加する

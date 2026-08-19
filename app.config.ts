@@ -63,6 +63,9 @@ const config: ExpoConfig = {
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: env.androidPackage,
+    // Google Playでは同一パッケージ内でバージョンコードを重複登録できない。
+    // 初回の内部テスト用AAB（1）に続く次回ビルドは2として生成する。
+    versionCode: 2,
     permissions: ["POST_NOTIFICATIONS"],
     blockedPermissions: ["android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE"],
     intentFilters: [
