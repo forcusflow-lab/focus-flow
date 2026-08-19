@@ -14,7 +14,7 @@ import android.widget.RemoteViews
 import org.json.JSONArray
 import org.json.JSONObject
 
-internal abstract class FocusFlowBaseWidgetProvider : AppWidgetProvider() {
+abstract class FocusFlowBaseWidgetProvider : AppWidgetProvider() {
   abstract fun layoutResource(): Int
   abstract fun widgetKey(): String
   abstract fun bind(views: RemoteViews, state: JSONObject)

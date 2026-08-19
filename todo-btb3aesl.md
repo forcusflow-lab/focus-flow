@@ -99,3 +99,4 @@
 - [x] Expoアカウント上のEASプロジェクト作成状況とFocus Flowのストア用ビルド連携を確認する
 - [x] Expoビルドのnpm ci失敗を解消して、Android App Bundle生成を再試行する
 - [x] Expo再ビルドの最新エラーログを分析し、Android App Bundle生成を阻害する設定または依存関係を修正する
+- [x] 修正後のExpo再ビルドで発生したGradleエラーを詳細ログから特定し、追加のKotlinまたはGradle修正を行う
