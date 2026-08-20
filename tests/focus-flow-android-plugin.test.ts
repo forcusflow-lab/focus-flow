@@ -49,12 +49,16 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     const xmlFiles = [accessibilityServiceXml, generatedAccessibilityServiceXml].map((file) => fs.readFileSync(file, "utf8"));
 
     xmlFiles.forEach((xml) => {
-      expect(xml).toContain('android:accessibilityEventTypes="typeWindowStateChanged|typeWindowsChanged"');
+      expect(xml).toContain('android:accessibilityEventTypes="typeWindowStateChanged|typeWindowsChanged|typeViewFocused"');
       expect(xml).toContain('android:accessibilityFlags="flagRetrieveInteractiveWindows"');
     });
     services.forEach((service) => {
       expect(service).toContain("AccessibilityEvent.TYPE_WINDOWS_CHANGED");
+      expect(service).toContain("AccessibilityEvent.TYPE_VIEW_FOCUSED");
       expect(service).toContain("android.accessibilityservice.AccessibilityServiceInfo");
+      expect(service).toContain("activeWindowPackage()");
+      expect(service).toContain("postDelayed(task, 320)");
+      expect(service).toContain("if (matchingRule == null)");
       expect(service).toContain("now - lastBlockedAt < 250");
       expect(service).toContain("GATE_LAST_EVENT_AT");
       expect(service).not.toContain("now - lastBlockedAt < 900");

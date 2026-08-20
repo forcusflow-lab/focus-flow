@@ -64,8 +64,8 @@ const config: ExpoConfig = {
     predictiveBackGestureEnabled: false,
     package: env.androidPackage,
     // Google Playでは同一パッケージ内でバージョンコードを重複登録できない。
-    // 内部テスト済みのAAB（1、2、3）に続く集中制限修正版は4として生成する。
-    versionCode: 4,
+    // 内部テスト済みのAAB（1、2、3、4）に続く再開時遮断・ホーム改善版は5として生成する。
+    versionCode: 5,
     permissions: ["POST_NOTIFICATIONS"],
     blockedPermissions: ["android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE"],
     intentFilters: [

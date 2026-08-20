@@ -3,6 +3,8 @@ package $PACKAGE_NAME.focusflow
 import android.accessibilityservice.AccessibilityService
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
 import android.accessibilityservice.AccessibilityServiceInfo
 import org.json.JSONObject
@@ -10,12 +12,16 @@ import org.json.JSONObject
 class FocusGateService : AccessibilityService() {
   private var lastPackage = ""
   private var lastBlockedAt = 0L
+  private val foregroundRecheckHandler = Handler(Looper.getMainLooper())
+  private var foregroundRecheck: Runnable? = null
 
   override fun onServiceConnected() {
     lastPackage = ""
     lastBlockedAt = 0L
+    foregroundRecheck?.let(foregroundRecheckHandler::removeCallbacks)
+    foregroundRecheck = null
     serviceInfo = serviceInfo.apply {
-      eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or AccessibilityEvent.TYPE_WINDOWS_CHANGED
+      eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or AccessibilityEvent.TYPE_WINDOWS_CHANGED or AccessibilityEvent.TYPE_VIEW_FOCUSED
       flags = flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
       notificationTimeout = 0
     }
@@ -23,8 +29,14 @@ class FocusGateService : AccessibilityService() {
 
   override fun onAccessibilityEvent(event: AccessibilityEvent?) {
     val eventType = event?.eventType ?: return
-    if (eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && eventType != AccessibilityEvent.TYPE_WINDOWS_CHANGED) return
-    val packageName = (event.packageName ?: rootInActiveWindow?.packageName)?.toString() ?: return
+    if (eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && eventType != AccessibilityEvent.TYPE_WINDOWS_CHANGED && eventType != AccessibilityEvent.TYPE_VIEW_FOCUSED) return
+    evaluateForeground(event.packageName?.toString(), eventType != AccessibilityEvent.TYPE_VIEW_FOCUSED)
+  }
+
+  private fun evaluateForeground(eventPackage: String?, scheduleRecheck: Boolean) {
+    // 最近使ったアプリの切替ではイベント元がSystem UIになる場合があるため、実際のアクティブ
+    // またはフォーカス中ウィンドウを最優先にする。短い再判定は切替アニメーション後を補足する。
+    val packageName = activeWindowPackage() ?: eventPackage ?: return
     if (packageName == applicationContext.packageName) return
     val now = System.currentTimeMillis()
     preferences().edit()
@@ -32,7 +44,11 @@ class FocusGateService : AccessibilityService() {
       .putString(FocusGateModule.GATE_LAST_EVENT_PACKAGE, packageName)
       .apply()
     val state = readState() ?: return
-    val matchingRule = state.ruleBlocking(packageName) ?: return
+    val matchingRule = state.ruleBlocking(packageName)
+    if (matchingRule == null) {
+      if (scheduleRecheck) scheduleForegroundRecheck()
+      return
+    }
     if (lastPackage == packageName && now - lastBlockedAt < 250) return
     lastPackage = packageName
     lastBlockedAt = now
@@ -49,9 +65,37 @@ class FocusGateService : AccessibilityService() {
     } catch (_: Exception) {
       performGlobalAction(GLOBAL_ACTION_HOME)
     }
+    if (scheduleRecheck) scheduleForegroundRecheck()
   }
 
   override fun onInterrupt() = Unit
+
+  override fun onDestroy() {
+    foregroundRecheck?.let(foregroundRecheckHandler::removeCallbacks)
+    foregroundRecheck = null
+    super.onDestroy()
+  }
+
+  private fun scheduleForegroundRecheck() {
+    foregroundRecheck?.let(foregroundRecheckHandler::removeCallbacks)
+    val task = Runnable { evaluateForeground(null, false) }
+    foregroundRecheck = task
+    foregroundRecheckHandler.postDelayed(task, 320)
+  }
+
+  private fun activeWindowPackage(): String? {
+    return try {
+      val activeRoot = rootInActiveWindow
+      val activePackage = activeRoot?.packageName?.toString()
+      activeRoot?.recycle()
+      if (!activePackage.isNullOrBlank()) activePackage else {
+        val focusedRoot = windows.firstOrNull { it.isFocused }?.root
+        val focusedPackage = focusedRoot?.packageName?.toString()
+        focusedRoot?.recycle()
+        focusedPackage?.takeIf { it.isNotBlank() }
+      }
+    } catch (_: Exception) { null }
+  }
 
   private fun preferences() = getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE)
   private fun readState(): GateState? = try {
