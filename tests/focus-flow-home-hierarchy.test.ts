@@ -12,5 +12,7 @@ describe("Focus Flowホーム画面の情報階層", () => {
     expect(source).toContain("残りの必須習慣");
     expect(source).toContain("remainingTodos");
     expect(source).toContain("remainingHabits");
+    expect(source).toContain("todo.id !== nextTodo?.id");
+    expect(source).toContain("habit.id !== nextHabit?.id");
   });
 });
