@@ -44,24 +44,29 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(source).not.toContain("internal abstract class FocusFlowBaseWidgetProvider");
   });
 
-  it("テンプレートと生成済みサービスが同じ前面化検出・短い重複抑制・実行診断を持つ", () => {
+  it("テンプレートと生成済みサービスが同じ継続前面監視・遮断オーバーレイ・実行診断を持つ", () => {
     const services = [gateServiceTemplate, generatedGateService].map((file) => fs.readFileSync(file, "utf8"));
     const xmlFiles = [accessibilityServiceXml, generatedAccessibilityServiceXml].map((file) => fs.readFileSync(file, "utf8"));
 
     xmlFiles.forEach((xml) => {
-      expect(xml).toContain('android:accessibilityEventTypes="typeWindowStateChanged|typeWindowsChanged|typeViewFocused"');
+      expect(xml).toContain('android:accessibilityEventTypes="typeWindowStateChanged|typeWindowsChanged|typeViewFocused|typeWindowContentChanged"');
       expect(xml).toContain('android:accessibilityFlags="flagRetrieveInteractiveWindows"');
     });
     services.forEach((service) => {
       expect(service).toContain("AccessibilityEvent.TYPE_WINDOWS_CHANGED");
       expect(service).toContain("AccessibilityEvent.TYPE_VIEW_FOCUSED");
+      expect(service).toContain("AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED");
       expect(service).toContain("android.accessibilityservice.AccessibilityServiceInfo");
       expect(service).toContain("activeWindowPackage()");
-      expect(service).toContain("postDelayed(task, 320)");
+      expect(service).toContain("scheduleForegroundRechecks()");
+      expect(service).toContain("foregroundRecheckDelays");
+      expect(service).toContain("WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY");
+      expect(service).toContain("WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE");
+      expect(service).toContain("showGateOverlay(candidatePackage, matchingRule, state)");
+      expect(service).toContain("hideGateOverlay()");
       expect(service).toContain("if (matchingRule == null)");
-      expect(service).toContain("now - lastBlockedAt < 250");
       expect(service).toContain("GATE_LAST_EVENT_AT");
-      expect(service).not.toContain("now - lastBlockedAt < 900");
+      expect(service).not.toContain("FocusGateActivity::class.java");
     });
     const module = fs.readFileSync(generatedGateModule, "utf8");
     expect(module).toContain("configuredBlockedPackageCount");
