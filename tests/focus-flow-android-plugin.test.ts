@@ -36,12 +36,15 @@ const generatedGateModule = path.join(process.cwd(), "android", "app", "src", "m
 const generatedAccessibilityServiceXml = path.join(process.cwd(), "android", "app", "src", "main", "res", "xml", "focus_flow_accessibility_service.xml");
 
 describe("Focus Flow Androidネイティブプラグイン", () => {
-  it("ウィジェットが親アプリの生成Rクラスを明示的に読み込む", () => {
+  it("統合ウィジェットが親アプリの生成Rクラスを明示的に読み込み、Todo・習慣の完了操作を扱う", () => {
     const source = fs.readFileSync(widgetTemplate, "utf8");
 
     expect(source).toContain("import $PACKAGE_NAME.R");
-    expect(source).toContain("abstract class FocusFlowBaseWidgetProvider");
-    expect(source).not.toContain("internal abstract class FocusFlowBaseWidgetProvider");
+    expect(source).toContain("class FocusFlowWidgetProvider : AppWidgetProvider()");
+    expect(source).toContain("widgetItems");
+    expect(source).toContain("focus_flow_widget_item_4");
+    expect(source).toContain("widgetTransparency");
+    expect(source).toContain("ACTION_COMPLETE");
   });
 
   it("テンプレートと生成済みサービスが同じ継続前面監視・遮断オーバーレイ・実行診断を持つ", () => {

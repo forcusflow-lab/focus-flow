@@ -1,8 +1,15 @@
 import { FREE_BLOCKED_APP_LIMIT, FREE_ITEM_LIMIT } from "./billing";
 import type { GateConfig } from "./types";
+import type { Todo } from "./types";
+import { isTodoAchieved } from "./utils";
 
 export function isFreeItemLimitReached(itemCount: number, isPlus: boolean) {
   return !isPlus && itemCount >= FREE_ITEM_LIMIT;
+}
+
+/** 無料版のTodo上限は、完了済みの履歴を除いた未完了項目だけで判定する。 */
+export function countUncompletedTodos(todos: Todo[]) {
+  return todos.filter((todo) => !isTodoAchieved(todo)).length;
 }
 
 export function countBlockedApps(config: GateConfig) {

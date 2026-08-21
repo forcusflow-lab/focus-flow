@@ -14,20 +14,9 @@ import android.widget.RemoteViews
 import org.json.JSONArray
 import org.json.JSONObject
 
-abstract class FocusFlowBaseWidgetProvider : AppWidgetProvider() {
-  abstract fun layoutResource(): Int
-  abstract fun widgetKey(): String
-  abstract fun bind(views: RemoteViews, state: JSONObject)
-  open fun bindAction(context: Context, id: Int, views: RemoteViews, state: JSONObject) = Unit
-  open fun adaptForSize(context: Context, id: Int, views: RemoteViews, state: JSONObject) = Unit
-
-  override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
-    ids.forEach { updateWidget(context, manager, it) }
-  }
-
-  override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: android.os.Bundle) {
-    updateWidget(context, manager, id)
-  }
+class FocusFlowWidgetProvider : AppWidgetProvider() {
+  override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) { ids.forEach { updateWidget(context, manager, it) } }
+  override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: android.os.Bundle) { updateWidget(context, manager, id) }
 
   override fun onReceive(context: Context, intent: Intent) {
     val updated = when (intent.action) {
@@ -35,225 +24,143 @@ abstract class FocusFlowBaseWidgetProvider : AppWidgetProvider() {
       ACTION_UNDO -> undo(context)
       else -> null
     }
-    if (updated != null) {
-      if (updated) FocusFlowWidgetProvider.refreshAll(context)
-      return
-    }
+    if (updated != null) { if (updated) refreshAll(context); return }
     super.onReceive(context, intent)
   }
 
-  fun updateWidget(context: Context, manager: AppWidgetManager, id: Int) {
-    val current = state(context)
-    val views = RemoteViews(context.packageName, layoutResource())
-    bind(views, current)
-    bindAction(context, id, views, current)
-    applyTheme(context, views, current)
-    applyTextScale(views, current)
-    adaptForSize(context, id, views, current)
+  private fun updateWidget(context: Context, manager: AppWidgetManager, id: Int) {
+    val state = state(context)
+    val english = state.optString("language", "ja") == "en"
+    val views = RemoteViews(context.packageName, R.layout.focus_flow_widget)
+    bindTheme(views, state)
+    bindHeader(views, state, english)
+    bindItems(context, id, views, state, english)
+    bindUndo(context, id, views, english)
     views.setOnClickPendingIntent(R.id.focus_flow_widget_root, launchIntent(context, id))
     manager.updateAppWidget(id, views)
   }
 
-  protected fun state(context: Context): JSONObject {
+  private fun state(context: Context): JSONObject {
     val saved = context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE).getString(FocusGateModule.GATE_STATE, null)
     return try { JSONObject(saved ?: "{}") } catch (_: Exception) { JSONObject() }
   }
 
-  protected fun launchIntent(context: Context, id: Int): PendingIntent {
-    val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply { addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP) }
-    return PendingIntent.getActivity(context, id, launch, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-  }
-
-  protected fun en(state: JSONObject) = state.optString("language", "ja") == "en"
-  protected fun active(state: JSONObject) = state.optBoolean("active", false)
-  protected fun isExpanded(context: Context, id: Int): Boolean = AppWidgetManager.getInstance(context).getAppWidgetOptions(id).getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0) >= 220
-
-  private fun applyTheme(context: Context, views: RemoteViews, state: JSONObject) {
-    val selection = state.optJSONObject("widgetThemes")?.optJSONObject(widgetKey())
+  private fun bindTheme(views: RemoteViews, state: JSONObject) {
+    val selection = state.optJSONObject("widgetThemes")?.optJSONObject("unified")
     val background = selection?.optString("background", "default") ?: "default"
     val requestedAccent = selection?.optString("accent", "auto") ?: "auto"
     val accent = if (requestedAccent == "auto") autoAccent(background) else requestedAccent
-    val lightBackground = background == "amber" || (background == "default" && widgetKey() == "next")
-    val primary = Color.parseColor(if (lightBackground) "#3F310B" else "#FFFFFF")
-    val title = Color.parseColor(if (lightBackground) "#775300" else "#DDF1EB")
-    val detail = Color.parseColor(if (lightBackground) "#65541F" else "#E8F6F1")
+    val light = background == "amber"
+    val title = Color.parseColor(if (light) "#3F310B" else "#FFFFFF")
+    val detail = Color.parseColor(if (light) "#65541F" else "#DDF1EB")
+    val muted = Color.parseColor(if (light) "#755F2A" else "#C7E6DE")
     views.setInt(R.id.focus_flow_widget_root, "setBackgroundResource", backgroundResource(background))
-    if (widgetKey() == "overview") {
-      views.setInt(R.id.focus_flow_widget_count, "setBackgroundResource", countResource(accent))
-      views.setTextColor(R.id.focus_flow_widget_count, primary)
-      views.setTextColor(R.id.focus_flow_widget_status, primary)
-    } else {
-      views.setTextColor(R.id.focus_flow_widget_title, title)
-      views.setTextColor(R.id.focus_flow_widget_main, primary)
-      views.setTextColor(R.id.focus_flow_widget_detail, detail)
-      if (widgetKey() == "next" || widgetKey() == "habit") views.setInt(R.id.focus_flow_widget_action, "setBackgroundResource", accentResource(accent))
+    views.setFloat(R.id.focus_flow_widget_root, "setAlpha", when (state.optString("widgetTransparency", "soft")) { "clear" -> 0.68f; "soft" -> 0.86f; else -> 1f })
+    views.setTextColor(R.id.focus_flow_widget_title, title)
+    views.setTextColor(R.id.focus_flow_widget_status, detail)
+    views.setTextColor(R.id.focus_flow_widget_empty, detail)
+    listOf(R.id.focus_flow_widget_item_1_title, R.id.focus_flow_widget_item_2_title, R.id.focus_flow_widget_item_3_title, R.id.focus_flow_widget_item_4_title).forEach { views.setTextColor(it, title) }
+    listOf(R.id.focus_flow_widget_item_1_badge, R.id.focus_flow_widget_item_2_badge, R.id.focus_flow_widget_item_3_badge, R.id.focus_flow_widget_item_4_badge).forEach { views.setTextColor(it, muted) }
+    listOf(R.id.focus_flow_widget_item_1_check, R.id.focus_flow_widget_item_2_check, R.id.focus_flow_widget_item_3_check, R.id.focus_flow_widget_item_4_check).forEach { views.setInt(it, "setBackgroundResource", accentResource(accent)) }
+    val size = state.optJSONObject("widgetTextSizes")?.optString("unified", "standard") ?: "standard"
+    val scale = when (size) { "compact" -> 0.90f; "large" -> 1.15f; else -> 1f }
+    views.setTextViewTextSize(R.id.focus_flow_widget_title, TypedValue.COMPLEX_UNIT_SP, 12f * scale)
+    views.setTextViewTextSize(R.id.focus_flow_widget_status, TypedValue.COMPLEX_UNIT_SP, 11f * scale)
+    listOf(R.id.focus_flow_widget_item_1_title, R.id.focus_flow_widget_item_2_title, R.id.focus_flow_widget_item_3_title, R.id.focus_flow_widget_item_4_title).forEach { views.setTextViewTextSize(it, TypedValue.COMPLEX_UNIT_SP, 14f * scale) }
+  }
+
+  private fun bindHeader(views: RemoteViews, state: JSONObject, english: Boolean) {
+    val pending = state.optInt("pendingCount", 0)
+    val active = state.optBoolean("active", false)
+    views.setTextViewText(R.id.focus_flow_widget_title, if (english) "TODAY" else "今日の項目")
+    views.setTextViewText(R.id.focus_flow_widget_status, if (!active) if (english) "App limits off" else "集中制限はオフ" else if (pending == 0) if (english) "Must-dos complete" else "必須項目を完了しました" else if (english) "$pending must-do${if (pending == 1) "" else "s"} remaining" else "必須項目 残り${pending}件")
+  }
+
+  private fun bindItems(context: Context, widgetId: Int, views: RemoteViews, state: JSONObject, english: Boolean) {
+    val rows = listOf(
+      Triple(R.id.focus_flow_widget_item_1, R.id.focus_flow_widget_item_1_check, Pair(R.id.focus_flow_widget_item_1_title, R.id.focus_flow_widget_item_1_badge)),
+      Triple(R.id.focus_flow_widget_item_2, R.id.focus_flow_widget_item_2_check, Pair(R.id.focus_flow_widget_item_2_title, R.id.focus_flow_widget_item_2_badge)),
+      Triple(R.id.focus_flow_widget_item_3, R.id.focus_flow_widget_item_3_check, Pair(R.id.focus_flow_widget_item_3_title, R.id.focus_flow_widget_item_3_badge)),
+      Triple(R.id.focus_flow_widget_item_4, R.id.focus_flow_widget_item_4_check, Pair(R.id.focus_flow_widget_item_4_title, R.id.focus_flow_widget_item_4_badge)),
+    )
+    val items = state.optJSONArray("widgetItems") ?: JSONArray()
+    rows.forEachIndexed { index, row ->
+      val item = items.optJSONObject(index)
+      if (item == null) { views.setViewVisibility(row.first, View.GONE); return@forEachIndexed }
+      val title = item.optString("title")
+      val kind = item.optString("kind")
+      val required = item.optBoolean("required", false)
+      val timedLocked = item.optBoolean("timedLocked", false)
+      views.setViewVisibility(row.first, View.VISIBLE)
+      views.setTextViewText(row.third.first, title)
+      views.setTextViewText(row.third.second, if (required) if (english) "MUST" else "必須" else if (kind == "habit") if (english) "HABIT" else "習慣" else if (english) "TODO" else "Todo")
+      views.setTextViewText(row.second, if (timedLocked) "…" else "✓")
+      views.setViewEnabled(row.second, !timedLocked)
+      if (!timedLocked) views.setOnClickPendingIntent(row.second, completeIntent(context, widgetId, item.optString("id"), kind))
+      views.setOnClickPendingIntent(row.first, launchIntent(context, widgetId))
     }
+    views.setViewVisibility(R.id.focus_flow_widget_empty, if (items.length() == 0) View.VISIBLE else View.GONE)
+    views.setTextViewText(R.id.focus_flow_widget_empty, if (english) "No open tasks or habits today" else "今日の未完了Todo・習慣はありません")
   }
 
-  private fun applyTextScale(views: RemoteViews, state: JSONObject) {
-    val size = state.optJSONObject("widgetTextSizes")?.optString(widgetKey(), "standard") ?: "standard"
-    val scale = when (size) { "compact" -> 0.90f; "large" -> 1.16f; else -> 1f }
-    if (widgetKey() == "overview") {
-      views.setTextViewTextSize(R.id.focus_flow_widget_count, TypedValue.COMPLEX_UNIT_SP, 23f * scale)
-      views.setTextViewTextSize(R.id.focus_flow_widget_status, TypedValue.COMPLEX_UNIT_SP, 12f * scale)
-    } else {
-      views.setTextViewTextSize(R.id.focus_flow_widget_title, TypedValue.COMPLEX_UNIT_SP, 11f * scale)
-      views.setTextViewTextSize(R.id.focus_flow_widget_main, TypedValue.COMPLEX_UNIT_SP, 16f * scale)
-      views.setTextViewTextSize(R.id.focus_flow_widget_detail, TypedValue.COMPLEX_UNIT_SP, 11f * scale)
-      if (widgetKey() == "next" || widgetKey() == "habit") views.setTextViewTextSize(R.id.focus_flow_widget_action, TypedValue.COMPLEX_UNIT_SP, 12f * scale)
-    }
-  }
-
-  private fun autoAccent(background: String): String = when (background) { "ocean" -> "sky"; "violet" -> "violet"; "amber" -> "gold"; "blush" -> "coral"; "ink" -> "ink"; else -> when (widgetKey()) { "progress" -> "sky"; "next" -> "gold"; "habit" -> "violet"; else -> "mint" } }
-  private fun backgroundResource(background: String): Int = when (background) { "forest" -> R.drawable.focus_flow_widget_background_forest; "ocean" -> R.drawable.focus_flow_widget_background_ocean; "violet" -> R.drawable.focus_flow_widget_background_violet; "amber" -> R.drawable.focus_flow_widget_background_amber; "blush" -> R.drawable.focus_flow_widget_background_blush; "ink" -> R.drawable.focus_flow_widget_background_ink; else -> when (widgetKey()) { "overview" -> R.drawable.focus_flow_widget_background; "progress" -> R.drawable.focus_flow_widget_background_progress; "next" -> R.drawable.focus_flow_widget_background_next; "habit" -> R.drawable.focus_flow_widget_background_habit; else -> R.drawable.focus_flow_widget_background_routine } }
-  private fun accentResource(accent: String): Int = when (accent) { "sky" -> R.drawable.focus_flow_widget_accent_sky; "violet" -> R.drawable.focus_flow_widget_accent_violet; "coral" -> R.drawable.focus_flow_widget_accent_coral; "gold" -> R.drawable.focus_flow_widget_accent_gold; "ink" -> R.drawable.focus_flow_widget_accent_ink; else -> R.drawable.focus_flow_widget_accent_mint }
-  private fun countResource(accent: String): Int = when (accent) { "sky" -> R.drawable.focus_flow_widget_count_sky; "violet" -> R.drawable.focus_flow_widget_count_violet; "coral" -> R.drawable.focus_flow_widget_count_coral; "gold" -> R.drawable.focus_flow_widget_count_gold; "ink" -> R.drawable.focus_flow_widget_count_ink; else -> R.drawable.focus_flow_widget_count_mint }
-
-  protected fun completeIntent(context: Context, id: Int, targetId: String, kind: String): PendingIntent {
-    return PendingIntent.getBroadcast(context, (id.toString() + targetId + kind).hashCode(), Intent(context, javaClass).apply {
-      action = ACTION_COMPLETE
-      putExtra(EXTRA_TARGET_ID, targetId)
-      putExtra(EXTRA_KIND, kind)
-    }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-  }
-
-  protected fun undoIntent(context: Context, id: Int): PendingIntent {
-    return PendingIntent.getBroadcast(context, (id.toString() + "undo").hashCode(), Intent(context, javaClass).apply {
-      action = ACTION_UNDO
-    }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-  }
-
-  protected fun bindUndo(context: Context, id: Int, views: RemoteViews, english: Boolean): Boolean {
-    if (!undoAvailable(context)) return false
-    views.setViewVisibility(R.id.focus_flow_widget_action, View.VISIBLE)
-    views.setTextViewText(R.id.focus_flow_widget_action, if (english) "Undo" else "取り消す")
-    views.setOnClickPendingIntent(R.id.focus_flow_widget_action, undoIntent(context, id))
-    return true
-  }
-
-  private fun undoAvailable(context: Context): Boolean {
-    val preferences = context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE)
-    val undo = try { JSONObject(preferences.getString(FocusGateModule.WIDGET_UNDO, "") ?: "") } catch (_: Exception) { null }
-    if (undo == null || undo.optLong("expiresAt") <= System.currentTimeMillis()) {
-      preferences.edit().remove(FocusGateModule.WIDGET_UNDO).apply()
-      return false
-    }
-    return true
+  private fun bindUndo(context: Context, id: Int, views: RemoteViews, english: Boolean) {
+    val undo = undoState(context)
+    if (undo == null) { views.setViewVisibility(R.id.focus_flow_widget_undo, View.GONE); return }
+    views.setViewVisibility(R.id.focus_flow_widget_undo, View.VISIBLE)
+    views.setTextViewText(R.id.focus_flow_widget_undo, if (english) "Undo" else "取り消す")
+    views.setOnClickPendingIntent(R.id.focus_flow_widget_undo, undoIntent(context, id))
   }
 
   private fun complete(context: Context, targetId: String, kind: String): Boolean {
     if (targetId.isBlank() || (kind != "todo" && kind != "habit")) return false
     val preferences = context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE)
-    val state = state(context)
-    val lockedIds = state.optJSONArray(if (kind == "todo") "timedLockedTodoIds" else "timedLockedHabitIds")
-    if (lockedIds != null) for (index in 0 until lockedIds.length()) if (lockedIds.optString(index) == targetId) return false
-    val expectedId = if (kind == "todo") state.optString("nextRequiredId") else state.optString("nextHabitId")
-    if (targetId != expectedId) return false
+    val current = state(context)
+    val items = current.optJSONArray("widgetItems") ?: return false
+    var target: JSONObject? = null
+    for (index in 0 until items.length()) { val item = items.optJSONObject(index); if (item?.optString("id") == targetId && item.optString("kind") == kind) target = item }
+    val item = target ?: return false
+    if (item.optBoolean("timedLocked", false)) return false
     val queued = try { JSONArray(preferences.getString(FocusGateModule.WIDGET_COMPLETIONS, "[]") ?: "[]") } catch (_: Exception) { JSONArray() }
-    for (index in 0 until queued.length()) {
-      val item = queued.optJSONObject(index)
-      if (item?.optString("id") == targetId && item.optString("kind") == kind) return false
-    }
-    val undo = JSONObject().put("expiresAt", System.currentTimeMillis() + UNDO_WINDOW_MS).put("id", targetId).put("kind", kind).put("state", JSONObject(state.toString()))
+    for (index in 0 until queued.length()) { val queuedItem = queued.optJSONObject(index); if (queuedItem?.optString("id") == targetId && queuedItem.optString("kind") == kind) return false }
+    val undo = JSONObject().put("expiresAt", System.currentTimeMillis() + UNDO_WINDOW_MS).put("id", targetId).put("kind", kind).put("state", JSONObject(current.toString()))
     queued.put(JSONObject().put("id", targetId).put("kind", kind))
+    val remainingItems = JSONArray()
+    for (index in 0 until items.length()) { val candidate = items.optJSONObject(index) ?: continue; if (candidate.optString("id") != targetId || candidate.optString("kind") != kind) remainingItems.put(candidate) }
+    current.put("widgetItems", remainingItems)
+    if (item.optBoolean("required", false)) updateRequiredState(current, targetId, kind)
+    preferences.edit().putString(FocusGateModule.GATE_STATE, current.toString()).putString(FocusGateModule.WIDGET_COMPLETIONS, queued.toString()).putString(FocusGateModule.WIDGET_UNDO, undo.toString()).putLong(FocusGateModule.GATE_STATE_UPDATED_AT, System.currentTimeMillis()).apply()
+    return true
+  }
+
+  private fun updateRequiredState(state: JSONObject, targetId: String, kind: String) {
     state.put("pendingCount", (state.optInt("pendingCount") - 1).coerceAtLeast(0))
     val queueKey = if (kind == "todo") "todoQueue" else "habitQueue"
     val queue = state.optJSONArray(queueKey) ?: JSONArray()
     val remainingQueue = JSONArray()
-    for (index in 0 until queue.length()) {
-      val item = queue.optJSONObject(index) ?: continue
-      if (item.optString("id") != targetId) remainingQueue.put(item)
-    }
+    for (index in 0 until queue.length()) { val entry = queue.optJSONObject(index) ?: continue; if (entry.optString("id") != targetId) remainingQueue.put(entry) }
     state.put(queueKey, remainingQueue)
-    val next = remainingQueue.optJSONObject(0)
-    if (kind == "todo") {
-      state.put("pendingTodos", (state.optInt("pendingTodos") - 1).coerceAtLeast(0))
-      state.put("completedTodoTotal", state.optInt("completedTodoTotal") + 1)
-      state.put("nextTodoId", next?.optString("id") ?: "")
-      state.put("nextTodoTitle", next?.optString("title") ?: "")
-    } else {
-      state.put("pendingHabits", (state.optInt("pendingHabits") - 1).coerceAtLeast(0))
-      state.put("completedHabitTotal", state.optInt("completedHabitTotal") + 1)
-      state.put("nextHabitId", next?.optString("id") ?: "")
-      state.put("nextHabitTitle", next?.optString("title") ?: "")
-    }
-    updateNextRequired(state)
-    updateRules(state, targetId, kind, removed = true)
-    preferences.edit()
-      .putString(FocusGateModule.GATE_STATE, state.toString())
-      .putString(FocusGateModule.WIDGET_COMPLETIONS, queued.toString())
-      .putString(FocusGateModule.WIDGET_UNDO, undo.toString())
-      .putLong(FocusGateModule.GATE_STATE_UPDATED_AT, System.currentTimeMillis())
-      .apply()
-    return true
+    if (kind == "todo") { state.put("pendingTodos", (state.optInt("pendingTodos") - 1).coerceAtLeast(0)); state.put("completedTodoTotal", state.optInt("completedTodoTotal") + 1) } else { state.put("pendingHabits", (state.optInt("pendingHabits") - 1).coerceAtLeast(0)); state.put("completedHabitTotal", state.optInt("completedHabitTotal") + 1) }
+    val rules = state.optJSONArray("rules") ?: JSONArray()
+    for (index in 0 until rules.length()) { val rule = rules.optJSONObject(index) ?: continue; val ids = rule.optJSONArray(if (kind == "todo") "pendingTodoIds" else "pendingHabitIds") ?: continue; var contains = false; val remaining = JSONArray(); for (idIndex in 0 until ids.length()) { val value = ids.optString(idIndex); if (value == targetId) contains = true else remaining.put(value) }; if (!contains) continue; if (kind == "todo") { rule.put("pendingTodoIds", remaining); rule.put("pendingTodos", (rule.optInt("pendingTodos") - 1).coerceAtLeast(0)) } else { rule.put("pendingHabitIds", remaining); rule.put("pendingHabits", (rule.optInt("pendingHabits") - 1).coerceAtLeast(0)) }; rule.put("pendingCount", (rule.optInt("pendingCount") - 1).coerceAtLeast(0)) }
   }
 
   private fun undo(context: Context): Boolean {
     val preferences = context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE)
-    val undo = try { JSONObject(preferences.getString(FocusGateModule.WIDGET_UNDO, "") ?: "") } catch (_: Exception) { return false }
-    if (undo.optLong("expiresAt") <= System.currentTimeMillis()) {
-      preferences.edit().remove(FocusGateModule.WIDGET_UNDO).apply()
-      return false
-    }
-    val targetId = undo.optString("id")
-    val kind = undo.optString("kind")
-    val restored = undo.optJSONObject("state") ?: return false
+    val undo = undoState(context) ?: return false
+    val targetId = undo.optString("id"); val kind = undo.optString("kind"); val restored = undo.optJSONObject("state") ?: return false
     val queued = try { JSONArray(preferences.getString(FocusGateModule.WIDGET_COMPLETIONS, "[]") ?: "[]") } catch (_: Exception) { JSONArray() }
-    val remaining = JSONArray()
-    for (index in 0 until queued.length()) {
-      val item = queued.optJSONObject(index) ?: continue
-      if (item.optString("id") != targetId || item.optString("kind") != kind) remaining.put(item)
-    }
-    preferences.edit()
-      .putString(FocusGateModule.GATE_STATE, restored.toString())
-      .putString(FocusGateModule.WIDGET_COMPLETIONS, remaining.toString())
-      .remove(FocusGateModule.WIDGET_UNDO)
-      .putLong(FocusGateModule.GATE_STATE_UPDATED_AT, System.currentTimeMillis())
-      .apply()
+    val remaining = JSONArray(); for (index in 0 until queued.length()) { val item = queued.optJSONObject(index) ?: continue; if (item.optString("id") != targetId || item.optString("kind") != kind) remaining.put(item) }
+    preferences.edit().putString(FocusGateModule.GATE_STATE, restored.toString()).putString(FocusGateModule.WIDGET_COMPLETIONS, remaining.toString()).remove(FocusGateModule.WIDGET_UNDO).putLong(FocusGateModule.GATE_STATE_UPDATED_AT, System.currentTimeMillis()).apply()
     return true
   }
 
-  private fun updateNextRequired(state: JSONObject) {
-    val nextTodoId = state.optString("nextTodoId")
-    val nextHabitId = state.optString("nextHabitId")
-    if (nextTodoId.isNotBlank()) {
-      state.put("nextRequiredId", nextTodoId)
-      state.put("nextRequiredTitle", state.optString("nextTodoTitle"))
-      state.put("nextRequiredKind", "todo")
-    } else if (nextHabitId.isNotBlank()) {
-      state.put("nextRequiredId", nextHabitId)
-      state.put("nextRequiredTitle", state.optString("nextHabitTitle"))
-      state.put("nextRequiredKind", "habit")
-    } else {
-      state.put("nextRequiredId", "")
-      state.put("nextRequiredTitle", "")
-      state.put("nextRequiredKind", "")
-    }
-  }
-
-  private fun updateRules(state: JSONObject, targetId: String, kind: String, removed: Boolean) {
-    val rules = state.optJSONArray("rules") ?: JSONArray()
-    for (index in 0 until rules.length()) {
-      val rule = rules.optJSONObject(index) ?: continue
-      val ids = if (kind == "todo") rule.optJSONArray("pendingTodoIds") else rule.optJSONArray("pendingHabitIds")
-      var found = false
-      if (ids != null) for (idIndex in 0 until ids.length()) if (ids.optString(idIndex) == targetId) found = true
-      if (!found) continue
-      val remaining = JSONArray()
-      if (ids != null) for (idIndex in 0 until ids.length()) {
-        val value = ids.optString(idIndex)
-        if (value != targetId) remaining.put(value)
-      }
-      if (kind == "todo") {
-        rule.put("pendingTodoIds", remaining)
-        rule.put("pendingTodos", (rule.optInt("pendingTodos") - if (removed) 1 else -1).coerceAtLeast(0))
-      } else {
-        rule.put("pendingHabitIds", remaining)
-        rule.put("pendingHabits", (rule.optInt("pendingHabits") - if (removed) 1 else -1).coerceAtLeast(0))
-      }
-      rule.put("pendingCount", (rule.optInt("pendingCount") - if (removed) 1 else -1).coerceAtLeast(0))
-    }
-  }
+  private fun undoState(context: Context): JSONObject? { val preferences = context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE); val undo = try { JSONObject(preferences.getString(FocusGateModule.WIDGET_UNDO, "") ?: "") } catch (_: Exception) { return null }; if (undo.optLong("expiresAt") <= System.currentTimeMillis()) { preferences.edit().remove(FocusGateModule.WIDGET_UNDO).apply(); return null }; return undo }
+  private fun launchIntent(context: Context, id: Int): PendingIntent { val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply { addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP) }; return PendingIntent.getActivity(context, id, launch, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE) }
+  private fun completeIntent(context: Context, id: Int, targetId: String, kind: String): PendingIntent = PendingIntent.getBroadcast(context, (id.toString() + targetId + kind).hashCode(), Intent(context, javaClass).apply { action = ACTION_COMPLETE; putExtra(EXTRA_TARGET_ID, targetId); putExtra(EXTRA_KIND, kind) }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+  private fun undoIntent(context: Context, id: Int): PendingIntent = PendingIntent.getBroadcast(context, (id.toString() + "undo").hashCode(), Intent(context, javaClass).apply { action = ACTION_UNDO }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+  private fun autoAccent(background: String): String = when (background) { "ocean" -> "sky"; "violet" -> "violet"; "amber" -> "gold"; "blush" -> "coral"; "ink" -> "ink"; else -> "mint" }
+  private fun backgroundResource(background: String): Int = when (background) { "forest" -> R.drawable.focus_flow_widget_background_forest; "ocean" -> R.drawable.focus_flow_widget_background_ocean; "violet" -> R.drawable.focus_flow_widget_background_violet; "amber" -> R.drawable.focus_flow_widget_background_amber; "blush" -> R.drawable.focus_flow_widget_background_blush; "ink" -> R.drawable.focus_flow_widget_background_ink; else -> R.drawable.focus_flow_widget_background }
+  private fun accentResource(accent: String): Int = when (accent) { "sky" -> R.drawable.focus_flow_widget_accent_sky; "violet" -> R.drawable.focus_flow_widget_accent_violet; "coral" -> R.drawable.focus_flow_widget_accent_coral; "gold" -> R.drawable.focus_flow_widget_accent_gold; "ink" -> R.drawable.focus_flow_widget_accent_ink; else -> R.drawable.focus_flow_widget_accent_mint }
 
   companion object {
     const val ACTION_COMPLETE = "focusflow.widget.COMPLETE"
@@ -261,99 +168,6 @@ abstract class FocusFlowBaseWidgetProvider : AppWidgetProvider() {
     const val EXTRA_TARGET_ID = "targetId"
     const val EXTRA_KIND = "kind"
     const val UNDO_WINDOW_MS = 15_000L
+    fun refreshAll(context: Context) { val manager = AppWidgetManager.getInstance(context); val provider = FocusFlowWidgetProvider(); manager.getAppWidgetIds(ComponentName(context, FocusFlowWidgetProvider::class.java)).forEach { id -> provider.updateWidget(context, manager, id) } }
   }
-}
-
-class FocusFlowWidgetProvider : FocusFlowBaseWidgetProvider() {
-  override fun layoutResource() = R.layout.focus_flow_widget
-  override fun widgetKey() = "overview"
-  override fun bind(views: RemoteViews, state: JSONObject) {
-    val pending = state.optInt("pendingCount", 0)
-    val english = en(state)
-    views.setTextViewText(R.id.focus_flow_widget_count, if (pending == 0) if (english) "Done" else "完了" else if (english) "$pending left" else "${pending}件")
-    views.setTextViewText(R.id.focus_flow_widget_status, if (!active(state)) if (english) "App limits are off" else "アプリ制限はオフ" else if (pending == 0) if (english) "Today’s must-dos are complete" else "今日の必須項目を完了しました" else if (english) "Finish must-dos to unlock apps" else "必須項目を終えてアプリを解除")
-  }
-  companion object {
-    private val providers = listOf(FocusFlowWidgetProvider::class.java, FocusFlowProgressWidgetProvider::class.java, FocusFlowNextWidgetProvider::class.java, FocusFlowHabitWidgetProvider::class.java, FocusFlowRoutineWidgetProvider::class.java)
-    fun refreshAll(context: Context) {
-      val manager = AppWidgetManager.getInstance(context)
-      providers.forEach { clazz ->
-        val provider = clazz.getDeclaredConstructor().newInstance()
-        manager.getAppWidgetIds(ComponentName(context, clazz)).forEach { id -> provider.updateWidget(context, manager, id) }
-      }
-    }
-  }
-}
-
-class FocusFlowProgressWidgetProvider : FocusFlowBaseWidgetProvider() {
-  override fun layoutResource() = R.layout.focus_flow_widget_progress
-  override fun widgetKey() = "progress"
-  override fun bind(views: RemoteViews, state: JSONObject) {
-    val english = en(state)
-    val total = state.optInt("requiredTodoTotal", 0) + state.optInt("requiredHabitTotal", 0)
-    val done = state.optInt("completedTodoTotal", 0) + state.optInt("completedHabitTotal", 0)
-    views.setTextViewText(R.id.focus_flow_widget_title, if (english) "UNLOCK PROGRESS" else "解除の進捗")
-    views.setTextViewText(R.id.focus_flow_widget_main, if (total == 0) if (english) "Add a must-do" else "必須項目を追加" else "$done / $total")
-    views.setTextViewText(R.id.focus_flow_widget_detail, if (english) "Tasks ${state.optInt("completedTodoTotal", 0)}/${state.optInt("requiredTodoTotal", 0)} · Habits ${state.optInt("completedHabitTotal", 0)}/${state.optInt("requiredHabitTotal", 0)}" else "Todo ${state.optInt("completedTodoTotal", 0)}/${state.optInt("requiredTodoTotal", 0)} ・ 習慣 ${state.optInt("completedHabitTotal", 0)}/${state.optInt("requiredHabitTotal", 0)}")
-  }
-  override fun adaptForSize(context: Context, id: Int, views: RemoteViews, state: JSONObject) { views.setViewVisibility(R.id.focus_flow_widget_detail, if (isExpanded(context, id)) View.VISIBLE else View.GONE) }
-}
-
-class FocusFlowNextWidgetProvider : FocusFlowBaseWidgetProvider() {
-  override fun layoutResource() = R.layout.focus_flow_widget_next
-  override fun widgetKey() = "next"
-  override fun bind(views: RemoteViews, state: JSONObject) {
-    val english = en(state)
-    val title = state.optString("nextRequiredTitle", "")
-    val kind = state.optString("nextRequiredKind", "")
-    views.setTextViewText(R.id.focus_flow_widget_title, if (english) "NEXT MUST-DO" else "次の必須項目")
-    views.setTextViewText(R.id.focus_flow_widget_main, if (title.isBlank()) if (english) "You’re all set" else "すべて完了です" else title)
-    views.setTextViewText(R.id.focus_flow_widget_detail, if (title.isBlank()) if (english) "Open Focus Flow to plan tomorrow" else "Focus Flowで明日の予定を整えましょう" else if (kind == "habit") if (english) "Record today’s habit" else "今日の習慣を記録" else if (english) "Complete this task to unlock apps" else "完了するとアプリを解除できます")
-  }
-  override fun bindAction(context: Context, id: Int, views: RemoteViews, state: JSONObject) {
-    val english = en(state)
-    if (bindUndo(context, id, views, english)) return
-    val targetId = state.optString("nextRequiredId")
-    val kind = state.optString("nextRequiredKind")
-    views.setViewVisibility(R.id.focus_flow_widget_action, if (targetId.isBlank()) View.GONE else View.VISIBLE)
-    views.setTextViewText(R.id.focus_flow_widget_action, if (english) "Mark complete" else "完了にする")
-    if (targetId.isNotBlank() && (kind == "todo" || kind == "habit")) views.setOnClickPendingIntent(R.id.focus_flow_widget_action, completeIntent(context, id, targetId, kind))
-  }
-  override fun adaptForSize(context: Context, id: Int, views: RemoteViews, state: JSONObject) { views.setViewVisibility(R.id.focus_flow_widget_detail, if (isExpanded(context, id)) View.VISIBLE else View.GONE) }
-}
-
-class FocusFlowHabitWidgetProvider : FocusFlowBaseWidgetProvider() {
-  override fun layoutResource() = R.layout.focus_flow_widget_habit
-  override fun widgetKey() = "habit"
-  override fun bind(views: RemoteViews, state: JSONObject) {
-    val english = en(state)
-    val total = state.optInt("requiredHabitTotal", 0)
-    val done = state.optInt("completedHabitTotal", 0)
-    views.setTextViewText(R.id.focus_flow_widget_title, if (english) "HABIT PULSE" else "習慣の記録")
-    views.setTextViewText(R.id.focus_flow_widget_main, if (total == 0) if (english) "No must-do habits" else "必須習慣はありません" else if (english) "$done of $total complete" else "$done / $total を完了")
-    views.setTextViewText(R.id.focus_flow_widget_detail, if (total == 0) if (english) "Add one when a routine matters" else "習慣を必須にするとここに表示" else if (done == total) if (english) "Today’s required habits are done" else "今日の必須習慣は完了しました" else if (english) "Tap to record your progress" else "タップして進捗を記録")
-  }
-  override fun bindAction(context: Context, id: Int, views: RemoteViews, state: JSONObject) {
-    val english = en(state)
-    if (bindUndo(context, id, views, english)) return
-    val targetId = state.optString("nextHabitId")
-    views.setViewVisibility(R.id.focus_flow_widget_action, if (targetId.isBlank()) View.GONE else View.VISIBLE)
-    views.setTextViewText(R.id.focus_flow_widget_action, if (english) "Complete habit" else "習慣を完了")
-    if (targetId.isNotBlank()) views.setOnClickPendingIntent(R.id.focus_flow_widget_action, completeIntent(context, id, targetId, "habit"))
-  }
-  override fun adaptForSize(context: Context, id: Int, views: RemoteViews, state: JSONObject) { views.setViewVisibility(R.id.focus_flow_widget_detail, if (isExpanded(context, id)) View.VISIBLE else View.GONE) }
-}
-
-class FocusFlowRoutineWidgetProvider : FocusFlowBaseWidgetProvider() {
-  override fun layoutResource() = R.layout.focus_flow_widget_routine
-  override fun widgetKey() = "routine"
-  override fun bind(views: RemoteViews, state: JSONObject) {
-    val english = en(state)
-    val label = state.optString("routineLabel", "")
-    val routineOn = state.optBoolean("routineActive", false)
-    views.setTextViewText(R.id.focus_flow_widget_title, if (english) "ROUTINE STATUS" else "日課の状態")
-    views.setTextViewText(R.id.focus_flow_widget_main, if (!active(state)) if (english) "App limits are off" else "アプリ制限はオフ" else if (routineOn) if (label.isBlank()) if (english) "Routine active" else "日課を適用中" else label else if (english) "No routine active" else "日課の時間外です")
-    views.setTextViewText(R.id.focus_flow_widget_detail, if (!active(state)) if (english) "Turn on App limits in Settings" else "設定からアプリ制限をオンにできます" else if (routineOn) if (english) "Tap to review today’s unlock progress" else "タップして今日の解除進捗を確認" else if (english) "Your next routine will resume automatically" else "次の日課の時間になると自動で再開")
-  }
-  override fun adaptForSize(context: Context, id: Int, views: RemoteViews, state: JSONObject) { views.setViewVisibility(R.id.focus_flow_widget_detail, if (isExpanded(context, id)) View.VISIBLE else View.GONE) }
 }

@@ -4,12 +4,30 @@
   android:layout_width="match_parent"
   android:layout_height="match_parent"
   android:background="@drawable/focus_flow_widget_background"
-  android:gravity="center_vertical"
-  android:orientation="horizontal"
+  android:orientation="vertical"
   android:padding="14dp">
-  <TextView android:id="@+id/focus_flow_widget_count" android:layout_width="54dp" android:layout_height="54dp" android:background="@drawable/focus_flow_widget_count_background" android:gravity="center" android:textColor="#FFFFFF" android:textSize="19sp" android:textStyle="bold" />
-  <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:orientation="vertical">
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="FOCUS FLOW" android:textColor="#CBE8DE" android:textSize="10sp" android:textStyle="bold" />
-    <TextView android:id="@+id/focus_flow_widget_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:ellipsize="end" android:maxLines="2" android:textColor="#FFFFFF" android:textSize="12sp" android:textStyle="bold" />
+  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+      <TextView android:id="@+id/focus_flow_widget_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="今日の項目" android:textColor="#FFFFFF" android:textSize="12sp" android:textStyle="bold" />
+      <TextView android:id="@+id/focus_flow_widget_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:textColor="#DDF1EB" android:textSize="11sp" />
+    </LinearLayout>
+    <TextView android:id="@+id/focus_flow_widget_undo" android:layout_width="wrap_content" android:layout_height="32dp" android:background="@drawable/focus_flow_widget_action_background" android:gravity="center" android:minWidth="64dp" android:paddingHorizontal="10dp" android:text="取り消す" android:textColor="#FFFFFF" android:textSize="11sp" android:textStyle="bold" android:visibility="gone" />
+  </LinearLayout>
+  <TextView android:id="@+id/focus_flow_widget_empty" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:gravity="center" android:textColor="#DDF1EB" android:textSize="12sp" android:visibility="gone" />
+  <LinearLayout android:id="@+id/focus_flow_widget_item_1" android:layout_width="match_parent" android:layout_height="42dp" android:layout_marginTop="12dp" android:gravity="center_vertical" android:orientation="horizontal">
+    <TextView android:id="@+id/focus_flow_widget_item_1_check" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="✓" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" />
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_weight="1" android:orientation="vertical"><TextView android:id="@+id/focus_flow_widget_item_1_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" /><TextView android:id="@+id/focus_flow_widget_item_1_badge" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:textColor="#C7E6DE" android:textSize="9sp" android:textStyle="bold" /></LinearLayout>
+  </LinearLayout>
+  <LinearLayout android:id="@+id/focus_flow_widget_item_2" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:orientation="horizontal">
+    <TextView android:id="@+id/focus_flow_widget_item_2_check" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="✓" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" />
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_weight="1" android:orientation="vertical"><TextView android:id="@+id/focus_flow_widget_item_2_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" /><TextView android:id="@+id/focus_flow_widget_item_2_badge" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:textColor="#C7E6DE" android:textSize="9sp" android:textStyle="bold" /></LinearLayout>
+  </LinearLayout>
+  <LinearLayout android:id="@+id/focus_flow_widget_item_3" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:orientation="horizontal">
+    <TextView android:id="@+id/focus_flow_widget_item_3_check" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="✓" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" />
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_weight="1" android:orientation="vertical"><TextView android:id="@+id/focus_flow_widget_item_3_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" /><TextView android:id="@+id/focus_flow_widget_item_3_badge" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:textColor="#C7E6DE" android:textSize="9sp" android:textStyle="bold" /></LinearLayout>
+  </LinearLayout>
+  <LinearLayout android:id="@+id/focus_flow_widget_item_4" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:orientation="horizontal">
+    <TextView android:id="@+id/focus_flow_widget_item_4_check" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="✓" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" />
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_weight="1" android:orientation="vertical"><TextView android:id="@+id/focus_flow_widget_item_4_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" /><TextView android:id="@+id/focus_flow_widget_item_4_badge" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:textColor="#C7E6DE" android:textSize="9sp" android:textStyle="bold" /></LinearLayout>
   </LinearLayout>
 </LinearLayout>

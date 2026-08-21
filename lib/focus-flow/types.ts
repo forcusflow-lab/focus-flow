@@ -1,13 +1,14 @@
 export type Priority = "high" | "medium" | "low";
 export type ProgressUnit = "check" | "count" | "minutes";
 export type RepeatRule = "none" | "daily" | "weekly";
-export type WidgetThemeKind = "overview" | "progress" | "next" | "habit" | "routine";
+export type WidgetThemeKind = "unified" | "overview" | "progress" | "next" | "habit" | "routine";
 export type WidgetBackgroundTheme = "default" | "forest" | "ocean" | "violet" | "amber" | "blush" | "ink";
 export type WidgetAccentTheme = "auto" | "mint" | "sky" | "violet" | "coral" | "gold" | "ink";
 export type WidgetThemeSelection = { background: WidgetBackgroundTheme; accent: WidgetAccentTheme };
 export type AppThemeId = "mist" | "slate" | "evergreen" | "ocean" | "orchid" | "sunrise";
 export type AppearancePreference = "system" | "light" | "dark";
 export type WidgetTextSize = "compact" | "standard" | "large";
+export type WidgetTransparency = "solid" | "soft" | "clear";
 export type AppFontId = "system" | "reading" | "notebook" | "focus";
 export type SavedThemeSet = { id: string; name: string; appTheme: AppThemeId; appearance: AppearancePreference; fontFamily?: AppFontId; widgetThemes: Partial<Record<WidgetThemeKind, WidgetThemeSelection>>; widgetTextSizes: Partial<Record<WidgetThemeKind, WidgetTextSize>> };
 
@@ -106,6 +107,7 @@ export type DisplaySettings = {
   dailyReminderTime?: string;
   widgetThemes?: Partial<Record<WidgetThemeKind, WidgetThemeSelection>>;
   widgetTextSizes?: Partial<Record<WidgetThemeKind, WidgetTextSize>>;
+  widgetTransparency?: WidgetTransparency;
   savedThemeSets?: SavedThemeSet[];
   plusEntitlement?: boolean;
 };
@@ -123,6 +125,7 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   dailyReminderEnabled: false,
   dailyReminderTime: "19:00",
   widgetTextSizes: {},
+  widgetTransparency: "soft",
   savedThemeSets: [],
   plusEntitlement: false,
 };

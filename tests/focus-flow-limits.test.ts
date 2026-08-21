@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { FREE_BLOCKED_APP_LIMIT, FREE_ITEM_LIMIT } from "../lib/focus-flow/billing";
-import { canSelectBlockedApp, capBlockedApps, countBlockedApps, isFreeItemLimitReached } from "../lib/focus-flow/limits";
-import type { GateConfig } from "../lib/focus-flow/types";
+import { canSelectBlockedApp, capBlockedApps, countBlockedApps, countUncompletedTodos, isFreeItemLimitReached } from "../lib/focus-flow/limits";
+import type { GateConfig, Todo } from "../lib/focus-flow/types";
 
 const config: GateConfig = {
   enabled: true,
@@ -19,6 +19,14 @@ describe("無料版とPlusの上限", () => {
     expect(isFreeItemLimitReached(1, false)).toBe(false);
     expect(isFreeItemLimitReached(2, false)).toBe(true);
     expect(isFreeItemLimitReached(999, true)).toBe(false);
+  });
+
+  it("完了済みTodoは無料版の作成上限に含めない", () => {
+    const todo = (id: string, completed: boolean): Todo => ({ id, title: id, priority: "medium", isRequired: false, completed, createdAt: "2026-01-01T00:00:00.000Z", progressUnit: "check", targetValue: 1, progressValue: completed ? 1 : 0 });
+    const todos = [todo("done", true), todo("open-one", false), todo("open-two", false)];
+    expect(countUncompletedTodos(todos)).toBe(2);
+    expect(isFreeItemLimitReached(countUncompletedTodos(todos), false)).toBe(true);
+    expect(countUncompletedTodos([...todos, todo("another-done", true)])).toBe(2);
   });
 
   it("無料版の制限対象アプリは全ルール合計5件、Plusでは無制限", () => {

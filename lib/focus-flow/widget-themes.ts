@@ -1,6 +1,6 @@
 import type { DisplaySettings, WidgetAccentTheme, WidgetBackgroundTheme, WidgetThemeKind, WidgetThemeSelection } from "./types";
 
-export const WIDGET_THEME_KINDS: WidgetThemeKind[] = ["overview", "progress", "next", "habit", "routine"];
+export const WIDGET_THEME_KINDS: WidgetThemeKind[] = ["unified"];
 export const DEFAULT_WIDGET_THEME: WidgetThemeSelection = { background: "default", accent: "auto" };
 
 export function getWidgetTheme(settings: DisplaySettings, kind: WidgetThemeKind): WidgetThemeSelection {

@@ -11,8 +11,7 @@ import { useFocusFlow, type EarlyCompletionTarget, type MutationResult } from "@
 import type { Todo } from "@/lib/focus-flow/types";
 import { formatJapaneseDate, getTodoDueStatus, getTodoSubtasks, isTodoAchieved, todoProgressLabel } from "@/lib/focus-flow/utils";
 
-type ViewMode = "focus" | "all" | "done";
-type ListItem = { type: "heading"; id: string; title: string; count: number } | { type: "todo"; id: string; todo: Todo };
+type ViewMode = "open" | "done";
 
 const priorityRank = { high: 0, medium: 1, low: 2 } as const;
 const dueRank = (todo: Todo) => { const status = todo.dueDate ? getTodoDueStatus(todo) : undefined; return status === "overdue" ? 0 : status === "today" ? 1 : todo.dueDate ? 2 : 3; };
@@ -21,7 +20,7 @@ export default function TodosScreen() {
   const { todos, displaySettings, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo, purchaseEarlyCompletion, earlyCompletionPrice } = useFocusFlow();
   const language = getAppLanguage(displaySettings);
   const t = useCallback((ja: string, en: string) => localized(language, ja, en), [language]);
-  const [viewMode, setViewMode] = useState<ViewMode>("focus");
+  const [viewMode, setViewMode] = useState<ViewMode>("open");
   const [formOpen, setFormOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | undefined>();
 
@@ -33,18 +32,7 @@ export default function TodosScreen() {
   const totalMustDos = todos.filter((todo) => todo.isRequired).length;
   const mustProgress = totalMustDos ? Math.round((completedMustDos / totalMustDos) * 100) : 0;
 
-  const listItems = useMemo<ListItem[]>(() => {
-    const todoItems = (items: Todo[]) => items.map((todo) => ({ type: "todo" as const, id: `todo-${todo.id}`, todo }));
-    if (viewMode === "done") return todoItems(doneTodos);
-    if (viewMode === "all") return todoItems(openTodos);
-    const groups = [
-      { id: "overdue", title: t("期限超過", "Overdue"), todos: openTodos.filter((todo) => getTodoDueStatus(todo) === "overdue") },
-      { id: "must", title: t("必須・今日の解除条件", "Must-dos to unlock"), todos: openTodos.filter((todo) => todo.isRequired && getTodoDueStatus(todo) !== "overdue") },
-      { id: "today", title: t("今日取り組む", "Due today"), todos: openTodos.filter((todo) => !todo.isRequired && getTodoDueStatus(todo) === "today") },
-      { id: "next", title: t("次に取り組む", "Next up"), todos: openTodos.filter((todo) => !todo.isRequired && getTodoDueStatus(todo) !== "overdue" && getTodoDueStatus(todo) !== "today") },
-    ].filter((group) => group.todos.length);
-    return groups.flatMap((group) => [{ type: "heading" as const, id: `heading-${group.id}`, title: group.title, count: group.todos.length }, ...todoItems(group.todos)]);
-  }, [doneTodos, openTodos, t, viewMode]);
+  const listItems = useMemo(() => viewMode === "done" ? doneTodos : openTodos, [doneTodos, openTodos, viewMode]);
 
   const openForm = (todo?: Todo) => { setEditingTodo(todo); setFormOpen(true); };
   const showMutationResult = (result: MutationResult, target?: EarlyCompletionTarget) => {
@@ -68,10 +56,10 @@ export default function TodosScreen() {
     contentContainerStyle={styles.content}
     ListHeaderComponent={<><ScreenHeading eyebrow={t("今日の実行リスト", "Your action list")} title={t("Todo", "Tasks")} action={<IconButton icon="add" label={t("Todoを追加", "Add task")} onPress={() => openForm()} variant="filled" />} />
       <View style={styles.summary}><View style={styles.summaryTop}><View style={styles.summaryIcon}><MaterialIcons name="lock-outline" size={19} color={COLORS.forest} /></View><View style={styles.summaryCopy}><Text style={styles.summaryEyebrow}>{t("アプリ解除の進捗", "UNLOCK PROGRESS")}</Text><Text style={styles.summaryTitle}>{totalMustDos ? t(`必須 ${completedMustDos}/${totalMustDos}件を完了`, `${completedMustDos}/${totalMustDos} must-dos complete`) : t("必須Todoを追加して開始", "Add a must-do to get started")}</Text></View><Text style={styles.summaryPercent}>{mustProgress}%</Text></View><View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${mustProgress}%` }]} /></View><Text style={styles.summaryHint}>{t("必須Todoを完了すると、選択したアプリの解除条件を満たせます。", "Complete must-dos to meet the unlock condition for your selected apps.")}</Text></View>
-      <View style={styles.segmented}>{([{ key: "focus", label: t("フォーカス", "Focus"), count: openTodos.length }, { key: "all", label: t("未完了", "Open"), count: openTodos.length }, { key: "done", label: t("完了", "Done"), count: doneTodos.length }] as const).map((tab) => <TouchableOpacity key={tab.key} accessibilityRole="button" accessibilityState={{ selected: viewMode === tab.key }} onPress={() => setViewMode(tab.key)} style={[styles.segment, viewMode === tab.key && styles.segmentActive]}><Text style={[styles.segmentText, viewMode === tab.key && styles.segmentTextActive]}>{tab.label}</Text><Text style={[styles.segmentCount, viewMode === tab.key && styles.segmentCountActive]}>{tab.count}</Text></TouchableOpacity>)}</View>
+      <View style={styles.segmented}>{([{ key: "open", label: t("未完了", "Open"), count: openTodos.length }, { key: "done", label: t("完了", "Done"), count: doneTodos.length }] as const).map((tab) => <TouchableOpacity key={tab.key} accessibilityRole="button" accessibilityState={{ selected: viewMode === tab.key }} onPress={() => setViewMode(tab.key)} style={[styles.segment, viewMode === tab.key && styles.segmentActive]}><Text style={[styles.segmentText, viewMode === tab.key && styles.segmentTextActive]}>{tab.label}</Text><Text style={[styles.segmentCount, viewMode === tab.key && styles.segmentCountActive]}>{tab.count}</Text></TouchableOpacity>)}</View>
     </>}
-    ListEmptyComponent={<EmptyState icon={viewMode === "done" ? "task-alt" : "playlist-add"} title={viewMode === "done" ? t("完了したTodoはまだありません", "No completed tasks yet") : t("最初のTodoを追加しましょう", "Add your first task")} description={viewMode === "done" ? t("完了したTodoはここで振り返れます。", "Finished tasks will appear here.") : t("必須を選ぶと、日課ルールに含めなくてもアプリ制限の解除条件になります。", "Choose Must-do to make a task an unlock condition.")} actionLabel={viewMode === "done" ? t("フォーカスを表示", "Show focus") : t("Todoを追加", "Add task")} onAction={() => viewMode === "done" ? setViewMode("focus") : openForm()} />}
-    renderItem={({ item }) => item.type === "heading" ? <View style={styles.groupHeading}><Text style={styles.groupTitle}>{item.title}</Text><Text style={styles.groupCount}>{item.count}</Text></View> : <TaskRow todo={item.todo} language={language} t={t} onEdit={() => openForm(item.todo)} onToggle={() => { const result = toggleTodo(item.todo.id); if (result.ok) safeHaptic(isTodoAchieved(item.todo) ? "light" : "success"); showMutationResult(result, { kind: "todo", id: item.todo.id }); }} onProgress={(delta) => { const result = adjustTodoProgress(item.todo.id, delta); if (result.ok && delta > 0) safeHaptic("light"); showMutationResult(result, { kind: "todo", id: item.todo.id }); }} onSubtask={(subtaskId) => { const subtask = getTodoSubtasks(item.todo).find((candidate) => candidate.id === subtaskId); const result = toggleSubtask(item.todo.id, subtaskId); if (result.ok) safeHaptic(subtask?.completed ? "light" : "success"); showMutationResult(result, { kind: "todo", id: item.todo.id }); }} onDelete={() => remove(item.todo)} />}
+    ListEmptyComponent={<EmptyState icon={viewMode === "done" ? "task-alt" : "playlist-add"} title={viewMode === "done" ? t("完了したTodoはまだありません", "No completed tasks yet") : t("最初のTodoを追加しましょう", "Add your first task")} description={viewMode === "done" ? t("完了したTodoはここで振り返れます。", "Finished tasks will appear here.") : t("必須にすると、対象アプリの解除条件にできます。", "Choose Must-do to make a task an unlock condition.")} actionLabel={viewMode === "done" ? t("未完了を表示", "Show open") : t("Todoを追加", "Add task")} onAction={() => viewMode === "done" ? setViewMode("open") : openForm()} />}
+    renderItem={({ item }) => <TaskRow todo={item} language={language} t={t} onEdit={() => openForm(item)} onToggle={() => { const result = toggleTodo(item.id); if (result.ok) safeHaptic(isTodoAchieved(item) ? "light" : "success"); showMutationResult(result, { kind: "todo", id: item.id }); }} onProgress={(delta) => { const result = adjustTodoProgress(item.id, delta); if (result.ok && delta > 0) safeHaptic("light"); showMutationResult(result, { kind: "todo", id: item.id }); }} onSubtask={(subtaskId) => { const subtask = getTodoSubtasks(item).find((candidate) => candidate.id === subtaskId); const result = toggleSubtask(item.id, subtaskId); if (result.ok) safeHaptic(subtask?.completed ? "light" : "success"); showMutationResult(result, { kind: "todo", id: item.id }); }} onDelete={() => remove(item)} />}
   />
   <TaskForm visible={formOpen} todo={editingTodo} onClose={() => { setFormOpen(false); setEditingTodo(undefined); }} onSave={(input) => { const result = editingTodo ? updateTodo(editingTodo.id, input) : addTodo(input); showMutationResult(result); return result; }} />
   </ScreenContainer>;
