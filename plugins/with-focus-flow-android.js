@@ -1,4 +1,4 @@
-const { AndroidConfig, createRunOncePlugin, withAndroidManifest, withDangerousMod } = require("expo/config-plugins");
+const { AndroidConfig, createRunOncePlugin, withAndroidManifest, withAppBuildGradle, withDangerousMod } = require("expo/config-plugins");
 const fs = require("fs");
 const path = require("path");
 const PLUGIN_NAME = "with-focus-flow-android";
@@ -9,7 +9,37 @@ function addComponent(application, key, component) {
   if (!application[key].some((item) => item.$?.["android:name"] === name)) application[key].push(component);
 }
 
+function withFocusFlowReleaseSigning(config) {
+  return withAppBuildGradle(config, (config) => {
+    let source = config.modResults.contents;
+    if (source.includes("FOCUS_FLOW_UPLOAD_STORE_FILE")) return config;
+
+    source = source.replace(
+      "    signingConfigs {\n",
+      `    signingConfigs {
+        // CI supplies these environment variables from GitHub Actions Secrets. Keeping
+        // them out of gradle.properties prevents upload-key material entering Git.
+        release {
+            if (System.getenv("FOCUS_FLOW_UPLOAD_STORE_FILE")) {
+                storeFile file(System.getenv("FOCUS_FLOW_UPLOAD_STORE_FILE"))
+                storePassword System.getenv("FOCUS_FLOW_UPLOAD_STORE_PASSWORD")
+                keyAlias System.getenv("FOCUS_FLOW_UPLOAD_KEY_ALIAS")
+                keyPassword System.getenv("FOCUS_FLOW_UPLOAD_KEY_PASSWORD")
+            }
+        }
+`,
+    );
+    source = source.replace(
+      /(\n\s*release\s*\{[\s\S]*?\n\s*)signingConfig = signingConfigs\.debug/,
+      "$1signingConfig = System.getenv(\"FOCUS_FLOW_UPLOAD_STORE_FILE\") ? signingConfigs.release : signingConfigs.debug",
+    );
+    config.modResults.contents = source;
+    return config;
+  });
+}
+
 function withFocusFlowAndroid(config) {
+  config = withFocusFlowReleaseSigning(config);
   config = withAndroidManifest(config, (config) => {
     const application = AndroidConfig.Manifest.getMainApplicationOrThrow(config.modResults);
     const manifest = config.modResults.manifest;
@@ -42,4 +72,4 @@ function withFocusFlowAndroid(config) {
     return config;
   }]);
 }
-module.exports = createRunOncePlugin(withFocusFlowAndroid, PLUGIN_NAME, "1.0.0");
+module.exports = createRunOncePlugin(withFocusFlowAndroid, PLUGIN_NAME, "1.0.1");

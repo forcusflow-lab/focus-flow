@@ -156,3 +156,7 @@
 - [ ] 厳格モードを集中制限の設定画面とAndroid遮断サービスへ実装し、内部テストで確認する
 - [x] 厳格モードの設定・Android同期・遮断オーバーレイを実装し、TypeScript・Vitest・Lintを通過した
 - [ ] Androidバージョンコード7の厳格モード版AABをEASで生成し、内部テストで通常・厳格モードの遮断を確認する
+- [x] GitHub ActionsまたはローカルGradleで、既存のGoogle Play署名を維持した厳格モード版AABを生成できる経路を評価する
+- [x] GitHub連携を有効化し、Focus Flow用の非公開リポジトリとGitHub Actionsビルド基盤を構成する
+- [ ] 既存のGoogle Playアップロード用キーストアを安全に取得し、GitHub Secretsへ登録する
+- [ ] GitHub ActionsでversionCode 7の署名付きAABを生成する
