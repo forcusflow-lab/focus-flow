@@ -15,7 +15,7 @@ describe("GitHub Actions Android AABビルド", () => {
     expect(source).toContain("FOCUS_FLOW_UPLOAD_STORE_PASSWORD");
     expect(source).toContain("signingConfigs.release");
     expect(source).toContain("project.hasProperty(\"FOCUS_FLOW_UPLOAD_STORE_FILE\")");
-    expect(source).toContain("/(\\n\\s*release\\s*\\{[\\s\\S]*?\\n\\s*)signingConfig = signingConfigs\\.debug/");
+    expect(source).toContain("/(buildTypes\\s*\\{[\\s\\S]*?\\n\\s*release\\s*\\{[\\s\\S]*?\\n\\s*)signingConfig = signingConfigs\\.debug/");
   });
 
   it("秘密情報をGitHub Secretsから復元し、署名済みAABだけを成果物にする", () => {

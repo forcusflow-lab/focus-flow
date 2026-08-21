@@ -30,7 +30,7 @@ function withFocusFlowReleaseSigning(config) {
 `,
     );
     source = source.replace(
-      /(\n\s*release\s*\{[\s\S]*?\n\s*)signingConfig = signingConfigs\.debug/,
+      /(buildTypes\s*\{[\s\S]*?\n\s*release\s*\{[\s\S]*?\n\s*)signingConfig = signingConfigs\.debug/,
       "$1signingConfig = project.hasProperty(\"FOCUS_FLOW_UPLOAD_STORE_FILE\") ? signingConfigs.release : signingConfigs.debug",
     );
     config.modResults.contents = source;
@@ -72,4 +72,4 @@ function withFocusFlowAndroid(config) {
     return config;
   }]);
 }
-module.exports = createRunOncePlugin(withFocusFlowAndroid, PLUGIN_NAME, "1.0.2");
+module.exports = createRunOncePlugin(withFocusFlowAndroid, PLUGIN_NAME, "1.0.3");
