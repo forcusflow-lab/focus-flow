@@ -6,15 +6,11 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Platform, useColorScheme } from "react-native";
 import { useColors } from "@/hooks/use-colors";
 import { isEnglish } from "@/lib/focus-flow/i18n";
-import { FocusFlowProvider, useFocusFlow } from "@/lib/focus-flow/provider";
+import { useFocusFlow } from "@/lib/focus-flow/provider";
 import { getAppPalette } from "@/lib/focus-flow/app-themes";
 
 export default function TabLayout() {
-  return (
-    <FocusFlowProvider>
-      <FocusTabs />
-    </FocusFlowProvider>
-  );
+  return <FocusTabs />;
 }
 
 function FocusTabs() {

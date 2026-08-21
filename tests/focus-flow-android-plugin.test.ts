@@ -44,6 +44,11 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(source).toContain("widgetItems");
     expect(source).toContain("focus_flow_widget_item_4");
     expect(source).toContain("widgetTransparency");
+    expect(source).toContain("widgetCompletedDisplay");
+    expect(source).toContain("focus_flow_widget_item_required");
+    expect(source).toContain("focus_flow_widget_item_done");
+    expect(source).toContain("StrikethroughSpan");
+    expect(source).toContain('if (required) views.setTextViewText(row.third.second, if (english) "MUST" else "必須")');
     expect(source).toContain("ACTION_COMPLETE");
   });
 

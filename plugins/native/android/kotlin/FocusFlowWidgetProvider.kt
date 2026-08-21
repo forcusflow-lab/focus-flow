@@ -8,11 +8,16 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.StrikethroughSpan
 import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
 import org.json.JSONArray
 import org.json.JSONObject
+
+private data class WidgetTextPalette(val title: Int, val detail: Int, val muted: Int, val completed: Int)
 
 class FocusFlowWidgetProvider : AppWidgetProvider() {
   override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) { ids.forEach { updateWidget(context, manager, it) } }
@@ -32,9 +37,9 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val state = state(context)
     val english = state.optString("language", "ja") == "en"
     val views = RemoteViews(context.packageName, R.layout.focus_flow_widget)
-    bindTheme(views, state)
+    val palette = bindTheme(views, state)
     bindHeader(views, state, english)
-    bindItems(context, id, views, state, english)
+    bindItems(context, id, views, state, english, palette)
     bindUndo(context, id, views, english)
     views.setOnClickPendingIntent(R.id.focus_flow_widget_root, launchIntent(context, id))
     manager.updateAppWidget(id, views)
@@ -45,7 +50,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     return try { JSONObject(saved ?: "{}") } catch (_: Exception) { JSONObject() }
   }
 
-  private fun bindTheme(views: RemoteViews, state: JSONObject) {
+  private fun bindTheme(views: RemoteViews, state: JSONObject): WidgetTextPalette {
     val selection = state.optJSONObject("widgetThemes")?.optJSONObject("unified")
     val background = selection?.optString("background", "default") ?: "default"
     val requestedAccent = selection?.optString("accent", "auto") ?: "auto"
@@ -54,6 +59,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val title = Color.parseColor(if (light) "#3F310B" else "#FFFFFF")
     val detail = Color.parseColor(if (light) "#65541F" else "#DDF1EB")
     val muted = Color.parseColor(if (light) "#755F2A" else "#C7E6DE")
+    val completed = Color.parseColor(if (light) "#9B8A62" else "#9CB8B0")
     views.setInt(R.id.focus_flow_widget_root, "setBackgroundResource", backgroundResource(background))
     views.setFloat(R.id.focus_flow_widget_root, "setAlpha", when (state.optString("widgetTransparency", "soft")) { "clear" -> 0.68f; "soft" -> 0.86f; else -> 1f })
     views.setTextColor(R.id.focus_flow_widget_title, title)
@@ -67,6 +73,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setTextViewTextSize(R.id.focus_flow_widget_title, TypedValue.COMPLEX_UNIT_SP, 12f * scale)
     views.setTextViewTextSize(R.id.focus_flow_widget_status, TypedValue.COMPLEX_UNIT_SP, 11f * scale)
     listOf(R.id.focus_flow_widget_item_1_title, R.id.focus_flow_widget_item_2_title, R.id.focus_flow_widget_item_3_title, R.id.focus_flow_widget_item_4_title).forEach { views.setTextViewTextSize(it, TypedValue.COMPLEX_UNIT_SP, 14f * scale) }
+    return WidgetTextPalette(title, detail, muted, completed)
   }
 
   private fun bindHeader(views: RemoteViews, state: JSONObject, english: Boolean) {
@@ -76,7 +83,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setTextViewText(R.id.focus_flow_widget_status, if (!active) if (english) "App limits off" else "集中制限はオフ" else if (pending == 0) if (english) "Must-dos complete" else "必須項目を完了しました" else if (english) "$pending must-do${if (pending == 1) "" else "s"} remaining" else "必須項目 残り${pending}件")
   }
 
-  private fun bindItems(context: Context, widgetId: Int, views: RemoteViews, state: JSONObject, english: Boolean) {
+  private fun bindItems(context: Context, widgetId: Int, views: RemoteViews, state: JSONObject, english: Boolean, palette: WidgetTextPalette) {
     val rows = listOf(
       Triple(R.id.focus_flow_widget_item_1, R.id.focus_flow_widget_item_1_check, Pair(R.id.focus_flow_widget_item_1_title, R.id.focus_flow_widget_item_1_badge)),
       Triple(R.id.focus_flow_widget_item_2, R.id.focus_flow_widget_item_2_check, Pair(R.id.focus_flow_widget_item_2_title, R.id.focus_flow_widget_item_2_badge)),
@@ -91,16 +98,23 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       val kind = item.optString("kind")
       val required = item.optBoolean("required", false)
       val timedLocked = item.optBoolean("timedLocked", false)
+      val completed = item.optBoolean("completed", false)
       views.setViewVisibility(row.first, View.VISIBLE)
-      views.setTextViewText(row.third.first, title)
-      views.setTextViewText(row.third.second, if (required) if (english) "MUST" else "必須" else if (kind == "habit") if (english) "HABIT" else "習慣" else if (english) "TODO" else "Todo")
+      views.setInt(row.first, "setBackgroundResource", when { completed -> R.drawable.focus_flow_widget_item_done; required -> R.drawable.focus_flow_widget_item_required; else -> R.drawable.focus_flow_widget_item_background })
+      views.setTextViewText(row.third.first, if (completed) struck(title) else title)
+      views.setTextColor(row.third.first, if (completed) palette.completed else palette.title)
+      views.setViewVisibility(row.third.second, if (required) View.VISIBLE else View.GONE)
+      if (required) views.setTextViewText(row.third.second, if (english) "MUST" else "必須")
+      views.setTextColor(row.third.second, palette.muted)
       views.setTextViewText(row.second, if (timedLocked) "…" else "✓")
-      if (!timedLocked) views.setOnClickPendingIntent(row.second, completeIntent(context, widgetId, item.optString("id"), kind))
+      if (!timedLocked && !completed) views.setOnClickPendingIntent(row.second, completeIntent(context, widgetId, item.optString("id"), kind))
       views.setOnClickPendingIntent(row.first, launchIntent(context, widgetId))
     }
     views.setViewVisibility(R.id.focus_flow_widget_empty, if (items.length() == 0) View.VISIBLE else View.GONE)
     views.setTextViewText(R.id.focus_flow_widget_empty, if (english) "No open tasks or habits today" else "今日の未完了Todo・習慣はありません")
   }
+
+  private fun struck(value: String): CharSequence = SpannableString(value).apply { setSpan(StrikethroughSpan(), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
 
   private fun bindUndo(context: Context, id: Int, views: RemoteViews, english: Boolean) {
     val undo = undoState(context)
@@ -123,9 +137,15 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     for (index in 0 until queued.length()) { val queuedItem = queued.optJSONObject(index); if (queuedItem?.optString("id") == targetId && queuedItem.optString("kind") == kind) return false }
     val undo = JSONObject().put("expiresAt", System.currentTimeMillis() + UNDO_WINDOW_MS).put("id", targetId).put("kind", kind).put("state", JSONObject(current.toString()))
     queued.put(JSONObject().put("id", targetId).put("kind", kind))
-    val remainingItems = JSONArray()
-    for (index in 0 until items.length()) { val candidate = items.optJSONObject(index) ?: continue; if (candidate.optString("id") != targetId || candidate.optString("kind") != kind) remainingItems.put(candidate) }
-    current.put("widgetItems", remainingItems)
+    if (current.optString("widgetCompletedDisplay", "dim") == "dim") {
+      item.put("completed", true)
+      item.put("timedLocked", false)
+      current.put("widgetItems", items)
+    } else {
+      val remainingItems = JSONArray()
+      for (index in 0 until items.length()) { val candidate = items.optJSONObject(index) ?: continue; if (candidate.optString("id") != targetId || candidate.optString("kind") != kind) remainingItems.put(candidate) }
+      current.put("widgetItems", remainingItems)
+    }
     if (item.optBoolean("required", false)) updateRequiredState(current, targetId, kind)
     preferences.edit().putString(FocusGateModule.GATE_STATE, current.toString()).putString(FocusGateModule.WIDGET_COMPLETIONS, queued.toString()).putString(FocusGateModule.WIDGET_UNDO, undo.toString()).putLong(FocusGateModule.GATE_STATE_UPDATED_AT, System.currentTimeMillis()).apply()
     return true

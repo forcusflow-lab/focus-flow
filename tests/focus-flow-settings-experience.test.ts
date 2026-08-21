@@ -30,4 +30,13 @@ describe("Focus Flow設定画面の実機UX回帰", () => {
     expect(today).not.toContain("deviceSetupOpen");
     expect(manage).not.toContain('route: "setup"');
   });
+
+  it("タブ外の利用条件・サブスクリプション画面も同じFocus Flowプロバイダー配下で開く", () => {
+    const rootLayout = readProjectFile("app", "_layout.tsx");
+    const tabsLayout = readProjectFile("app", "(tabs)", "_layout.tsx");
+
+    expect(rootLayout).toContain("<FocusFlowProvider>");
+    expect(rootLayout).toContain('<Stack.Screen name="legal" />');
+    expect(tabsLayout).not.toContain("<FocusFlowProvider>");
+  });
 });

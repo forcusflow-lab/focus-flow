@@ -9,8 +9,9 @@ export type AppThemeId = "mist" | "slate" | "evergreen" | "ocean" | "orchid" | "
 export type AppearancePreference = "system" | "light" | "dark";
 export type WidgetTextSize = "compact" | "standard" | "large";
 export type WidgetTransparency = "solid" | "soft" | "clear";
+export type WidgetCompletedDisplay = "hide" | "dim";
 export type AppFontId = "system" | "reading" | "notebook" | "focus";
-export type SavedThemeSet = { id: string; name: string; appTheme: AppThemeId; appearance: AppearancePreference; fontFamily?: AppFontId; widgetThemes: Partial<Record<WidgetThemeKind, WidgetThemeSelection>>; widgetTextSizes: Partial<Record<WidgetThemeKind, WidgetTextSize>> };
+export type SavedThemeSet = { id: string; name: string; appTheme: AppThemeId; appearance: AppearancePreference; fontFamily?: AppFontId; widgetThemes: Partial<Record<WidgetThemeKind, WidgetThemeSelection>>; widgetTextSizes: Partial<Record<WidgetThemeKind, WidgetTextSize>>; widgetCompletedDisplay?: WidgetCompletedDisplay };
 
 export type TodoSubtask = {
   id: string;
@@ -108,6 +109,7 @@ export type DisplaySettings = {
   widgetThemes?: Partial<Record<WidgetThemeKind, WidgetThemeSelection>>;
   widgetTextSizes?: Partial<Record<WidgetThemeKind, WidgetTextSize>>;
   widgetTransparency?: WidgetTransparency;
+  widgetCompletedDisplay?: WidgetCompletedDisplay;
   savedThemeSets?: SavedThemeSet[];
   plusEntitlement?: boolean;
 };
@@ -126,6 +128,7 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   dailyReminderTime: "19:00",
   widgetTextSizes: {},
   widgetTransparency: "soft",
+  widgetCompletedDisplay: "dim",
   savedThemeSets: [],
   plusEntitlement: false,
 };
