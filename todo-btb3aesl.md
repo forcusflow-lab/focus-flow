@@ -159,4 +159,4 @@
 - [x] GitHub ActionsまたはローカルGradleで、既存のGoogle Play署名を維持した厳格モード版AABを生成できる経路を評価する
 - [x] GitHub連携を有効化し、Focus Flow用の非公開リポジトリとGitHub Actionsビルド基盤を構成する
 - [x] 既存のGoogle Playアップロード用キーストアを安全に取得し、GitHub Secretsへ登録する
-- [ ] GitHub ActionsでversionCode 7の署名付きAABを生成する
+- [x] GitHub ActionsでversionCode 7の署名付きAABを生成する
