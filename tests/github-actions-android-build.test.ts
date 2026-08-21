@@ -14,6 +14,7 @@ describe("GitHub Actions Android AABビルド", () => {
     expect(source).toContain("FOCUS_FLOW_UPLOAD_STORE_FILE");
     expect(source).toContain("FOCUS_FLOW_UPLOAD_STORE_PASSWORD");
     expect(source).toContain("signingConfigs.release");
+    expect(source).toContain("project.hasProperty(\"FOCUS_FLOW_UPLOAD_STORE_FILE\")");
     expect(source).toContain("/(\\n\\s*release\\s*\\{[\\s\\S]*?\\n\\s*)signingConfig = signingConfigs\\.debug/");
   });
 
@@ -26,7 +27,9 @@ describe("GitHub Actions Android AABビルド", () => {
     expect(source).toContain("secrets.ANDROID_KEYSTORE_PASSWORD");
     expect(source).toContain("secrets.ANDROID_KEY_ALIAS");
     expect(source).toContain("secrets.ANDROID_KEY_PASSWORD");
-    expect(source).toContain("./gradlew :app:bundleRelease --no-daemon --stacktrace");
+    expect(source).toContain("-PFOCUS_FLOW_UPLOAD_STORE_FILE=\"$FOCUS_FLOW_UPLOAD_STORE_FILE\"");
+    expect(source).toContain("Verify Google Play upload certificate");
+    expect(source).toContain("EXPECTED_UPLOAD_CERT_SHA1");
     expect(source).toContain("android/app/build/outputs/bundle/release/app-release.aab");
     expect(source).not.toContain("git add android/app/focus-flow-upload.jks");
   });

@@ -160,3 +160,4 @@
 - [x] GitHub連携を有効化し、Focus Flow用の非公開リポジトリとGitHub Actionsビルド基盤を構成する
 - [x] 既存のGoogle Playアップロード用キーストアを安全に取得し、GitHub Secretsへ登録する
 - [x] GitHub ActionsでversionCode 7の署名付きAABを生成する
+- [ ] Google Play Consoleが要求する既存アップロード証明書と、GitHub Actionsの署名キー不一致を解消してversionCode 7のAABを再生成する

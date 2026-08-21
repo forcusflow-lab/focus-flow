@@ -17,21 +17,21 @@ function withFocusFlowReleaseSigning(config) {
     source = source.replace(
       "    signingConfigs {\n",
       `    signingConfigs {
-        // CI supplies these environment variables from GitHub Actions Secrets. Keeping
+        // CI supplies these Gradle properties from GitHub Actions Secrets. Keeping
         // them out of gradle.properties prevents upload-key material entering Git.
         release {
-            if (System.getenv("FOCUS_FLOW_UPLOAD_STORE_FILE")) {
-                storeFile file(System.getenv("FOCUS_FLOW_UPLOAD_STORE_FILE"))
-                storePassword System.getenv("FOCUS_FLOW_UPLOAD_STORE_PASSWORD")
-                keyAlias System.getenv("FOCUS_FLOW_UPLOAD_KEY_ALIAS")
-                keyPassword System.getenv("FOCUS_FLOW_UPLOAD_KEY_PASSWORD")
+            if (project.hasProperty("FOCUS_FLOW_UPLOAD_STORE_FILE")) {
+                storeFile file(FOCUS_FLOW_UPLOAD_STORE_FILE)
+                storePassword FOCUS_FLOW_UPLOAD_STORE_PASSWORD
+                keyAlias FOCUS_FLOW_UPLOAD_KEY_ALIAS
+                keyPassword FOCUS_FLOW_UPLOAD_KEY_PASSWORD
             }
         }
 `,
     );
     source = source.replace(
       /(\n\s*release\s*\{[\s\S]*?\n\s*)signingConfig = signingConfigs\.debug/,
-      "$1signingConfig = System.getenv(\"FOCUS_FLOW_UPLOAD_STORE_FILE\") ? signingConfigs.release : signingConfigs.debug",
+      "$1signingConfig = project.hasProperty(\"FOCUS_FLOW_UPLOAD_STORE_FILE\") ? signingConfigs.release : signingConfigs.debug",
     );
     config.modResults.contents = source;
     return config;
@@ -72,4 +72,4 @@ function withFocusFlowAndroid(config) {
     return config;
   }]);
 }
-module.exports = createRunOncePlugin(withFocusFlowAndroid, PLUGIN_NAME, "1.0.1");
+module.exports = createRunOncePlugin(withFocusFlowAndroid, PLUGIN_NAME, "1.0.2");

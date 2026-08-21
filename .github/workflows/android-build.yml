@@ -20,6 +20,7 @@ jobs:
       FOCUS_FLOW_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       FOCUS_FLOW_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       FOCUS_FLOW_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      EXPECTED_UPLOAD_CERT_SHA1: "0D:A5:A7:0E:14:A2:A4:3A:DB:A8:F8:04:40:81:C5:B2:18:86:B5:BC"
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -63,7 +64,21 @@ jobs:
 
       - name: Build signed release bundle
         working-directory: android
-        run: ./gradlew :app:bundleRelease --no-daemon --stacktrace
+        run: |
+          ./gradlew :app:bundleRelease --no-daemon --stacktrace \
+            -PFOCUS_FLOW_UPLOAD_STORE_FILE="$FOCUS_FLOW_UPLOAD_STORE_FILE" \
+            -PFOCUS_FLOW_UPLOAD_STORE_PASSWORD="$FOCUS_FLOW_UPLOAD_STORE_PASSWORD" \
+            -PFOCUS_FLOW_UPLOAD_KEY_ALIAS="$FOCUS_FLOW_UPLOAD_KEY_ALIAS" \
+            -PFOCUS_FLOW_UPLOAD_KEY_PASSWORD="$FOCUS_FLOW_UPLOAD_KEY_PASSWORD"
+
+      - name: Verify Google Play upload certificate
+        working-directory: android
+        run: |
+          unzip -p app/build/outputs/bundle/release/app-release.aab 'META-INF/*.RSA' > /tmp/focus-flow-signature.rsa
+          openssl pkcs7 -inform DER -in /tmp/focus-flow-signature.rsa -print_certs -out /tmp/focus-flow-certificate.pem
+          ACTUAL_UPLOAD_CERT_SHA1="$(openssl x509 -in /tmp/focus-flow-certificate.pem -noout -fingerprint -sha1 | cut -d= -f2)"
+          test "$ACTUAL_UPLOAD_CERT_SHA1" = "$EXPECTED_UPLOAD_CERT_SHA1" || { echo "::error title=Unexpected upload certificate::Expected $EXPECTED_UPLOAD_CERT_SHA1 but found $ACTUAL_UPLOAD_CERT_SHA1"; exit 1; }
+          echo "Verified Google Play upload certificate: $ACTUAL_UPLOAD_CERT_SHA1"
 
       - name: Upload Android App Bundle
         uses: actions/upload-artifact@v4
