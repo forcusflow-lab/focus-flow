@@ -64,6 +64,8 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
       expect(service).toContain("WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE");
       expect(service).toContain("showGateOverlay(candidatePackage, matchingRule, state)");
       expect(service).toContain("hideGateOverlay()");
+      expect(service).toContain("state.strictMode");
+      expect(service).toContain("json.optBoolean(\"strictMode\")");
       expect(service).toContain("if (matchingRule == null)");
       expect(service).toContain("GATE_LAST_EVENT_AT");
       expect(service).not.toContain("FocusGateActivity::class.java");

@@ -71,6 +71,8 @@ export type FocusSession = {
 
 export type GateConfig = {
   enabled: boolean;
+  /** 必須項目が残る間、Focus Flow内からの通常の制限オフ操作を保護する任意モード。 */
+  strictMode?: boolean;
   blockedPackages: string[];
   requiredTodoIds: string[];
   requiredHabitIds: string[];
@@ -108,7 +110,7 @@ export type DisplaySettings = {
   plusEntitlement?: boolean;
 };
 
-export const DEFAULT_GATE_CONFIG: GateConfig = { enabled: false, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, accessibilityDisclosureAcceptedAt: undefined, schedules: [] };
+export const DEFAULT_GATE_CONFIG: GateConfig = { enabled: false, strictMode: false, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, accessibilityDisclosureAcceptedAt: undefined, schedules: [] };
 
 export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   fontScale: "standard",

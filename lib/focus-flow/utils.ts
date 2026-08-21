@@ -233,6 +233,14 @@ export function getGateSummary(data: FocusFlowData, base = new Date(), language:
   return { pendingTodos, pendingHabits, pendingCount, message: pendingCount ? language === "en" ? `To unlock your apps: ${fragments.join(", ")}` : `必須項目が未完了です：${fragments.join("・")}` : activeRules.length ? language === "en" ? "All must-dos for this time are complete" : "この時間帯の必須項目を完了しました" : language === "en" ? "App limits are inactive right now" : "現在は制限時間外です" };
 }
 
+/**
+ * 厳格モードは、集中制限が有効で必須項目が残っている間だけ、アプリ内の通常解除を保護する。
+ * Androidのシステム設定・アプリ削除を管理するデバイス所有者モードとは区別する。
+ */
+export function isStrictGateActive(data: FocusFlowData, base = new Date()) {
+  return Boolean(data.gateConfig.strictMode && data.gateConfig.enabled && getGateSummary(data, base).pendingCount > 0);
+}
+
 function timeToMinutes(value: string) {
   const [hours, minutes] = value.split(":").map(Number);
   return Math.min(Math.max((Number.isFinite(hours) ? hours : 0) * 60 + (Number.isFinite(minutes) ? minutes : 0), 0), 1439);

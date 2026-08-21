@@ -68,7 +68,10 @@ class FocusGateService : AccessibilityService() {
 
     val activePackage = activeWindowPackage()
     val candidatePackage = foregroundCandidate(eventPackage, activePackage, state) ?: return
-    if (candidatePackage == applicationContext.packageName) return
+    if (candidatePackage == applicationContext.packageName) {
+      hideGateOverlay()
+      return
+    }
 
     val now = System.currentTimeMillis()
     preferences().edit()
@@ -138,16 +141,16 @@ class FocusGateService : AccessibilityService() {
     })
     layout.addView(TextView(this).apply {
       text = if (english) {
-        "This screen stays active while required items remain. Complete your items in Focus Flow to unlock restricted apps."
+        if (state.strictMode) "Strict mode is on. Complete your required items in Focus Flow to unlock restricted apps." else "This screen stays active while required items remain. Complete your items in Focus Flow to unlock restricted apps."
       } else {
-        "必須項目が残っている間はこの画面が維持されます。Focus Flowで項目を完了すると制限アプリを利用できます。"
+        if (state.strictMode) "厳格モードを適用中です。Focus Flowで必須項目を完了すると制限アプリを利用できます。" else "必須項目が残っている間はこの画面が維持されます。Focus Flowで項目を完了すると制限アプリを利用できます。"
       }
       textSize = 13f
       setTextColor(Color.rgb(190, 220, 209))
       gravity = Gravity.CENTER
       setPadding(0, 20, 0, 8)
     })
-    layout.addView(Button(this).apply {
+    if (!state.strictMode) layout.addView(Button(this).apply {
       text = if (english) "Open Focus Flow app settings" else "Focus Flowのアプリ情報を開く"
       setOnClickListener {
         hideGateOverlay()
@@ -237,13 +240,13 @@ class FocusGateService : AccessibilityService() {
   private fun readState(): GateState? = try {
     val saved = preferences().getString(FocusGateModule.GATE_STATE, null) ?: return null
     val json = JSONObject(saved)
-    GateState(json.optBoolean("active"), json.optJSONArray("rules"), json.optString("language", "ja"))
+    GateState(json.optBoolean("active"), json.optBoolean("strictMode"), json.optJSONArray("rules"), json.optString("language", "ja"))
   } catch (_: Exception) {
     null
   }
 }
 
-private data class GateState(val active: Boolean, val rules: org.json.JSONArray?, val language: String) {
+private data class GateState(val active: Boolean, val strictMode: Boolean, val rules: org.json.JSONArray?, val language: String) {
   fun ruleBlocking(packageName: String): GateRule? {
     if (!active || rules == null) return null
     for (index in 0 until rules.length()) {

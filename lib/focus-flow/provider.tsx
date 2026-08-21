@@ -7,7 +7,7 @@ import { EARLY_COMPLETION_PRODUCT_ID, PLUS_PRODUCT_ID, type EarlyCompletionStatu
 import { finishPlatformPurchase, openSubscriptionManagement, usePlatformIAP, type IapProduct, type IapSubscription } from "./iap-bridge";
 import { canSelectBlockedApp as canSelectBlockedAppForPlan, capBlockedApps, isFreeItemLimitReached } from "./limits";
 import { cancelDailyReminder } from "./reminders";
-import { createId, dayKey, getTodoSubtasks, isHabitCompleteOn, isHabitTimeReady, isTimedTodo, isTodoAchieved, isTodoRequiredForGate, isTodoTimeReady, nextRecurringDueDate } from "./utils";
+import { createId, dayKey, getGateSummary, getTodoSubtasks, isHabitCompleteOn, isHabitTimeReady, isTimedTodo, isTodoAchieved, isTodoRequiredForGate, isTodoTimeReady, nextRecurringDueDate } from "./utils";
 import { DEFAULT_DISPLAY_SETTINGS, DEFAULT_GATE_CONFIG, DisplaySettings, EMPTY_FOCUS_FLOW_DATA, FocusFlowData, GateConfig, Habit, Memo, Priority, ProgressUnit, RepeatRule, Todo, TodoSubtask } from "./types";
 
 const STORAGE_KEY = "@focus-flow/data-v1";
@@ -145,7 +145,11 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
   const deleteMemo = useCallback((id: string) => commit((current) => ({ ...current, memos: current.memos.filter((memo) => memo.id !== id) })), [commit]);
   const addFocusSession = useCallback((durationMinutes: number) => { if (durationMinutes <= 0) return; commit((current) => ({ ...current, focusSessions: [{ id: createId("focus"), startedAt: new Date().toISOString(), durationMinutes, completed: true }, ...current.focusSessions] })); }, [commit]);
 
-  const setGateConfig = useCallback((input: Partial<GateConfig>) => commit((current) => { const candidate = { ...current.gateConfig, ...input }; return { ...current, gateConfig: capBlockedApps(candidate, Boolean(current.displaySettings.plusEntitlement && plusStatus.active)) }; }), [commit, plusStatus.active]);
+  const setGateConfig = useCallback((input: Partial<GateConfig>) => commit((current) => {
+    const protectedByStrictMode = current.gateConfig.strictMode && current.gateConfig.enabled && getGateSummary(current).pendingCount > 0;
+    const candidate = { ...current.gateConfig, ...input, enabled: protectedByStrictMode && input.enabled === false ? true : input.enabled ?? current.gateConfig.enabled };
+    return { ...current, gateConfig: capBlockedApps(candidate, Boolean(current.displaySettings.plusEntitlement && plusStatus.active)) };
+  }), [commit, plusStatus.active]);
   const canSelectBlockedApp = useCallback((packageName: string) => canSelectBlockedAppForPlan(data.gateConfig, packageName, isPlus), [data.gateConfig, isPlus]);
   const setDisplaySettings = useCallback((input: Partial<DisplaySettings>) => commit((current) => ({ ...current, displaySettings: { ...current.displaySettings, ...input } })), [commit]);
   const clearAllData = useCallback(() => { setData({ todos: [], habits: [], memos: [], focusSessions: [], gateConfig: { ...DEFAULT_GATE_CONFIG, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], schedules: [] }, displaySettings: { ...DEFAULT_DISPLAY_SETTINGS } }); void AsyncStorage.removeItem(STORAGE_KEY); void cancelDailyReminder(); }, []);

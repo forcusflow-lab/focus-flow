@@ -64,8 +64,8 @@ const config: ExpoConfig = {
     predictiveBackGestureEnabled: false,
     package: env.androidPackage,
     // Google Playでは同一パッケージ内でバージョンコードを重複登録できない。
-    // 内部テスト済みのAAB（1〜5）に続く継続遮断オーバーレイ版は6として生成する。
-    versionCode: 6,
+    // 内部テスト済みのAAB（1〜6）に続く厳格モード版は7として生成する。
+    versionCode: 7,
     permissions: ["POST_NOTIFICATIONS"],
     blockedPermissions: ["android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE"],
     intentFilters: [
