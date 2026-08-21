@@ -35,3 +35,5 @@
 | GitHub Actions署名ビルド | 完了 | Privateリポジトリ `forcusflow-lab/focus-flow` へ署名付きAAB生成ワークフローを追加。EASで管理されていたGoogle PlayアップロードキーをGitHub Actions Secretsへ登録し、ローカルの認証情報は削除・Git除外した。 |
 | versionCode 7 AAB | 生成済み | GitHub Actions run `32453812784` が成功。`app-release.aab`（39,351,580 bytes）を取得し、AABアーカイブとして検証した。 |
 | versionCode 7 内部テスト下書き | AAB追加待ち | Play Consoleの内部テストで未公開リリース（リリースID 6）を作成済み。`/home/ubuntu/Downloads/focus-flow-v7-aab/app-release.aab` を「App Bundle のアップロード」へ追加し、リリース名・ノートを確認してレビューへ進める。公開開始はアカウント所有者の明示確認後に行う。 |
+| versionCode 7 署名修正 | 完了・再アップロード待ち | 最初のGitHub Actions AABはdebug証明書（SHA-1 `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25`）で署名され、Play Consoleの既存アップロード証明書（SHA-1 `0D:A5:A7:0E:14:A2:A4:3A:DB:A8:F8:04:40:81:C5:B2:18:86:B5:BC`）と不一致だった。releaseビルド型の署名置換先を修正し、GitHub Actions run `32460806456` が成功。再取得したAAB（39,351,560 bytes）が要求されたSHA-1で署名されていることをローカルでも確認した。 |
+| versionCode 7 内部テスト配布 | 公開済み・実機受入確認済み | Play Consoleで内部テストが「有効」、最新リリースが `7 (1.0.0)` であることを確認。テスター実機で、厳格モードの有効化、必須項目が残る場合のFocus Flow内からの解除保護、遮断画面でのアプリ情報導線非表示、制限対象アプリの遮断を確認した。 |

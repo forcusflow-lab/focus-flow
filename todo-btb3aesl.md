@@ -152,12 +152,13 @@
 - [x] Androidバージョンコード6の継続遮断オーバーレイ版AABをEASで生成した
 - [x] アクセシビリティオーバーレイと複数回の前面再評価による継続遮断を実装し、TypeScript・Vitest・Lintを通過した
 - [x] Focus Flowバージョンコード6をGoogle Play内部テストへ保存して公開した
-- [ ] 厳格モードのAndroid上の技術的境界を確認し、制限アプリの再開・設定変更に対する強化方針を設計する
-- [ ] 厳格モードを集中制限の設定画面とAndroid遮断サービスへ実装し、内部テストで確認する
+- [x] 厳格モードのAndroid上の技術的境界を確認し、制限アプリの再開・設定変更に対する強化方針を設計する
+- [x] 厳格モードを集中制限の設定画面とAndroid遮断サービスへ実装し、内部テストで確認する
 - [x] 厳格モードの設定・Android同期・遮断オーバーレイを実装し、TypeScript・Vitest・Lintを通過した
 - [ ] Androidバージョンコード7の厳格モード版AABをEASで生成し、内部テストで通常・厳格モードの遮断を確認する
 - [x] GitHub ActionsまたはローカルGradleで、既存のGoogle Play署名を維持した厳格モード版AABを生成できる経路を評価する
 - [x] GitHub連携を有効化し、Focus Flow用の非公開リポジトリとGitHub Actionsビルド基盤を構成する
 - [x] 既存のGoogle Playアップロード用キーストアを安全に取得し、GitHub Secretsへ登録する
 - [x] GitHub ActionsでversionCode 7の署名付きAABを生成する
-- [ ] Google Play Consoleが要求する既存アップロード証明書と、GitHub Actionsの署名キー不一致を解消してversionCode 7のAABを再生成する
+- [x] Google Play Consoleが要求する既存アップロード証明書と、GitHub Actionsの署名キー不一致を解消してversionCode 7のAABを再生成する
+- [x] Google Play内部テストのversionCode 7で厳格モードの有効化・解除保護・遮断画面を実機確認する
