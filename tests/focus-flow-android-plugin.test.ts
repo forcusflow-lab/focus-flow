@@ -34,6 +34,7 @@ const accessibilityServiceXml = path.join(
 const generatedGateService = path.join(process.cwd(), "android", "app", "src", "main", "java", "com", "app", "focusflow", "focusflow", "FocusGateService.kt");
 const generatedGateModule = path.join(process.cwd(), "android", "app", "src", "main", "java", "com", "app", "focusflow", "focusflow", "FocusGateModule.kt");
 const generatedAccessibilityServiceXml = path.join(process.cwd(), "android", "app", "src", "main", "res", "xml", "focus_flow_accessibility_service.xml");
+const androidPlugin = path.join(process.cwd(), "plugins", "with-focus-flow-android.js");
 
 describe("Focus Flow Androidネイティブプラグイン", () => {
   it("統合ウィジェットが親アプリの生成Rクラスを明示的に読み込み、Todo・習慣の完了操作を扱う", () => {
@@ -50,6 +51,14 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(source).toContain("StrikethroughSpan");
     expect(source).toContain('if (required) views.setTextViewText(row.third.second, if (english) "MUST" else "必須")');
     expect(source).toContain("ACTION_COMPLETE");
+  });
+
+  it("クリーン生成時にも統合ウィジェットの必須・通常・完了カードDrawableをコピーする", () => {
+    const source = fs.readFileSync(androidPlugin, "utf8");
+
+    expect(source).toContain("focus_flow_widget_item_background.xml");
+    expect(source).toContain("focus_flow_widget_item_required.xml");
+    expect(source).toContain("focus_flow_widget_item_done.xml");
   });
 
   it("テンプレートと生成済みサービスが同じ継続前面監視・遮断オーバーレイ・実行診断を持つ", () => {
