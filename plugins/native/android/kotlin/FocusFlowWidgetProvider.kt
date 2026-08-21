@@ -95,7 +95,6 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       views.setTextViewText(row.third.first, title)
       views.setTextViewText(row.third.second, if (required) if (english) "MUST" else "必須" else if (kind == "habit") if (english) "HABIT" else "習慣" else if (english) "TODO" else "Todo")
       views.setTextViewText(row.second, if (timedLocked) "…" else "✓")
-      views.setViewEnabled(row.second, !timedLocked)
       if (!timedLocked) views.setOnClickPendingIntent(row.second, completeIntent(context, widgetId, item.optString("id"), kind))
       views.setOnClickPendingIntent(row.first, launchIntent(context, widgetId))
     }
