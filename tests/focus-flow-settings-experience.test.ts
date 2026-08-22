@@ -21,6 +21,10 @@ describe("Focus Flow設定画面の実機UX回帰", () => {
     expect(source).toContain("homeScrollRef.current?.scrollTo({ y: 0, animated: false })");
     expect(source).toContain("Home screen widget");
     expect(source).toContain("widgetOpacity");
+    expect(source).toContain("Follow app theme");
+    expect(source).toContain("Used by both the app and home-screen widget.");
+    expect(source).toContain("Theme preview");
+    expect(source).not.toContain("Tune color, type, and completed items");
     expect(source).not.toContain("function DiagnosticRow");
   });
 

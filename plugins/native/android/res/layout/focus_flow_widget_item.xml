@@ -2,15 +2,14 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
   android:id="@+id/focus_flow_widget_item_root"
   android:layout_width="match_parent"
-  android:layout_height="wrap_content"
-  android:minHeight="50dp"
+  android:layout_height="64dp"
   android:gravity="center_vertical"
   android:orientation="horizontal"
-  android:paddingHorizontal="10dp"
-  android:paddingVertical="7dp">
-  <TextView android:id="@+id/focus_flow_widget_item_check" android:layout_width="26dp" android:layout_height="26dp" android:gravity="center" android:textColor="#FFFFFF" android:textSize="13sp" android:textStyle="bold" />
+  android:paddingHorizontal="12dp"
+  android:paddingVertical="8dp">
+  <ImageView android:id="@+id/focus_flow_widget_item_check" android:layout_width="20dp" android:layout_height="20dp" android:contentDescription="" android:scaleType="center" />
   <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_weight="1" android:orientation="vertical">
-    <TextView android:id="@+id/focus_flow_widget_item_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="2" android:textSize="14sp" android:textStyle="bold" />
-    <TextView android:id="@+id/focus_flow_widget_item_badge" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:textSize="9sp" android:textStyle="bold" />
+    <TextView android:id="@+id/focus_flow_widget_item_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:textSize="14sp" android:textStyle="bold" />
+    <TextView android:id="@+id/focus_flow_widget_item_badge" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:textSize="10sp" android:textStyle="bold" />
   </LinearLayout>
 </LinearLayout>

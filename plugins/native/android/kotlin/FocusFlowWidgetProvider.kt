@@ -21,6 +21,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   override fun onReceive(context: Context, intent: Intent) {
     val updated = when (intent.action) {
       ACTION_COMPLETE -> complete(context, intent.getStringExtra(EXTRA_TARGET_ID).orEmpty(), intent.getStringExtra(EXTRA_KIND).orEmpty())
+      ACTION_RESTORE -> restore(context, intent.getStringExtra(EXTRA_TARGET_ID).orEmpty(), intent.getStringExtra(EXTRA_KIND).orEmpty())
       ACTION_UNDO -> undo(context)
       ACTION_OPEN_ITEM -> { openItem(context, intent.getStringExtra(EXTRA_TARGET_ID).orEmpty(), intent.getStringExtra(EXTRA_KIND).orEmpty()); false }
       else -> null
@@ -42,7 +43,10 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     }
     views.setRemoteAdapter(R.id.focus_flow_widget_list, serviceIntent)
     views.setEmptyView(R.id.focus_flow_widget_list, R.id.focus_flow_widget_empty)
-    val template = PendingIntent.getBroadcast(context, id, Intent(context, FocusFlowWidgetProvider::class.java).apply { action = ACTION_OPEN_ITEM; putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id) }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+    // The collection template intentionally has no action. Each row supplies its own
+    // fill-in action (open, complete, or restore); mutability is required for Android
+    // to merge that action and the row identifiers into the broadcast.
+    val template = PendingIntent.getBroadcast(context, id, Intent(context, FocusFlowWidgetProvider::class.java).apply { putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id) }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
     views.setPendingIntentTemplate(R.id.focus_flow_widget_list, template)
     views.setOnClickPendingIntent(R.id.focus_flow_widget_root, todayIntent(context, id))
     manager.updateAppWidget(id, views)
@@ -54,15 +58,14 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   }
 
   private fun bindTheme(views: RemoteViews, state: JSONObject) {
-    val background = state.optJSONObject("widgetThemes")?.optJSONObject("unified")?.optString("background", "default") ?: "default"
-    views.setInt(R.id.focus_flow_widget_root, "setBackgroundColor", widgetBackgroundColor(background, state.optInt("widgetOpacity", 86).coerceIn(0, 100)))
+    val palette = state.optJSONObject("widgetPalette")
+    views.setInt(R.id.focus_flow_widget_root, "setBackgroundColor", withOpacity(paletteColor(palette, "background", "#F7F8F5"), state.optInt("widgetOpacity", 86).coerceIn(0, 100)))
   }
 
   private fun bindHeader(views: RemoteViews, state: JSONObject, english: Boolean) {
-    val background = state.optJSONObject("widgetThemes")?.optJSONObject("unified")?.optString("background", "default") ?: "default"
-    val light = background == "amber" || background == "blush"
-    val title = Color.parseColor(if (light) "#2F2614" else "#FFFFFF")
-    val detail = Color.parseColor(if (light) "#59471F" else "#E7F5F0")
+    val palette = state.optJSONObject("widgetPalette")
+    val title = paletteColor(palette, "text", "#1A2925")
+    val detail = paletteColor(palette, "muted", "#64736D")
     val pending = state.optInt("pendingCount", 0)
     val active = state.optBoolean("active", false)
     views.setTextColor(R.id.focus_flow_widget_title, title)
@@ -99,6 +102,24 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     return true
   }
 
+  private fun restore(context: Context, targetId: String, kind: String): Boolean {
+    if (targetId.isBlank() || (kind != "todo" && kind != "habit")) return false
+    val preferences = context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE)
+    val current = state(context)
+    val items = current.optJSONArray("widgetItems") ?: return false
+    var target: JSONObject? = null
+    for (index in 0 until items.length()) { val item = items.optJSONObject(index); if (item?.optString("id") == targetId && item.optString("kind") == kind) target = item }
+    val item = target ?: return false
+    if (!item.optBoolean("completed", false) || !item.optBoolean("canToggle", false)) return false
+    item.put("completed", false)
+    item.put("timedLocked", false)
+    if (item.optBoolean("required", false)) restoreRequiredState(current, item, kind)
+    val actions = widgetActions(preferences)
+    actions.put(JSONObject().put("id", targetId).put("kind", kind).put("operation", "restore"))
+    preferences.edit().putString(FocusGateModule.GATE_STATE, current.put("widgetItems", items).toString()).putString(FocusGateModule.WIDGET_ACTIONS, actions.toString()).remove(FocusGateModule.WIDGET_UNDO).putLong(FocusGateModule.GATE_STATE_UPDATED_AT, System.currentTimeMillis()).apply()
+    return true
+  }
+
   private fun undo(context: Context): Boolean {
     val preferences = context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE)
     val undo = undoState(context) ?: return false
@@ -109,6 +130,9 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     return true
   }
 
+  private fun paletteColor(palette: JSONObject?, key: String, fallback: String): Int = try { Color.parseColor(palette?.optString(key, fallback) ?: fallback) } catch (_: Exception) { Color.parseColor(fallback) }
+  private fun withOpacity(color: Int, opacity: Int): Int = Color.argb((opacity * 2.55f).toInt(), Color.red(color), Color.green(color), Color.blue(color))
+
   private fun updateRequiredState(state: JSONObject, targetId: String, kind: String) {
     state.put("pendingCount", (state.optInt("pendingCount") - 1).coerceAtLeast(0))
     val queueKey = if (kind == "todo") "todoQueue" else "habitQueue"
@@ -116,6 +140,15 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     for (index in 0 until queue.length()) { val entry = queue.optJSONObject(index) ?: continue; if (entry.optString("id") != targetId) remainingQueue.put(entry) }
     state.put(queueKey, remainingQueue)
     if (kind == "todo") { state.put("pendingTodos", (state.optInt("pendingTodos") - 1).coerceAtLeast(0)); state.put("completedTodoTotal", state.optInt("completedTodoTotal") + 1) } else { state.put("pendingHabits", (state.optInt("pendingHabits") - 1).coerceAtLeast(0)); state.put("completedHabitTotal", state.optInt("completedHabitTotal") + 1) }
+  }
+
+  private fun restoreRequiredState(state: JSONObject, item: JSONObject, kind: String) {
+    state.put("pendingCount", state.optInt("pendingCount") + 1)
+    val queueKey = if (kind == "todo") "todoQueue" else "habitQueue"
+    val queue = state.optJSONArray(queueKey) ?: JSONArray()
+    queue.put(JSONObject().put("id", item.optString("id")).put("title", item.optString("title")))
+    state.put(queueKey, queue)
+    if (kind == "todo") { state.put("pendingTodos", state.optInt("pendingTodos") + 1); state.put("completedTodoTotal", (state.optInt("completedTodoTotal") - 1).coerceAtLeast(0)) } else { state.put("pendingHabits", state.optInt("pendingHabits") + 1); state.put("completedHabitTotal", (state.optInt("completedHabitTotal") - 1).coerceAtLeast(0)) }
   }
 
   private fun openItem(context: Context, targetId: String, kind: String) { if (targetId.isBlank() || (kind != "todo" && kind != "habit")) return; context.startActivity(deepLink(context, if (kind == "habit") "habits" else "todos", targetId).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)) }
@@ -126,12 +159,12 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
 
   companion object {
     const val ACTION_COMPLETE = "focusflow.widget.COMPLETE"
+    const val ACTION_RESTORE = "focusflow.widget.RESTORE"
     const val ACTION_UNDO = "focusflow.widget.UNDO"
     const val ACTION_OPEN_ITEM = "focusflow.widget.OPEN_ITEM"
     const val EXTRA_TARGET_ID = "targetId"
     const val EXTRA_KIND = "kind"
     const val UNDO_WINDOW_MS = 15_000L
-    fun refreshAll(context: Context) { val manager = AppWidgetManager.getInstance(context); val provider = FocusFlowWidgetProvider(); manager.getAppWidgetIds(ComponentName(context, FocusFlowWidgetProvider::class.java)).forEach { id -> provider.updateWidget(context, manager, id) }; manager.notifyAppWidgetViewDataChanged(manager.getAppWidgetIds(ComponentName(context, FocusFlowWidgetProvider::class.java)), R.id.focus_flow_widget_list) }
-    fun widgetBackgroundColor(background: String, opacity: Int): Int { val base = when (background) { "forest" -> "#164C3F"; "ocean" -> "#1E5C7A"; "violet" -> "#5C4678"; "amber" -> "#F1D78B"; "blush" -> "#B86A73"; "ink" -> "#17202B"; else -> "#246B5A" }; return Color.parseColor(base).let { color -> Color.argb((opacity * 2.55f).toInt(), Color.red(color), Color.green(color), Color.blue(color)) } }
+    fun refreshAll(context: Context) { val manager = AppWidgetManager.getInstance(context); val provider = FocusFlowWidgetProvider(); manager.getAppWidgetIds(ComponentName(context, FocusFlowWidgetProvider::class.java)).forEach { id -> provider.updateWidget(context, manager, it) }; manager.notifyAppWidgetViewDataChanged(manager.getAppWidgetIds(ComponentName(context, FocusFlowWidgetProvider::class.java)), R.id.focus_flow_widget_list) }
   }
 }

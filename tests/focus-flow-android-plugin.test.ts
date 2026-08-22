@@ -67,10 +67,13 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(source).toContain("widgetOpacity");
     expect(source).toContain("WIDGET_ACTIONS");
     expect(source).toContain("ACTION_COMPLETE");
+    expect(source).toContain("ACTION_RESTORE");
     expect(source).toContain("ACTION_OPEN_ITEM");
     expect(source).toContain("ACTION_UNDO");
     expect(source).toContain("WIDGET_UNDO");
     expect(source).toContain("setPendingIntentTemplate");
+    expect(source).toContain("PendingIntent.FLAG_MUTABLE");
+    expect(source).toContain("widgetPalette");
     expect(source).toContain("deepLink(context, if (kind == \"habit\") \"habits\" else \"todos\", targetId)");
     expect(source).toContain("todayIntent");
     expect(itemsSource).toContain("RemoteViewsService.RemoteViewsFactory");
@@ -81,6 +84,11 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(itemsSource).toContain("action = FocusFlowWidgetProvider.ACTION_OPEN_ITEM");
     expect(itemsSource).toContain("setOnClickFillInIntent(R.id.focus_flow_widget_item_check");
     expect(itemsSource).toContain("action = FocusFlowWidgetProvider.ACTION_COMPLETE");
+    expect(itemsSource).toContain("action = FocusFlowWidgetProvider.ACTION_RESTORE");
+    expect(itemsSource).toContain("View.INVISIBLE");
+    expect(itemsSource).toContain("paletteColor(palette, \"primary\"");
+    expect(itemsSource).toContain("setImageViewResource");
+    expect(itemsSource).toContain("focus_flow_widget_check_mark");
     expect(moduleSource).toContain("consumeWidgetActions");
     expect(moduleSource).toContain("WIDGET_ACTIONS");
   });
@@ -93,6 +101,7 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(source).toContain("focus_flow_widget_item_done.xml");
     expect(source).toContain("focus_flow_widget_item.xml");
     expect(source).toContain("focus_flow_widget_checkbox.xml");
+    expect(source).toContain("focus_flow_widget_check_mark.xml");
     expect(source).toContain("FocusFlowWidgetItemsService.kt");
     expect(source).toContain("android.permission.BIND_REMOTEVIEWS");
   });
