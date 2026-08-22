@@ -16,4 +16,19 @@ describe("Focus Flowの項目遷移と完了取り消し", () => {
       expect(source).toContain("router.replace(\"/\")");
     });
   });
+
+  it("Todoと習慣のチェックは44dpの専用領域で処理し、詳細を開く操作と競合しない", () => {
+    const todos = fs.readFileSync(path.join(process.cwd(), "app", "(tabs)", "todos.tsx"), "utf8");
+    const habits = fs.readFileSync(path.join(process.cwd(), "app", "(tabs)", "habits.tsx"), "utf8");
+    const today = fs.readFileSync(path.join(process.cwd(), "app", "(tabs)", "index.tsx"), "utf8");
+
+    expect(todos).toContain("checkTouchTarget: { width: 44, height: 44");
+    expect(todos).toContain("event.stopPropagation(); onToggle();");
+    expect(todos).toContain("style={styles.checkTouchTarget}");
+    expect(habits).toContain("todayCheckTouchTarget: { width: 44, height: 44");
+    expect(habits).toContain("event.stopPropagation(); onToggle();");
+    expect(habits).toContain("style={styles.todayCheckTouchTarget}");
+    expect(today).toContain("itemCheckTouchTarget: { width: 44, height: 44");
+    expect(today).toContain("event.stopPropagation(); onToggle();");
+  });
 });

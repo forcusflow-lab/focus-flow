@@ -133,10 +133,7 @@ class FocusGateService : AccessibilityService() {
       text = if (english) "Review items in Focus Flow" else "Focus Flowで項目を確認する"
       setOnClickListener {
         hideGateOverlay()
-        packageManager.getLaunchIntentForPackage(applicationContext.packageName)?.let { launchIntent ->
-          launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-          startActivity(launchIntent)
-        }
+        startActivity(focusFlowTodayIntent())
       }
     })
     layout.addView(TextView(this).apply {
@@ -191,6 +188,11 @@ class FocusGateService : AccessibilityService() {
       gateOverlayPackage = null
     }
   }
+
+  private fun focusFlowTodayIntent(): Intent = Intent(
+    Intent.ACTION_VIEW,
+    Uri.Builder().scheme("$DEEP_LINK_SCHEME").authority("today").build(),
+  ).setPackage(applicationContext.packageName).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
 
   private fun scheduleForegroundRechecks() {
     foregroundRecheck?.let(foregroundRecheckHandler::removeCallbacks)

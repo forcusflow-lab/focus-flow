@@ -6,7 +6,8 @@ import type { ExpoConfig } from "expo/config";
 // e.g., "my-app" created at 2024-01-15 10:30:45 -> "space.manus.my.app.t20240115103045"
 // Bundle ID can only contain letters, numbers, and dots
 // Android requires each dot-separated segment to start with a letter
-const rawBundleId = "com.app.focusflow";
+const isPersonalUnlimitedBuild = process.env.FOCUS_FLOW_PERSONAL_UNLIMITED === "1";
+const rawBundleId = isPersonalUnlimitedBuild ? "com.app.focusflow.personal" : "com.app.focusflow";
 const bundleId =
   rawBundleId
     .replace(/[-_]/g, ".") // Replace hyphens/underscores with dots
@@ -24,7 +25,7 @@ const bundleId =
 // Extract timestamp from bundle ID and prefix with "manus" for deep link scheme
 // e.g., "space.manus.my.app.t20240115103045" -> "manus20240115103045"
 const timestamp = bundleId.split(".").pop()?.replace(/^t/, "") ?? "";
-const schemeFromBundleId = `manus${timestamp}`;
+const schemeFromBundleId = isPersonalUnlimitedBuild ? "manusfocusflowpersonal" : "manusfocusflow";
 
 const env = {
   // App branding - update these values directly (do not use env vars)
@@ -64,8 +65,8 @@ const config: ExpoConfig = {
     predictiveBackGestureEnabled: false,
     package: env.androidPackage,
     // Google Playでは同一パッケージ内でバージョンコードを重複登録できない。
-    // versionCode 10は実機フィードバック前の内部テスト配布済みAABのため、今回の修正版は重複しない11で配布する。
-    versionCode: 11,
+    // 本人専用APKは別パッケージなので、通常版の内部テスト版と競合しない。
+    versionCode: isPersonalUnlimitedBuild ? 1 : 12,
     permissions: ["POST_NOTIFICATIONS"],
     blockedPermissions: ["android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE"],
     intentFilters: [
@@ -95,11 +96,11 @@ const config: ExpoConfig = {
       "expo-splash-screen",
       {
         image: "./assets/images/splash-icon.png",
-        imageWidth: 200,
+        imageWidth: 96,
         resizeMode: "contain",
-        backgroundColor: "#F7F8F5",
+        backgroundColor: "#F2F7F4",
         dark: {
-          backgroundColor: "#11201B",
+          backgroundColor: "#14231E",
         },
       },
     ],
@@ -118,6 +119,7 @@ const config: ExpoConfig = {
     reactCompiler: true,
   },
   extra: {
+    personalUnlimitedBuild: isPersonalUnlimitedBuild,
     eas: {
       projectId: "6b20d097-806c-4b32-a93a-64ff132e4f0f",
     },

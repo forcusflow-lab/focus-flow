@@ -1,0 +1,60 @@
+name: Build Focus Flow personal unlimited APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-personal-apk:
+    name: Build personal unlimited APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      FOCUS_FLOW_PERSONAL_UNLIMITED: "1"
+      FOCUS_FLOW_UPLOAD_STORE_FILE: focus-flow-upload.jks
+      FOCUS_FLOW_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      FOCUS_FLOW_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      FOCUS_FLOW_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Install JavaScript dependencies
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+      - name: Generate the personal Android project
+        run: CI=1 pnpm exec expo prebuild --platform android --clean
+      - name: Restore signing key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/focus-flow-upload.jks
+          chmod 600 android/app/focus-flow-upload.jks
+      - name: Build signed personal APK
+        working-directory: android
+        run: |
+          ./gradlew :app:assembleRelease --no-daemon --stacktrace \
+            -PFOCUS_FLOW_UPLOAD_STORE_FILE="$FOCUS_FLOW_UPLOAD_STORE_FILE" \
+            -PFOCUS_FLOW_UPLOAD_STORE_PASSWORD="$FOCUS_FLOW_UPLOAD_STORE_PASSWORD" \
+            -PFOCUS_FLOW_UPLOAD_KEY_ALIAS="$FOCUS_FLOW_UPLOAD_KEY_ALIAS" \
+            -PFOCUS_FLOW_UPLOAD_KEY_PASSWORD="$FOCUS_FLOW_UPLOAD_KEY_PASSWORD"
+      - name: Upload personal APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: focus-flow-personal-unlimited-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 14

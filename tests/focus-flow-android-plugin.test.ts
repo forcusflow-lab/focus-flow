@@ -39,6 +39,15 @@ const gateServiceTemplate = path.join(
   "FocusGateService.kt",
 );
 
+const gateActivityTemplate = path.join(
+  process.cwd(),
+  "plugins",
+  "native",
+  "android",
+  "kotlin",
+  "FocusGateActivity.kt",
+);
+
 const accessibilityServiceXml = path.join(
   process.cwd(),
   "plugins",
@@ -69,8 +78,8 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(source).toContain("ACTION_COMPLETE");
     expect(source).toContain("ACTION_RESTORE");
     expect(source).toContain("ACTION_OPEN_ITEM");
-    expect(source).toContain("ACTION_UNDO");
-    expect(source).toContain("WIDGET_UNDO");
+    expect(source).not.toContain("ACTION_UNDO");
+    expect(source).not.toContain("WIDGET_UNDO");
     expect(source).toContain("setPendingIntentTemplate");
     expect(source).toContain("PendingIntent.FLAG_MUTABLE");
     expect(source).toContain("widgetPalette");
@@ -81,9 +90,9 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(itemsSource).toContain("focus_flow_widget_checkbox");
     expect(itemsSource).toContain("StrikethroughSpan");
     expect(itemsSource).toContain('"MUST" else "必須"');
-    expect(itemsSource).toContain("setOnClickFillInIntent(R.id.focus_flow_widget_item_root");
+    expect(itemsSource).toContain("focus_flow_widget_item_content");
     expect(itemsSource).toContain("action = FocusFlowWidgetProvider.ACTION_OPEN_ITEM");
-    expect(itemsSource).toContain("setOnClickFillInIntent(R.id.focus_flow_widget_item_check");
+    expect(itemsSource).toContain("focus_flow_widget_item_action");
     expect(itemsSource).toContain("action = FocusFlowWidgetProvider.ACTION_COMPLETE");
     expect(itemsSource).toContain("action = FocusFlowWidgetProvider.ACTION_RESTORE");
     expect(itemsSource).toContain("View.INVISIBLE");
@@ -133,6 +142,12 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
       expect(service).toContain("GATE_LAST_EVENT_AT");
       expect(service).not.toContain("FocusGateActivity::class.java");
     });
+    expect(services[0]).toContain('Uri.Builder().scheme("$DEEP_LINK_SCHEME").authority("today").build()');
+    expect(services[1]).toContain('Uri.Builder().scheme("manusfocusflow").authority("today").build()');
+    expect(services[0]).toContain("Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP");
+    const fallbackActivity = fs.readFileSync(gateActivityTemplate, "utf8");
+    expect(fallbackActivity).toContain('Uri.Builder().scheme("$DEEP_LINK_SCHEME").authority("today").build()');
+    expect(fallbackActivity).toContain("Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP");
     const module = fs.readFileSync(generatedGateModule, "utf8");
     expect(module).toContain("configuredBlockedPackageCount");
     expect(module).toContain("JSONObject(saved)");
