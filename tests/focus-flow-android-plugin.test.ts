@@ -74,6 +74,7 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(source).toContain("setPendingIntentTemplate");
     expect(source).toContain("PendingIntent.FLAG_MUTABLE");
     expect(source).toContain("widgetPalette");
+    expect(source).toContain("forEach { id -> provider.updateWidget(context, manager, id) }");
     expect(source).toContain("deepLink(context, if (kind == \"habit\") \"habits\" else \"todos\", targetId)");
     expect(source).toContain("todayIntent");
     expect(itemsSource).toContain("RemoteViewsService.RemoteViewsFactory");

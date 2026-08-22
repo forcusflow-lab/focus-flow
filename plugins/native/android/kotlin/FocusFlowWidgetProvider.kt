@@ -165,6 +165,6 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     const val EXTRA_TARGET_ID = "targetId"
     const val EXTRA_KIND = "kind"
     const val UNDO_WINDOW_MS = 15_000L
-    fun refreshAll(context: Context) { val manager = AppWidgetManager.getInstance(context); val provider = FocusFlowWidgetProvider(); manager.getAppWidgetIds(ComponentName(context, FocusFlowWidgetProvider::class.java)).forEach { id -> provider.updateWidget(context, manager, it) }; manager.notifyAppWidgetViewDataChanged(manager.getAppWidgetIds(ComponentName(context, FocusFlowWidgetProvider::class.java)), R.id.focus_flow_widget_list) }
+    fun refreshAll(context: Context) { val manager = AppWidgetManager.getInstance(context); val provider = FocusFlowWidgetProvider(); manager.getAppWidgetIds(ComponentName(context, FocusFlowWidgetProvider::class.java)).forEach { id -> provider.updateWidget(context, manager, id) }; manager.notifyAppWidgetViewDataChanged(manager.getAppWidgetIds(ComponentName(context, FocusFlowWidgetProvider::class.java)), R.id.focus_flow_widget_list) }
   }
 }
