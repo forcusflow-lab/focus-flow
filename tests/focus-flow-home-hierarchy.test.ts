@@ -8,7 +8,7 @@ describe("Focus Flowホーム画面の情報階層", () => {
     const source = fs.readFileSync(path.join(process.cwd(), "app", "(tabs)", "index.tsx"), "utf8");
 
     expect(source).toContain("必須項目");
-    expect(source).toContain("今日の項目");
+    expect(source).toContain("今日のリスト");
     expect(source).toContain("requiredItemCard");
     expect(source).toContain("Pill label={english ? \"Must-do\" : \"必須\"}");
     expect(source).not.toContain("regularBadge");
@@ -17,5 +17,8 @@ describe("Focus Flowホーム画面の情報階層", () => {
     expect(source).toContain("requiredHabits");
     expect(source).toContain("regularHabits");
     expect(source).not.toContain("今取り組む1件");
+    expect(source).toContain('params: { open: item.todo.id }');
+    expect(source).toContain('params: { open: item.habit.id }');
+    expect(source).toContain("borderRadius: 6");
   });
 });

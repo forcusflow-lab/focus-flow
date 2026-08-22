@@ -12,6 +12,24 @@ const widgetTemplate = path.join(
   "FocusFlowWidgetProvider.kt",
 );
 
+const widgetItemsTemplate = path.join(
+  process.cwd(),
+  "plugins",
+  "native",
+  "android",
+  "kotlin",
+  "FocusFlowWidgetItemsService.kt",
+);
+
+const gateModuleTemplate = path.join(
+  process.cwd(),
+  "plugins",
+  "native",
+  "android",
+  "kotlin",
+  "FocusGateModule.kt",
+);
+
 const gateServiceTemplate = path.join(
   process.cwd(),
   "plugins",
@@ -37,20 +55,34 @@ const generatedAccessibilityServiceXml = path.join(process.cwd(), "android", "ap
 const androidPlugin = path.join(process.cwd(), "plugins", "with-focus-flow-android.js");
 
 describe("Focus Flow Androidネイティブプラグイン", () => {
-  it("統合ウィジェットが親アプリの生成Rクラスを明示的に読み込み、Todo・習慣の完了操作を扱う", () => {
+  it("統合ウィジェットがスクロール可能なコレクション、独立透過、Todo・習慣の操作を扱う", () => {
     const source = fs.readFileSync(widgetTemplate, "utf8");
+    const itemsSource = fs.readFileSync(widgetItemsTemplate, "utf8");
+    const moduleSource = fs.readFileSync(gateModuleTemplate, "utf8");
 
     expect(source).toContain("import $PACKAGE_NAME.R");
     expect(source).toContain("class FocusFlowWidgetProvider : AppWidgetProvider()");
-    expect(source).toContain("widgetItems");
-    expect(source).toContain("focus_flow_widget_item_4");
-    expect(source).toContain("widgetTransparency");
-    expect(source).toContain("widgetCompletedDisplay");
-    expect(source).toContain("focus_flow_widget_item_required");
-    expect(source).toContain("focus_flow_widget_item_done");
-    expect(source).toContain("StrikethroughSpan");
-    expect(source).toContain('if (required) views.setTextViewText(row.third.second, if (english) "MUST" else "必須")');
+    expect(source).toContain("setRemoteAdapter");
+    expect(source).toContain("focus_flow_widget_list");
+    expect(source).toContain("widgetOpacity");
+    expect(source).toContain("WIDGET_ACTIONS");
     expect(source).toContain("ACTION_COMPLETE");
+    expect(source).toContain("ACTION_OPEN_ITEM");
+    expect(source).toContain("ACTION_UNDO");
+    expect(source).toContain("WIDGET_UNDO");
+    expect(source).toContain("setPendingIntentTemplate");
+    expect(source).toContain("deepLink(context, if (kind == \"habit\") \"habits\" else \"todos\", targetId)");
+    expect(source).toContain("todayIntent");
+    expect(itemsSource).toContain("RemoteViewsService.RemoteViewsFactory");
+    expect(itemsSource).toContain("focus_flow_widget_checkbox");
+    expect(itemsSource).toContain("StrikethroughSpan");
+    expect(itemsSource).toContain('"MUST" else "必須"');
+    expect(itemsSource).toContain("setOnClickFillInIntent(R.id.focus_flow_widget_item_root");
+    expect(itemsSource).toContain("action = FocusFlowWidgetProvider.ACTION_OPEN_ITEM");
+    expect(itemsSource).toContain("setOnClickFillInIntent(R.id.focus_flow_widget_item_check");
+    expect(itemsSource).toContain("action = FocusFlowWidgetProvider.ACTION_COMPLETE");
+    expect(moduleSource).toContain("consumeWidgetActions");
+    expect(moduleSource).toContain("WIDGET_ACTIONS");
   });
 
   it("クリーン生成時にも統合ウィジェットの必須・通常・完了カードDrawableをコピーする", () => {
@@ -59,6 +91,10 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(source).toContain("focus_flow_widget_item_background.xml");
     expect(source).toContain("focus_flow_widget_item_required.xml");
     expect(source).toContain("focus_flow_widget_item_done.xml");
+    expect(source).toContain("focus_flow_widget_item.xml");
+    expect(source).toContain("focus_flow_widget_checkbox.xml");
+    expect(source).toContain("FocusFlowWidgetItemsService.kt");
+    expect(source).toContain("android.permission.BIND_REMOTEVIEWS");
   });
 
   it("テンプレートと生成済みサービスが同じ継続前面監視・遮断オーバーレイ・実行診断を持つ", () => {

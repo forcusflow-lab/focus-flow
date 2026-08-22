@@ -11,7 +11,7 @@ export type WidgetTextSize = "compact" | "standard" | "large";
 export type WidgetTransparency = "solid" | "soft" | "clear";
 export type WidgetCompletedDisplay = "hide" | "dim";
 export type AppFontId = "system" | "reading" | "notebook" | "focus";
-export type SavedThemeSet = { id: string; name: string; appTheme: AppThemeId; appearance: AppearancePreference; fontFamily?: AppFontId; widgetThemes: Partial<Record<WidgetThemeKind, WidgetThemeSelection>>; widgetTextSizes: Partial<Record<WidgetThemeKind, WidgetTextSize>>; widgetCompletedDisplay?: WidgetCompletedDisplay };
+export type SavedThemeSet = { id: string; name: string; appTheme: AppThemeId; appearance: AppearancePreference; fontFamily?: AppFontId; widgetThemes: Partial<Record<WidgetThemeKind, WidgetThemeSelection>>; widgetTextSizes: Partial<Record<WidgetThemeKind, WidgetTextSize>>; widgetOpacity?: number; widgetCompletedDisplay?: WidgetCompletedDisplay };
 
 export type TodoSubtask = {
   id: string;
@@ -108,6 +108,8 @@ export type DisplaySettings = {
   dailyReminderTime?: string;
   widgetThemes?: Partial<Record<WidgetThemeKind, WidgetThemeSelection>>;
   widgetTextSizes?: Partial<Record<WidgetThemeKind, WidgetTextSize>>;
+  /** ホーム画面ウィジェット本体の背景不透明度。0は背景を消し、100は完全に表示する。 */
+  widgetOpacity?: number;
   widgetTransparency?: WidgetTransparency;
   widgetCompletedDisplay?: WidgetCompletedDisplay;
   savedThemeSets?: SavedThemeSet[];
@@ -127,6 +129,7 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   dailyReminderEnabled: false,
   dailyReminderTime: "19:00",
   widgetTextSizes: {},
+  widgetOpacity: 86,
   widgetTransparency: "soft",
   widgetCompletedDisplay: "dim",
   savedThemeSets: [],

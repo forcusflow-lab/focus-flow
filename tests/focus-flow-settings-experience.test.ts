@@ -16,9 +16,11 @@ describe("Focus Flow設定画面の実機UX回帰", () => {
   it("設定は目的別パネルと先頭復帰を備え、端末診断を重複表示しない", () => {
     const source = readProjectFile("app", "(tabs)", "settings.tsx");
 
-    expect(source).toContain('type SettingsPanel = "home" | "limits" | "appearance" | "reminders" | "widgets" | "plus"');
+    expect(source).toContain('type SettingsPanel = "home" | "limits" | "appearance" | "reminders" | "plus"');
     expect(source).toContain('setPanel("home")');
     expect(source).toContain("homeScrollRef.current?.scrollTo({ y: 0, animated: false })");
+    expect(source).toContain("Home screen widget");
+    expect(source).toContain("widgetOpacity");
     expect(source).not.toContain("function DiagnosticRow");
   });
 

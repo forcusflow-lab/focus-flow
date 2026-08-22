@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
 
-import { consumeWidgetCompletions, syncAndroidGate } from "./android-gate";
+import { consumeWidgetActions, syncAndroidGate } from "./android-gate";
 import { EARLY_COMPLETION_PRODUCT_ID, PLUS_PRODUCT_ID, type EarlyCompletionStatus, type PlusStatus } from "./billing";
 import { finishPlatformPurchase, openSubscriptionManagement, usePlatformIAP, type IapProduct, type IapSubscription } from "./iap-bridge";
 import { canSelectBlockedApp as canSelectBlockedAppForPlan, capBlockedApps, countUncompletedTodos, isFreeItemLimitReached } from "./limits";
@@ -58,13 +58,20 @@ function normalizedHabit(habit: Habit, legacyIds: Set<string>): Habit {
   return { ...habit, isRequired: Boolean(habit.isRequired || legacyIds.has(habit.id)), progressUnit: habit.progressUnit ?? "check", targetValue: Math.max(Number(habit.targetValue) || 1, 1), dailyProgress: habit.dailyProgress && typeof habit.dailyProgress === "object" ? habit.dailyProgress : {}, timerStartedAtByDate: habit.timerStartedAtByDate && typeof habit.timerStartedAtByDate === "object" ? habit.timerStartedAtByDate : {}, earlyCompletionDates: Array.isArray(habit.earlyCompletionDates) ? habit.earlyCompletionDates : [] };
 }
 
+function normalizedWidgetOpacity(value: unknown, legacy: unknown): number {
+  const numeric = Number(value);
+  if (Number.isFinite(numeric)) return Math.max(0, Math.min(100, Math.round(numeric)));
+  return legacy === "clear" ? 68 : legacy === "solid" ? 100 : 86;
+}
+
 function normalizeData(value: unknown): FocusFlowData {
   if (!value || typeof value !== "object") return EMPTY_FOCUS_FLOW_DATA;
   const candidate = value as Partial<FocusFlowData>;
   const gateConfig = { ...DEFAULT_GATE_CONFIG, ...(candidate.gateConfig ?? {}) };
   const legacyTodoIds = new Set([...(gateConfig.requiredTodoIds ?? []), ...gateConfig.schedules.flatMap((schedule) => schedule.requiredTodoIds ?? [])]);
   const legacyHabitIds = new Set([...(gateConfig.requiredHabitIds ?? []), ...gateConfig.schedules.flatMap((schedule) => schedule.requiredHabitIds ?? [])]);
-  return { todos: Array.isArray(candidate.todos) ? candidate.todos.map((todo) => normalizedTodo(todo, legacyTodoIds)) : [], habits: Array.isArray(candidate.habits) ? candidate.habits.map((habit) => normalizedHabit(habit, legacyHabitIds)) : [], memos: Array.isArray(candidate.memos) ? candidate.memos : [], focusSessions: Array.isArray(candidate.focusSessions) ? candidate.focusSessions : [], gateConfig: { ...gateConfig, requiredTodoIds: [], requiredHabitIds: [], schedules: gateConfig.schedules.map((schedule) => ({ ...schedule, requiredTodoIds: [], requiredHabitIds: [] })) }, displaySettings: { ...DEFAULT_DISPLAY_SETTINGS, ...(candidate.displaySettings ?? {}), appTheme: candidate.displaySettings?.appTheme ?? candidate.displaySettings?.theme ?? "mist" } };
+  const savedDisplaySettings: Partial<DisplaySettings> = candidate.displaySettings ?? {};
+  return { todos: Array.isArray(candidate.todos) ? candidate.todos.map((todo) => normalizedTodo(todo, legacyTodoIds)) : [], habits: Array.isArray(candidate.habits) ? candidate.habits.map((habit) => normalizedHabit(habit, legacyHabitIds)) : [], memos: Array.isArray(candidate.memos) ? candidate.memos : [], focusSessions: Array.isArray(candidate.focusSessions) ? candidate.focusSessions : [], gateConfig: { ...gateConfig, requiredTodoIds: [], requiredHabitIds: [], schedules: gateConfig.schedules.map((schedule) => ({ ...schedule, requiredTodoIds: [], requiredHabitIds: [] })) }, displaySettings: { ...DEFAULT_DISPLAY_SETTINGS, ...savedDisplaySettings, appTheme: savedDisplaySettings.appTheme ?? savedDisplaySettings.theme ?? "mist", widgetOpacity: normalizedWidgetOpacity(savedDisplaySettings.widgetOpacity, savedDisplaySettings.widgetTransparency) } };
 }
 
 function progressComplete(todo: Todo) {
@@ -166,8 +173,31 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
   const applyElapsedTimers = useCallback(() => { commit((current) => { const today = dayKey(); const now = new Date(); let changed = false; const todos = current.todos.map((todo) => { if (!isTimedTodo(todo) || todo.completed || !isTodoTimeReady(todo, now) || !progressComplete(todo)) return todo; changed = true; return maybeAdvanceRecurring({ ...todo, completed: true, completedAt: now.toISOString(), progressValue: todo.targetValue }); }); const habits = current.habits.map((habit) => { if ((habit.progressUnit ?? "check") !== "minutes" || isHabitCompleteOn(habit, today) || !isHabitTimeReady(habit, today, now)) return habit; changed = true; return { ...habit, completedDates: Array.from(new Set([...habit.completedDates, today])).sort(), dailyProgress: { ...(habit.dailyProgress ?? {}), [today]: habit.targetValue ?? 1 } }; }); return changed ? { ...current, todos, habits } : current; }); }, [commit]);
   useEffect(() => { if (!isReady) return; applyElapsedTimers(); const timer = setInterval(applyElapsedTimers, 1_000); return () => clearInterval(timer); }, [applyElapsedTimers, isReady]);
 
-  const applyWidgetCompletions = useCallback(async () => { const actions = await consumeWidgetCompletions(); if (!actions.length) return; commit((current) => { const today = dayKey(); const todoIds = new Set(actions.filter((action) => action.kind === "todo").map((action) => action.id)); const habitIds = new Set(actions.filter((action) => action.kind === "habit").map((action) => action.id)); const todos = current.todos.map((todo) => { if (!todoIds.has(todo.id) || isTodoAchieved(todo) || (isTimedTodo(todo) && !isTodoTimeReady(todo))) return todo; const completed: Todo = { ...todo, completed: true, completedAt: new Date().toISOString(), progressValue: todo.progressUnit === "check" ? todo.progressValue : todo.targetValue, subtasks: getTodoSubtasks(todo).map((subtask) => ({ ...subtask, completed: true })) }; return maybeAdvanceRecurring(completed); }); const habits = current.habits.map((habit) => { if (!habitIds.has(habit.id) || ((habit.progressUnit ?? "check") === "minutes" && !isHabitTimeReady(habit, today))) return habit; const completedDates = Array.from(new Set([...habit.completedDates, today])).sort(); return { ...habit, completedDates, dailyProgress: { ...(habit.dailyProgress ?? {}), [today]: habit.targetValue ?? 1 } }; }); return { ...current, todos, habits }; }); }, [commit]);
-  useEffect(() => { if (!isReady) return; void applyWidgetCompletions(); void refreshPlusStatus(); const subscription = AppState.addEventListener("change", (state) => { if (state === "active") { void applyWidgetCompletions(); applyElapsedTimers(); void refreshPlusStatus(); } }); return () => subscription.remove(); }, [applyElapsedTimers, applyWidgetCompletions, isReady, refreshPlusStatus]);
+  const applyWidgetActions = useCallback(async () => {
+    const actions = await consumeWidgetActions();
+    if (!actions.length) return;
+    commit((current) => {
+      const today = dayKey();
+      const byTarget = new Map(actions.map((action) => [`${action.kind}:${action.id}`, action.operation]));
+      const todos = current.todos.map((todo) => {
+        const operation = byTarget.get(`todo:${todo.id}`);
+        if (!operation || todo.repeatRule !== "none") return todo;
+        if (operation === "restore" && isTodoAchieved(todo)) return { ...todo, completed: false, completedAt: undefined, progressValue: 0, timerStartedAt: undefined, earlyCompletionAt: undefined, subtasks: getTodoSubtasks(todo).map((subtask) => ({ ...subtask, completed: false })) };
+        if (operation === "complete" && !isTodoAchieved(todo) && !isTimedTodo(todo)) return { ...todo, completed: true, completedAt: new Date().toISOString(), progressValue: todo.targetValue, subtasks: getTodoSubtasks(todo).map((subtask) => ({ ...subtask, completed: true })) };
+        return todo;
+      });
+      const habits = current.habits.map((habit) => {
+        const operation = byTarget.get(`habit:${habit.id}`);
+        if (!operation || (habit.progressUnit ?? "check") === "minutes") return habit;
+        const completed = habit.completedDates.includes(today);
+        if (operation === "restore" && completed) return { ...habit, completedDates: habit.completedDates.filter((item) => item !== today), dailyProgress: { ...(habit.dailyProgress ?? {}), [today]: 0 } };
+        if (operation === "complete" && !completed) return { ...habit, completedDates: Array.from(new Set([...habit.completedDates, today])).sort(), dailyProgress: { ...(habit.dailyProgress ?? {}), [today]: habit.targetValue ?? 1 } };
+        return habit;
+      });
+      return { ...current, todos, habits };
+    });
+  }, [commit]);
+  useEffect(() => { if (!isReady) return; void applyWidgetActions(); void refreshPlusStatus(); const subscription = AppState.addEventListener("change", (state) => { if (state === "active") { void applyWidgetActions(); applyElapsedTimers(); void refreshPlusStatus(); } }); return () => subscription.remove(); }, [applyElapsedTimers, applyWidgetActions, isReady, refreshPlusStatus]);
   useEffect(() => { if (isReady) void syncAndroidGate(data); }, [data, isReady]);
 
   const value = useMemo(() => ({ ...data, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo, addHabit, updateHabit, toggleHabit, adjustHabitProgress, deleteHabit, addMemo, updateMemo, deleteMemo, addFocusSession, setGateConfig, canSelectBlockedApp, setDisplaySettings, clearAllData, plusStatus, earlyCompletionStatus, earlyCompletionPrice: earlyCompletionProduct?.displayPrice, refreshPlusStatus, purchasePlus, restorePlus, managePlus, purchaseEarlyCompletion }), [data, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo, addHabit, updateHabit, toggleHabit, adjustHabitProgress, deleteHabit, addMemo, updateMemo, deleteMemo, addFocusSession, setGateConfig, canSelectBlockedApp, setDisplaySettings, clearAllData, plusStatus, earlyCompletionStatus, earlyCompletionProduct?.displayPrice, refreshPlusStatus, purchasePlus, restorePlus, managePlus, purchaseEarlyCompletion]);
