@@ -86,6 +86,9 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(source).toContain("forEach { id -> provider.updateWidget(context, manager, id) }");
     expect(source).toContain("deepLink(context, if (kind == \"habit\") \"habits\" else \"todos\", targetId)");
     expect(source).toContain("todayIntent");
+    expect(source).toContain('Uri.parse("$DEEP_LINK_SCHEME://$path")');
+    expect(source).toContain('"todos" -> "/todos"');
+    expect(source).toContain('"habits" -> "/habits"');
     expect(itemsSource).toContain("RemoteViewsService.RemoteViewsFactory");
     expect(itemsSource).toContain("focus_flow_widget_checkbox");
     expect(itemsSource).toContain("StrikethroughSpan");
@@ -142,11 +145,11 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
       expect(service).toContain("GATE_LAST_EVENT_AT");
       expect(service).not.toContain("FocusGateActivity::class.java");
     });
-    expect(services[0]).toContain('Uri.Builder().scheme("$DEEP_LINK_SCHEME").authority("today").build()');
-    expect(services[1]).toContain('Uri.Builder().scheme("manusfocusflow").authority("today").build()');
+    expect(services[0]).toContain('Uri.parse("$DEEP_LINK_SCHEME:///")');
+    expect(services[1]).toContain('Uri.parse("manusfocusflow:///")');
     expect(services[0]).toContain("Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP");
     const fallbackActivity = fs.readFileSync(gateActivityTemplate, "utf8");
-    expect(fallbackActivity).toContain('Uri.Builder().scheme("$DEEP_LINK_SCHEME").authority("today").build()');
+    expect(fallbackActivity).toContain('Uri.parse("$DEEP_LINK_SCHEME:///")');
     expect(fallbackActivity).toContain("Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP");
     const module = fs.readFileSync(generatedGateModule, "utf8");
     expect(module).toContain("configuredBlockedPackageCount");

@@ -191,7 +191,7 @@ class FocusGateService : AccessibilityService() {
 
   private fun focusFlowTodayIntent(): Intent = Intent(
     Intent.ACTION_VIEW,
-    Uri.Builder().scheme("$DEEP_LINK_SCHEME").authority("today").build(),
+    Uri.parse("$DEEP_LINK_SCHEME:///"),
   ).setPackage(applicationContext.packageName).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
 
   private fun scheduleForegroundRechecks() {

@@ -8,6 +8,6 @@ describe("Google Play向けAndroidバージョンコード", () => {
     const configPath = path.join(process.cwd(), "app.config.ts");
     const configSource = fs.readFileSync(configPath, "utf8");
 
-    expect(configSource).toContain("versionCode: isPersonalUnlimitedBuild ? 1 : 12");
+    expect(configSource).toContain("versionCode: isPersonalUnlimitedBuild ? 2 : 12");
   });
 });

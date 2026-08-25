@@ -217,3 +217,4 @@
 - [x] 戻る・チェック・Deep Link・遮断・設定を含む全画面の操作導線を回帰テストと実機項目で再監査する
 - [x] 本人専用の制限なしPlus APKを通常のGoogle Play配布と分離して生成し、無料版・課金版へ影響しないことを検証する
 - [x] ウィジェット操作・テーマ統一・設定再設計を含むAndroid versionCode 11の署名AABを生成し、内部テストへ配布する
+- [ ] 本人専用APKのウィジェット・遮断画面・項目詳細のDeep LinkをExpo Routerが受け取れるパスへ統一し、Unmatched Routeを解消して更新用versionCode 2で再配布する

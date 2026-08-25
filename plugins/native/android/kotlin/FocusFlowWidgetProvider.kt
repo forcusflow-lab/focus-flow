@@ -131,7 +131,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
 
   private fun openItem(context: Context, targetId: String, kind: String) { if (targetId.isBlank() || (kind != "todo" && kind != "habit")) return; context.startActivity(deepLink(context, if (kind == "habit") "habits" else "todos", targetId).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)) }
   private fun todayIntent(context: Context, id: Int): PendingIntent = PendingIntent.getActivity(context, id, deepLink(context, "today"), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-  private fun deepLink(context: Context, destination: String, targetId: String? = null): Intent { val uri = Uri.Builder().scheme("$DEEP_LINK_SCHEME").authority(destination).apply { if (targetId != null) appendQueryParameter("open", targetId) }.build(); return Intent(Intent.ACTION_VIEW, uri).setPackage(context.packageName) }
+  private fun deepLink(context: Context, destination: String, targetId: String? = null): Intent { val path = when (destination) { "todos" -> "/todos"; "habits" -> "/habits"; else -> "/" }; val uri = Uri.parse("$DEEP_LINK_SCHEME://$path").buildUpon().apply { if (targetId != null) appendQueryParameter("open", targetId) }.build(); return Intent(Intent.ACTION_VIEW, uri).setPackage(context.packageName) }
   private fun widgetActions(preferences: android.content.SharedPreferences): JSONArray = try { JSONArray(preferences.getString(FocusGateModule.WIDGET_ACTIONS, "[]") ?: "[]") } catch (_: Exception) { JSONArray() }
 
   companion object {
