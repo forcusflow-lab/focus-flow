@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { Alert, FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
 
+import { HabitForm } from "@/components/focus-flow/habit-form";
 import { TaskForm } from "@/components/focus-flow/task-form";
 import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
 import { COLORS, IconButton, LoadingScreen, Pill, safeHaptic } from "@/components/focus-flow/ui";
@@ -19,9 +20,11 @@ type HomeListItem =
 
 export default function TodayScreen() {
   const router = useRouter();
-  const { todos, habits, memos, focusSessions, gateConfig, displaySettings, isReady, toggleTodo, toggleHabit, addTodo } = useFocusFlow();
+  const { todos, habits, memos, focusSessions, gateConfig, displaySettings, isReady, toggleTodo, toggleHabit, addTodo, updateTodo, updateHabit } = useFocusFlow();
   const [taskFormOpen, setTaskFormOpen] = useState(false);
   const [newTaskDefaultRequired, setNewTaskDefaultRequired] = useState(false);
+  const [openedTodo, setOpenedTodo] = useState<Todo | undefined>();
+  const [openedHabit, setOpenedHabit] = useState<Habit | undefined>();
   const english = isEnglish(displaySettings);
   const today = dayKey();
   const t = useCallback((ja: string, en: string) => english ? en : ja, [english]);
@@ -91,9 +94,11 @@ export default function TodayScreen() {
         {totalRequired ? <View style={styles.progressCard}><View style={styles.progressCopy}><Text style={styles.progressLabel}>{t("必須の進み具合", "MUST-DO PROGRESS")}</Text><Text style={styles.progressTitle}>{t(`残り ${pendingRequired}件`, `${pendingRequired} remaining`)}</Text><Text style={styles.progressDetail}>{t(`${doneRequired}/${totalRequired}件を完了`, `${doneRequired}/${totalRequired} complete`)}</Text></View><Text style={styles.progressPercent}>{progress}%</Text><View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${progress}%` }]} /></View></View> : null}
       </>}
       ListEmptyComponent={todos.length || habits.length ? <View style={styles.emptyPanel}><MaterialIcons name="done-all" size={22} color={COLORS.forest} /><View><Text style={styles.emptyTitle}>{t("今日の未完了項目はありません", "No open items for today")}</Text><Text style={styles.emptyText}>{t("新しいTodoを追加するか、明日の項目を整えましょう。", "Add a new task or plan your next action.")}</Text></View></View> : null}
-      renderItem={({ item }) => item.type === "heading" ? <View style={[styles.sectionHeader, item.required && styles.requiredSectionHeader]}><Text style={[styles.sectionTitle, item.required && styles.requiredSectionTitle]}>{item.title}</Text><Text style={[styles.sectionHint, item.required && styles.requiredSectionHint]}>{item.detail}</Text></View> : item.type === "todo" ? <HomeTodoCard todo={item.todo} required={item.required} windowLabel={item.windowLabel} english={english} onToggle={() => handleTodoToggle(item.todo.id)} onOpen={() => router.push({ pathname: "/(tabs)/todos", params: { open: item.todo.id } })} /> : <HomeHabitCard habit={item.habit} required={item.required} windowLabel={item.windowLabel} english={english} onToggle={() => handleHabitToggle(item.habit.id)} onOpen={() => router.push({ pathname: "/(tabs)/habits", params: { open: item.habit.id } })} />}
+      renderItem={({ item }) => item.type === "heading" ? <View style={[styles.sectionHeader, item.required && styles.requiredSectionHeader]}><Text style={[styles.sectionTitle, item.required && styles.requiredSectionTitle]}>{item.title}</Text><Text style={[styles.sectionHint, item.required && styles.requiredSectionHint]}>{item.detail}</Text></View> : item.type === "todo" ? <HomeTodoCard todo={item.todo} required={item.required} windowLabel={item.windowLabel} english={english} onToggle={() => handleTodoToggle(item.todo.id)} onOpen={() => setOpenedTodo(item.todo)} /> : <HomeHabitCard habit={item.habit} required={item.required} windowLabel={item.windowLabel} english={english} onToggle={() => handleHabitToggle(item.habit.id)} onOpen={() => setOpenedHabit(item.habit)} />}
     />
     <TaskForm visible={taskFormOpen} defaultRequired={newTaskDefaultRequired} onClose={() => { setTaskFormOpen(false); setNewTaskDefaultRequired(false); }} onSave={addTodo} />
+    <TaskForm visible={Boolean(openedTodo)} todo={openedTodo} onClose={() => setOpenedTodo(undefined)} onSave={(input) => openedTodo ? updateTodo(openedTodo.id, input) : { ok: false }} />
+    <HabitForm visible={Boolean(openedHabit)} habit={openedHabit} onClose={() => setOpenedHabit(undefined)} onSave={(input) => openedHabit ? updateHabit(openedHabit.id, input) : { ok: false }} />
   </ScreenContainer>;
 }
 

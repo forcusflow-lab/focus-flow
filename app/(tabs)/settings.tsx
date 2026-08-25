@@ -1,7 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
-import { ActivityIndicator, Alert, Modal, Platform, ScrollView, StyleSheet, Switch, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, BackHandler, Modal, Platform, ScrollView, StyleSheet, Switch, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ScaledText } from "@/components/focus-flow/scaled-text";
@@ -68,6 +68,14 @@ export default function SettingsScreen() {
     requestAnimationFrame(() => homeScrollRef.current?.scrollTo({ y: 0, animated: false }));
     return undefined;
   }, []));
+  useEffect(() => {
+    if (Platform.OS !== "android" || panel === "home") return;
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      setPanel("home");
+      return true;
+    });
+    return () => subscription.remove();
+  }, [panel]);
 
   if (!isReady) return <ScreenContainer><LoadingScreen /></ScreenContainer>;
 

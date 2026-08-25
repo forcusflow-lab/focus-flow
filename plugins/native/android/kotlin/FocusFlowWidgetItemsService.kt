@@ -48,11 +48,12 @@ private class FocusFlowWidgetItemsFactory(private val context: Context, private 
     val title = item.optString("title")
     views.setTextViewText(R.id.focus_flow_widget_item_title, if (completed) struck(title) else title)
     views.setTextColor(R.id.focus_flow_widget_item_title, if (completed) completedColor else titleColor)
-    // Keep the badge line reserved on regular items so every widget card has the
-    // same height and the title/checkbox always share one visual baseline.
+    // The row grows with its actual title and supporting copy. Reserving a blank
+    // badge line caused excessive empty space in real widgets and pushed the
+    // checkbox out of visual alignment with the content card.
     val requiredLabel = if (state.optString("language", "ja") == "en") "MUST" else "必須"
     val badge = listOfNotNull(if (required) requiredLabel else null, windowLabel.ifBlank { null }).joinToString(" · ")
-    views.setViewVisibility(R.id.focus_flow_widget_item_badge, if (badge.isNotBlank()) View.VISIBLE else View.INVISIBLE)
+    views.setViewVisibility(R.id.focus_flow_widget_item_badge, if (badge.isNotBlank()) View.VISIBLE else View.GONE)
     views.setTextViewText(R.id.focus_flow_widget_item_badge, badge)
     views.setTextColor(R.id.focus_flow_widget_item_badge, mutedColor)
     if (completed) {
@@ -65,6 +66,7 @@ private class FocusFlowWidgetItemsFactory(private val context: Context, private 
     views.setFloat(R.id.focus_flow_widget_item_check, "setAlpha", if (canToggle || completed) 1f else 0.45f)
     val scale = when (state.optJSONObject("widgetTextSizes")?.optString("unified", "standard")) { "compact" -> 0.90f; "large" -> 1.15f; else -> 1f }
     views.setTextViewTextSize(R.id.focus_flow_widget_item_title, TypedValue.COMPLEX_UNIT_SP, 14f * scale)
+    views.setTextViewTextSize(R.id.focus_flow_widget_item_badge, TypedValue.COMPLEX_UNIT_SP, 10f * scale)
     // Completion uses a dedicated 48dp touch target. The item copy is a separate
     // view, so the widget cannot treat a checkbox tap as a Deep Link tap.
     views.setOnClickFillInIntent(R.id.focus_flow_widget_item_content, Intent().apply { action = FocusFlowWidgetProvider.ACTION_OPEN_ITEM; putExtra(FocusFlowWidgetProvider.EXTRA_TARGET_ID, item.optString("id")); putExtra(FocusFlowWidgetProvider.EXTRA_KIND, item.optString("kind")) })

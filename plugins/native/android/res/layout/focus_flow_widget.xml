@@ -4,15 +4,15 @@
   android:layout_width="match_parent"
   android:layout_height="match_parent"
   android:orientation="vertical"
-  android:padding="10dp">
-  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+  android:padding="12dp">
+  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="42dp" android:gravity="center_vertical" android:orientation="horizontal">
     <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
       <TextView android:id="@+id/focus_flow_widget_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="12sp" android:textStyle="bold" />
       <TextView android:id="@+id/focus_flow_widget_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:textSize="11sp" />
     </LinearLayout>
   </LinearLayout>
-  <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="6dp">
-    <ListView android:id="@+id/focus_flow_widget_list" android:layout_width="match_parent" android:layout_height="match_parent" android:divider="@android:color/transparent" android:dividerHeight="4dp" android:scrollbars="vertical" />
+  <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="8dp">
+    <ListView android:id="@+id/focus_flow_widget_list" android:layout_width="match_parent" android:layout_height="match_parent" android:divider="@android:color/transparent" android:dividerHeight="6dp" android:scrollbars="vertical" />
     <TextView android:id="@+id/focus_flow_widget_empty" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:padding="12dp" android:textSize="12sp" android:visibility="gone" />
   </FrameLayout>
 </LinearLayout>

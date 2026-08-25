@@ -45,6 +45,19 @@ describe("v12 時間帯必須・起動・Today UX", () => {
     expect(widgetService).toContain("listOfNotNull");
   });
 
+  it("Todayではチェックが画面遷移を起こさず、本文は一覧タブを経由せず直接詳細を開く", () => {
+    const today = source("app", "(tabs)", "index.tsx");
+
+    expect(today).toContain("const [openedTodo, setOpenedTodo]");
+    expect(today).toContain("const [openedHabit, setOpenedHabit]");
+    expect(today).toContain("onOpen={() => setOpenedTodo(item.todo)}");
+    expect(today).toContain("onOpen={() => setOpenedHabit(item.habit)}");
+    expect(today).toContain("<TaskForm visible={Boolean(openedTodo)}");
+    expect(today).toContain("<HabitForm visible={Boolean(openedHabit)}");
+    expect(today).not.toContain('router.push({ pathname: "/(tabs)/todos", params: { open: item.todo.id } })');
+    expect(today).not.toContain('router.push({ pathname: "/(tabs)/habits", params: { open: item.habit.id } })');
+  });
+
   it("遮断・ウィジェットのToday遷移と起動画面はルーター互換の全画面導入を使う", () => {
     const gateService = source("plugins", "native", "android", "kotlin", "FocusGateService.kt");
     const widgetProvider = source("plugins", "native", "android", "kotlin", "FocusFlowWidgetProvider.kt");

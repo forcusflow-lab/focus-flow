@@ -18,18 +18,20 @@ describe("Focus Flowカード密度", () => {
     expect(today).toContain('itemCard: { position: "relative", minHeight: 68');
   });
 
-  it("ウィジェットは固定行高と不可視の必須ラベルレーンを使う", () => {
+  it("ウィジェットは内容に応じる行高と非表示の空補足行で、カードの重なり・過剰な空白を防ぐ", () => {
     const layout = projectFile("plugins", "native", "android", "res", "layout", "focus_flow_widget_item.xml");
     const service = projectFile("plugins", "native", "android", "kotlin", "FocusFlowWidgetItemsService.kt");
 
-    expect(layout).toContain('android:layout_height="56dp"');
+    expect(layout).toContain('android:layout_height="wrap_content"');
+    expect(layout).toContain('android:minHeight="68dp"');
     expect(layout).toContain('android:id="@+id/focus_flow_widget_item_check"');
     expect(layout).toContain('android:layout_width="20dp"');
     expect(layout).toContain('android:layout_height="20dp"');
     expect(layout).toContain('android:id="@+id/focus_flow_widget_item_action"');
     expect(layout).toContain('android:layout_width="48dp"');
     expect(layout).toContain('android:id="@+id/focus_flow_widget_item_content"');
-    expect(service).toContain('View.INVISIBLE');
+    expect(layout).toContain('android:maxLines="2"');
+    expect(service).toContain('View.GONE');
   });
 
   it("完了済み項目は行全体を薄くせず、読みやすい文字色・背景・取り消し線で区別する", () => {

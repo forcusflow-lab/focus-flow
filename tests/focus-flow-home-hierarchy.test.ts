@@ -17,8 +17,12 @@ describe("Focus Flowホーム画面の情報階層", () => {
     expect(source).toContain("requiredHabits");
     expect(source).toContain("regularHabits");
     expect(source).not.toContain("今取り組む1件");
-    expect(source).toContain('params: { open: item.todo.id }');
-    expect(source).toContain('params: { open: item.habit.id }');
+    expect(source).toContain('onOpen={() => setOpenedTodo(item.todo)}');
+    expect(source).toContain('onOpen={() => setOpenedHabit(item.habit)}');
+    expect(source).toContain('<TaskForm visible={Boolean(openedTodo)}');
+    expect(source).toContain('<HabitForm visible={Boolean(openedHabit)}');
+    expect(source).not.toContain('params: { open: item.todo.id }');
+    expect(source).not.toContain('params: { open: item.habit.id }');
     expect(source).toContain("borderRadius: 6");
   });
 });

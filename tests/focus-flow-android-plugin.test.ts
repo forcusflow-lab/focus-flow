@@ -62,6 +62,9 @@ const generatedGateService = path.join(process.cwd(), "android", "app", "src", "
 const generatedGateModule = path.join(process.cwd(), "android", "app", "src", "main", "java", "com", "app", "focusflow", "focusflow", "FocusGateModule.kt");
 const generatedAccessibilityServiceXml = path.join(process.cwd(), "android", "app", "src", "main", "res", "xml", "focus_flow_accessibility_service.xml");
 const androidPlugin = path.join(process.cwd(), "plugins", "with-focus-flow-android.js");
+const widgetShellLayout = path.join(process.cwd(), "plugins", "native", "android", "res", "layout", "focus_flow_widget.xml");
+const widgetItemLayout = path.join(process.cwd(), "plugins", "native", "android", "res", "layout", "focus_flow_widget_item.xml");
+const widgetInfoXml = path.join(process.cwd(), "plugins", "native", "android", "res", "xml", "focus_flow_widget_info.xml");
 
 describe("Focus Flow Androidネイティブプラグイン", () => {
   it("統合ウィジェットがスクロール可能なコレクション、独立透過、Todo・習慣の操作を扱う", () => {
@@ -99,10 +102,11 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(itemsSource).toContain("focus_flow_widget_item_action");
     expect(itemsSource).toContain("action = FocusFlowWidgetProvider.ACTION_COMPLETE");
     expect(itemsSource).toContain("action = FocusFlowWidgetProvider.ACTION_RESTORE");
-    expect(itemsSource).toContain("View.INVISIBLE");
+    expect(itemsSource).toContain("View.GONE");
     expect(itemsSource).toContain("paletteColor(palette, \"primary\"");
     expect(itemsSource).toContain("setImageViewResource");
     expect(itemsSource).toContain("focus_flow_widget_check_mark");
+    expect(itemsSource).toContain("setTextViewTextSize(R.id.focus_flow_widget_item_badge");
     expect(moduleSource).toContain("consumeWidgetActions");
     expect(moduleSource).toContain("WIDGET_ACTIONS");
   });
@@ -118,6 +122,23 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(source).toContain("focus_flow_widget_check_mark.xml");
     expect(source).toContain("FocusFlowWidgetItemsService.kt");
     expect(source).toContain("android.permission.BIND_REMOTEVIEWS");
+  });
+
+  it("Widgetは可変行高と48dpのチェック領域を維持し、長い本文・補足・小さいセルで重ならない", () => {
+    const shell = fs.readFileSync(widgetShellLayout, "utf8");
+    const item = fs.readFileSync(widgetItemLayout, "utf8");
+    const metadata = fs.readFileSync(widgetInfoXml, "utf8");
+
+    expect(item).toContain('android:layout_height="wrap_content"');
+    expect(item).toContain('android:minHeight="68dp"');
+    expect(item).toContain('android:layout_width="48dp"');
+    expect(item).toContain('android:layout_width="0dp"');
+    expect(item).toContain('android:maxLines="2"');
+    expect(item).toContain('android:paddingTop="10dp"');
+    expect(item).toContain('android:paddingBottom="10dp"');
+    expect(shell).toContain('android:dividerHeight="6dp"');
+    expect(metadata).toContain('android:minHeight="132dp"');
+    expect(metadata).toContain('android:targetCellHeight="2"');
   });
 
   it("テンプレートと生成済みサービスが同じ継続前面監視・遮断オーバーレイ・実行診断を持つ", () => {

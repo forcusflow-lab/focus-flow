@@ -19,6 +19,8 @@ describe("Focus Flow設定画面の実機UX回帰", () => {
     expect(source).toContain('type SettingsPanel = "home" | "limits" | "appearance" | "reminders" | "plus"');
     expect(source).toContain('setPanel("home")');
     expect(source).toContain("homeScrollRef.current?.scrollTo({ y: 0, animated: false })");
+    expect(source).toContain("BackHandler.addEventListener(\"hardwareBackPress\"");
+    expect(source).toContain('if (Platform.OS !== "android" || panel === "home") return');
     expect(source).toContain("Home screen widget");
     expect(source).toContain("widgetOpacity");
     expect(source).toContain("Follow app theme");
