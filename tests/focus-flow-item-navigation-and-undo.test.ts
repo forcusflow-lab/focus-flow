@@ -13,7 +13,7 @@ describe("Focus Flowの項目遷移と完了取り消し", () => {
       expect(source).toContain("params.open");
       expect(source).toContain("setUndo");
       expect(source).toContain("setTimeout");
-      expect(source).toContain("router.replace(\"/\")");
+      expect(source).toContain("router.replace(\"/(tabs)\" as never)");
     });
   });
 
