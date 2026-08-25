@@ -14,7 +14,7 @@ import { isEnglish } from "@/lib/focus-flow/i18n";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
 import { cancelDailyReminder, getReminderPermissionGranted, requestReminderPermission, scheduleDailyReminder, sendReminderTest } from "@/lib/focus-flow/reminders";
 import type { AppThemeId, DisplaySettings, GateSchedule, SavedThemeSet, WidgetCompletedDisplay } from "@/lib/focus-flow/types";
-import { getGateSummary, isGateTimeActive } from "@/lib/focus-flow/utils";
+import { getGateRuleSummaries, getGateSummary } from "@/lib/focus-flow/utils";
 
 const Text = ScaledText;
 type SettingsPanel = "home" | "limits" | "appearance" | "reminders" | "plus";
@@ -42,7 +42,7 @@ export default function SettingsScreen() {
   const isIOS = Platform.OS === "ios";
   const isPlus = Boolean(displaySettings.plusEntitlement && plusStatus.active);
   const summary = useMemo(() => getGateSummary({ todos, habits, memos, focusSessions, gateConfig, displaySettings }, new Date(), english ? "en" : "ja"), [todos, habits, memos, focusSessions, gateConfig, displaySettings, english]);
-  const scheduleActive = useMemo(() => isGateTimeActive(gateConfig), [gateConfig]);
+  const scheduleActive = useMemo(() => getGateRuleSummaries({ todos, habits, memos, focusSessions, gateConfig, displaySettings }, new Date(), english ? "en" : "ja").some((rule) => Boolean(rule.schedule) && rule.isActive), [todos, habits, memos, focusSessions, gateConfig, displaySettings, english]);
 
   const loadAndroidStatus = useCallback(async () => {
     const available = Platform.OS === "android" && isNativeGateAvailable();
@@ -114,7 +114,16 @@ export default function SettingsScreen() {
   };
   const addSchedule = () => setGateConfig({ schedules: [...gateConfig.schedules, { id: `schedule-${Date.now()}`, label: t(`日課 ${gateConfig.schedules.length + 1}`, `Routine ${gateConfig.schedules.length + 1}`), enabled: true, days: [1, 2, 3, 4, 5], startTime: "09:00", endTime: "18:00", requiredTodoIds: [], requiredHabitIds: [], blockedPackages: [] }] });
   const updateSchedule = (id: string, input: Partial<GateSchedule>) => setGateConfig({ schedules: gateConfig.schedules.map((item) => item.id === id ? { ...item, ...input } : item) });
-  const removeSchedule = (id: string) => setGateConfig({ schedules: gateConfig.schedules.filter((item) => item.id !== id) });
+  const removeSchedule = (id: string) => {
+    const schedule = gateConfig.schedules.find((item) => item.id === id);
+    if (!schedule) return;
+    const affectedTodos = todos.filter((todo) => todo.requiredWindowMode === "scheduled" && todo.requiredScheduleIds?.includes(id)).length;
+    const affectedHabits = habits.filter((habit) => habit.requiredWindowMode === "scheduled" && habit.requiredScheduleIds?.includes(id)).length;
+    const affectedCount = affectedTodos + affectedHabits;
+    const remove = () => setGateConfig({ schedules: gateConfig.schedules.filter((item) => item.id !== id) });
+    if (!affectedCount) { remove(); return; }
+    Alert.alert(t("時間帯を削除しますか？", "Remove this time window?"), t(`「${schedule.label}」を使う必須項目が${affectedCount}件あります。削除後、それらは「いつでも必須」に変わります。`, `${affectedCount} must-dos use “${schedule.label}”. After removal, they will become required anytime.`), [{ text: t("戻る", "Cancel"), style: "cancel" }, { text: t("削除する", "Remove"), style: "destructive", onPress: remove }]);
+  };
   const toggleReminder = async (enabled: boolean) => {
     if (Platform.OS === "web") return;
     setReminderBusy(true);

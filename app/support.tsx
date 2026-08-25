@@ -17,7 +17,7 @@ const FAQS: Record<"ja" | "en", Record<"android" | "ios", Faq[]>> = {
     android: [
       { question: "集中ルールでは何ができますか？", answer: "集中ルールでは、選んだアプリを、必須Todoや必須習慣が完了するまで制限できます。設定画面で時間帯を決められます。" },
       { question: "選んだアプリが制限されないのはなぜですか？", answer: "集中ルールがオンか、現在が有効時間帯か、対象アプリが選ばれているか、アクセシビリティが有効かを確認してください。バッテリー設定によっては動作が不安定になる場合があります。" },
-      { question: "集中ルールを止めるには？", answer: "管理から設定を開き、集中ルールをオフにしてください。Androidの設定でアクセシビリティを無効にすることもできます。" },
+      { question: "集中ルールを止めるには？", answer: "「その他」から設定を開き、集中ルールをオフにしてください。Androidの設定でアクセシビリティを無効にすることもできます。" },
       { question: "なぜアクセシビリティが必要ですか？", answer: "選んだアプリが前面に開いたことを検知して集中ルールを適用するためです。画面の文字、メッセージ、入力内容、スクリーンショットは読み取りません。" },
       { question: "端末外に送信されるデータはありますか？", answer: "Todo、メモ、日課、アプリの利用状況は端末内に保管されます。Focus Flowは広告SDKや行動追跡SDKを使用しません。" },
       { question: "時間管理の項目を早く完了したい場合は？", answer: "分を目標にしたTodo・習慣は、計測を開始して設定時間が経過すると完了します。時間前に完了する場合は、対象項目の画面からストアが表示する1回限りの早期完了を利用できます。集中ルールを止める場合は、設定からオフにしてください。" },
@@ -35,7 +35,7 @@ const FAQS: Record<"ja" | "en", Record<"android" | "ios", Faq[]>> = {
     android: [
       { question: "What do App limits do?", answer: "App limits keep the apps you choose locked until you complete your must-do tasks and habits. You decide when limits apply by setting schedules in Settings." },
       { question: "Why isn't an app being locked?", answer: "Check that App limits are on, the current time is inside an active schedule, the app is selected in that schedule, and Accessibility is enabled. Battery settings can also prevent Android from running limits reliably." },
-      { question: "How do I turn off App limits?", answer: "Open Manage, then Settings. You can turn off App limits at any time. You can also disable Accessibility in Android settings." },
+      { question: "How do I turn off App limits?", answer: "Open More, then Settings. You can turn off App limits at any time. You can also disable Accessibility in Android settings." },
       { question: "Why does Focus Flow need Accessibility?", answer: "Accessibility lets Focus Flow detect when a selected app opens so it can apply your App limits. It does not read screen text, messages, typed content, or screenshots." },
       { question: "What data leaves my device?", answer: "Your tasks, notes, routines, and app activity stay on your device. Focus Flow does not use advertising or behavioral-tracking SDKs." },
       { question: "What if I need to finish a timed item early?", answer: "Tasks and habits measured in minutes complete after you start their timer and the scheduled time passes. To finish sooner, use the one-time early completion shown by your store from that item. To stop App limits, turn them off in Settings." },
@@ -100,9 +100,9 @@ export default function SupportScreen() {
   return (
     <ScreenContainer className="px-5" containerClassName="bg-background">
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel={t("管理へ戻る", "Back to Manage")} onPress={() => router.back()} style={styles.back}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel={t("その他へ戻る", "Back to More")} onPress={() => router.back()} style={styles.back}>
           <MaterialIcons name="arrow-back" size={20} color={COLORS.forest} />
-          <Text style={styles.backText}>{t("管理へ戻る", "Back to Manage")}</Text>
+          <Text style={styles.backText}>{t("その他へ戻る", "Back to More")}</Text>
         </TouchableOpacity>
         <Text style={styles.eyebrow}>{t("サポート", "SUPPORT")}</Text>
         <Text style={styles.title}>{t("よくある質問・不具合報告", "FAQ & bug reports")}</Text>

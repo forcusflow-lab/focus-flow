@@ -15,6 +15,7 @@ export default function NotesScreen() {
   const t = (ja: string, en: string) => localized(language, ja, en);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Memo | undefined>();
+  const displayTitle = (memo: Memo) => memo.title.trim() || memo.body.trim().split(/\r?\n/)[0]?.trim().slice(0, 48) || t("無題のメモ", "Untitled note");
 
   const openForm = (memo?: Memo) => { setEditing(memo); setFormOpen(true); };
   const closeForm = () => { setFormOpen(false); setEditing(undefined); };
@@ -26,12 +27,12 @@ export default function NotesScreen() {
   const showFreeLimit = (kind: string) => Alert.alert(t("無料版の上限です", "Free plan limit"), t(`${kind}は無料版では2件までです。Plusでは無制限に追加できます。`, `The free plan allows up to 2 ${kind.toLowerCase()}. Plus removes this limit.`));
   const convert = (memo: Memo) => {
     const confirm = () => {
-      const result = addTodo({ title: memo.title, priority: "medium", isRequired: false });
+      const result = addTodo({ title: displayTitle(memo), priority: "medium", isRequired: false });
       if (!result.ok) { showFreeLimit(t("Todo", "Tasks")); return; }
       safeHaptic("success");
     };
     if (Platform.OS === "web") confirm();
-    else Alert.alert(t("Todoに追加", "Add to tasks"), t(`「${memo.title}」を通常のTodoとして追加します。`, `Add “${memo.title}” as a regular task?`), [{ text: t("キャンセル", "Cancel"), style: "cancel" }, { text: t("追加", "Add"), onPress: confirm }]);
+    else Alert.alert(t("Todoに追加", "Add to tasks"), t(`「${displayTitle(memo)}」を通常のTodoとして追加します。`, `Add “${displayTitle(memo)}” as a regular task?`), [{ text: t("キャンセル", "Cancel"), style: "cancel" }, { text: t("追加", "Add"), onPress: confirm }]);
   };
 
   if (!isReady) return <ScreenContainer><LoadingScreen /></ScreenContainer>;
@@ -44,7 +45,7 @@ export default function NotesScreen() {
       showsVerticalScrollIndicator={false}
       ListHeaderComponent={<ScreenHeading eyebrow={t("あとで整理する", "Capture for later")} title={t("メモ", "Notes")} action={<IconButton icon="add" label={t("メモを追加", "Add note")} onPress={() => openForm()} variant="filled" />} />}
       ListEmptyComponent={<EmptyState icon="sticky-note-2" title={t("気になったことをすぐ残す", "Save an idea right away")} description={t("まだTodoにしない情報、考え、調べたいことを自由にメモできます。", "Keep thoughts, research ideas, and anything you do not want to turn into a task yet.")} actionLabel={t("メモを追加", "Add note")} onAction={() => openForm()} />}
-      renderItem={({ item }) => <View style={styles.memoCard}><TouchableOpacity onPress={() => openForm(item)} activeOpacity={0.76} style={styles.memoCopy}><Text style={styles.memoTitle} numberOfLines={1}>{item.title}</Text>{item.body ? <Text style={styles.memoBody} numberOfLines={3}>{item.body}</Text> : null}<Text style={styles.memoDate}>{new Date(item.updatedAt).toLocaleDateString(language === "en" ? "en-US" : "ja-JP", { month: language === "en" ? "short" : "numeric", day: "numeric" })} {t("更新", "updated")}</Text></TouchableOpacity><View style={styles.actions}><TouchableOpacity accessibilityLabel={t("Todoとして追加", "Add as task")} onPress={() => convert(item)} style={styles.action}><MaterialIcons name="playlist-add" size={20} color={COLORS.blue} /></TouchableOpacity><TouchableOpacity accessibilityLabel={t("メモを削除", "Delete note")} onPress={() => remove(item)} style={styles.action}><MaterialIcons name="delete-outline" size={21} color={COLORS.muted} /></TouchableOpacity></View></View>}
+      renderItem={({ item }) => <View style={styles.memoCard}><TouchableOpacity onPress={() => openForm(item)} activeOpacity={0.76} style={styles.memoCopy}><Text style={styles.memoTitle} numberOfLines={1}>{displayTitle(item)}</Text>{item.body && item.title.trim() ? <Text style={styles.memoBody} numberOfLines={3}>{item.body}</Text> : null}<Text style={styles.memoDate}>{new Date(item.updatedAt).toLocaleDateString(language === "en" ? "en-US" : "ja-JP", { month: language === "en" ? "short" : "numeric", day: "numeric" })} {t("更新", "updated")}</Text></TouchableOpacity><View style={styles.actions}><TouchableOpacity accessibilityLabel={t("Todoとして追加", "Add as task")} onPress={() => convert(item)} style={styles.action}><MaterialIcons name="playlist-add" size={18} color={COLORS.blue} /><Text style={styles.actionLabel}>{t("Todo", "Task")}</Text></TouchableOpacity><TouchableOpacity accessibilityLabel={t("メモを削除", "Delete note")} onPress={() => remove(item)} style={styles.deleteAction}><MaterialIcons name="delete-outline" size={21} color={COLORS.muted} /></TouchableOpacity></View></View>}
     />
     <MemoForm visible={formOpen} memo={editing} onClose={closeForm} onSave={(input) => {
       const result = editing ? updateMemo(editing.id, input) : addMemo(input);
@@ -98,8 +99,10 @@ const styles = StyleSheet.create({
   memoTitle: { color: COLORS.text, fontSize: 16, lineHeight: 21, fontWeight: "800" },
   memoBody: { color: COLORS.muted, fontSize: 13, lineHeight: 19, marginTop: 5 },
   memoDate: { color: "#7B8AA3", fontSize: 11, fontWeight: "700", marginTop: 9 },
-  actions: { width: 37, alignItems: "center", gap: 4 },
-  action: { width: 36, height: 36, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: "#EDF3FB" },
+  actions: { width: 48, alignItems: "center", gap: 5 },
+  action: { width: 46, minHeight: 43, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: "#EDF3FB", paddingVertical: 3 },
+  actionLabel: { color: COLORS.blue, fontSize: 9, fontWeight: "800", marginTop: 1 },
+  deleteAction: { width: 40, height: 31, alignItems: "center", justifyContent: "center", borderRadius: 10 },
   backdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(22,35,59,0.34)" },
   sheet: { maxHeight: "94%", backgroundColor: "#F4F8FE", borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingBottom: 16 },
   handle: { alignSelf: "center", width: 42, height: 5, borderRadius: 3, backgroundColor: "#C8D5E8", marginTop: 10, marginBottom: 16 },

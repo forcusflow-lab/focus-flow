@@ -1,4 +1,4 @@
-import type { FocusFlowData, FocusSession, GateConfig, GateSchedule, Habit, RepeatRule, Todo, TodoSubtask } from "./types";
+import type { FocusFlowData, FocusSession, GateConfig, GateSchedule, Habit, RepeatRule, RequiredWindowMode, Todo, TodoSubtask } from "./types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 export type ContentLanguage = "ja" | "en";
@@ -97,11 +97,42 @@ export function nextRecurringDueDate(currentDueDate: string | undefined, repeatR
   return dayKeyOffset(repeatRule === "daily" ? 1 : 7, anchor);
 }
 
-export function isTodoRequiredForGate(todo: Todo, autoRequireDueToday: boolean, base = new Date()) {
+type RequiredWindowItem = Pick<Todo | Habit, "isRequired" | "requiredWindowMode" | "requiredScheduleIds">;
+
+/**
+ * 旧データの必須項目を安全に常時必須へ移行しつつ、空の時間帯指定を残さない。
+ */
+export function getRequiredWindowMode(item: RequiredWindowItem): RequiredWindowMode | undefined {
+  if (!item.isRequired) return undefined;
+  return item.requiredWindowMode === "scheduled" && (item.requiredScheduleIds?.length ?? 0) > 0 ? "scheduled" : "always";
+}
+
+export function isItemRequiredForGate(item: RequiredWindowItem, schedule?: GateSchedule) {
+  const mode = getRequiredWindowMode(item);
+  if (!mode) return false;
+  if (mode === "always") return schedule === undefined;
+  return Boolean(schedule && item.requiredScheduleIds?.includes(schedule.id));
+}
+
+/** 指定した時点で、この項目が集中制限の解除条件に入るかを返す。 */
+export function isItemRequiredDuringActiveGate(item: RequiredWindowItem, config: GateConfig, base = new Date()) {
+  const mode = getRequiredWindowMode(item);
+  if (mode === "always") return true;
+  if (mode !== "scheduled") return false;
+  return config.schedules.some((schedule) => item.requiredScheduleIds?.includes(schedule.id) && isScheduleActive(schedule, base));
+}
+
+export function isTodoRequiredForGate(todo: Todo, autoRequireDueToday: boolean, base = new Date(), schedule?: GateSchedule) {
   const today = dayKey(base);
   const repeatRule = todo.repeatRule ?? "none";
   const repeatingInstanceIsDue = repeatRule === "none" || !todo.dueDate || todo.dueDate <= today;
-  return (todo.isRequired && repeatingInstanceIsDue) || (autoRequireDueToday && getTodoDueStatus(todo, base) === "today");
+  const dueTodayIsAlwaysRequired = autoRequireDueToday && getTodoDueStatus(todo, base) === "today";
+  if (dueTodayIsAlwaysRequired) return schedule === undefined;
+  return Boolean(repeatingInstanceIsDue && isItemRequiredForGate(todo, schedule));
+}
+
+export function isHabitRequiredForGate(habit: Habit, schedule?: GateSchedule) {
+  return isItemRequiredForGate(habit, schedule);
 }
 
 export function isHabitCompleteOn(habit: Habit, value: string, base = new Date()) {
@@ -201,10 +232,8 @@ export type GateSummary = { pendingTodos: number; pendingHabits: number; pending
 export type GateRuleSummary = GateSummary & { id: string; label: string; isActive: boolean; blockedPackages: string[]; requiredTodoIds: string[]; requiredHabitIds: string[]; pendingTodoIds: string[]; pendingHabitIds: string[]; schedule?: GateSchedule };
 
 function getRuleSummary(data: FocusFlowData, schedule: GateSchedule | undefined, base: Date, language: ContentLanguage): GateRuleSummary {
-  const baseTodoIds = data.todos.filter((todo) => isTodoRequiredForGate(todo, data.gateConfig.autoRequireDueToday, base)).map((todo) => todo.id);
-  const baseHabitIds = data.habits.filter((habit) => habit.isRequired).map((habit) => habit.id);
-  const requiredTodos = data.todos.filter((todo) => baseTodoIds.includes(todo.id));
-  const requiredHabits = data.habits.filter((habit) => baseHabitIds.includes(habit.id));
+  const requiredTodos = data.todos.filter((todo) => isTodoRequiredForGate(todo, data.gateConfig.autoRequireDueToday, base, schedule));
+  const requiredHabits = data.habits.filter((habit) => isHabitRequiredForGate(habit, schedule));
   const pendingTodoIds = requiredTodos.filter((todo) => !isTodoAchieved(todo)).map((todo) => todo.id);
   const pendingHabitIds = requiredHabits.filter((habit) => !isHabitCompleteOn(habit, dayKey(base))).map((habit) => habit.id);
   const pendingTodos = pendingTodoIds.length;
@@ -212,7 +241,8 @@ function getRuleSummary(data: FocusFlowData, schedule: GateSchedule | undefined,
   const pendingCount = pendingTodos + pendingHabits;
   const fragments = language === "en" ? [pendingTodos ? `${pendingTodos} task${pendingTodos === 1 ? "" : "s"}` : "", pendingHabits ? `${pendingHabits} habit${pendingHabits === 1 ? "" : "s"}` : ""].filter(Boolean) : [pendingTodos ? `Todo ${pendingTodos}件` : "", pendingHabits ? `習慣 ${pendingHabits}件` : ""].filter(Boolean);
   const blockedPackages = [...new Set([...(data.gateConfig.blockedPackages ?? []), ...(schedule?.blockedPackages ?? [])])];
-  return { id: schedule?.id ?? "always", label: schedule?.label ?? (language === "en" ? "Always-on schedule" : "常時の集中ルール"), isActive: schedule ? isScheduleActive(schedule, base) : true, blockedPackages, requiredTodoIds: requiredTodos.map((todo) => todo.id), requiredHabitIds: requiredHabits.map((habit) => habit.id), pendingTodoIds, pendingHabitIds, pendingTodos, pendingHabits, pendingCount, schedule, message: pendingCount ? language === "en" ? `To unlock: ${fragments.join(", ")}` : `未完了：${fragments.join("・")}` : language === "en" ? "All must-dos for this schedule are complete" : "このルールの必須項目を完了しました" };
+  const isActive = schedule ? isScheduleActive(schedule, base) : requiredTodos.length + requiredHabits.length > 0;
+  return { id: schedule?.id ?? "always", label: schedule?.label ?? (language === "en" ? "Always-on schedule" : "常時の集中ルール"), isActive, blockedPackages, requiredTodoIds: requiredTodos.map((todo) => todo.id), requiredHabitIds: requiredHabits.map((habit) => habit.id), pendingTodoIds, pendingHabitIds, pendingTodos, pendingHabits, pendingCount, schedule, message: pendingCount ? language === "en" ? `To unlock: ${fragments.join(", ")}` : `未完了：${fragments.join("・")}` : language === "en" ? "All must-dos for this schedule are complete" : "このルールの必須項目を完了しました" };
 }
 
 export function getGateRuleSummaries(data: FocusFlowData, base = new Date(), language: ContentLanguage = "ja") {

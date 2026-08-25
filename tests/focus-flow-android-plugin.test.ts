@@ -86,9 +86,10 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(source).toContain("forEach { id -> provider.updateWidget(context, manager, id) }");
     expect(source).toContain("deepLink(context, if (kind == \"habit\") \"habits\" else \"todos\", targetId)");
     expect(source).toContain("todayIntent");
-    expect(source).toContain('Uri.parse("$DEEP_LINK_SCHEME://$path")');
-    expect(source).toContain('"todos" -> "/todos"');
-    expect(source).toContain('"habits" -> "/habits"');
+    expect(source).toContain('Uri.parse("$DEEP_LINK_SCHEME:///")');
+    expect(source).toContain('"todos" -> appendPath("todos")');
+    expect(source).toContain('"habits" -> appendPath("habits")');
+    expect(source).not.toContain('Uri.parse("$DEEP_LINK_SCHEME://$path")');
     expect(itemsSource).toContain("RemoteViewsService.RemoteViewsFactory");
     expect(itemsSource).toContain("focus_flow_widget_checkbox");
     expect(itemsSource).toContain("StrikethroughSpan");

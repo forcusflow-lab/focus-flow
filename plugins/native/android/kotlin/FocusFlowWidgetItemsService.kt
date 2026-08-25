@@ -40,6 +40,7 @@ private class FocusFlowWidgetItemsFactory(private val context: Context, private 
     val primaryColor = paletteColor(palette, "primary", "#1B6B62")
     val completed = item.optBoolean("completed", false)
     val required = item.optBoolean("required", false)
+    val windowLabel = item.optString("windowLabel", "")
     val timedLocked = item.optBoolean("timedLocked", false)
     val canToggle = item.optBoolean("canToggle", false)
     val highContrast = opacity < 55
@@ -49,8 +50,10 @@ private class FocusFlowWidgetItemsFactory(private val context: Context, private 
     views.setTextColor(R.id.focus_flow_widget_item_title, if (completed) completedColor else titleColor)
     // Keep the badge line reserved on regular items so every widget card has the
     // same height and the title/checkbox always share one visual baseline.
-    views.setViewVisibility(R.id.focus_flow_widget_item_badge, if (required) View.VISIBLE else View.INVISIBLE)
-    views.setTextViewText(R.id.focus_flow_widget_item_badge, if (state.optString("language", "ja") == "en") "MUST" else "必須")
+    val requiredLabel = if (state.optString("language", "ja") == "en") "MUST" else "必須"
+    val badge = listOfNotNull(if (required) requiredLabel else null, windowLabel.ifBlank { null }).joinToString(" · ")
+    views.setViewVisibility(R.id.focus_flow_widget_item_badge, if (badge.isNotBlank()) View.VISIBLE else View.INVISIBLE)
+    views.setTextViewText(R.id.focus_flow_widget_item_badge, badge)
     views.setTextColor(R.id.focus_flow_widget_item_badge, mutedColor)
     if (completed) {
       views.setInt(R.id.focus_flow_widget_item_check, "setBackgroundColor", primaryColor)

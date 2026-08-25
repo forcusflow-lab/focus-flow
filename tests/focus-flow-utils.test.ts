@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { FocusFlowData, GateSchedule, Habit } from "../lib/focus-flow/types";
-import { dayKey, getGateRuleSummaries, getGateSummary, habitStreak, isHabitCompleteOn, isScheduleActive, isTodoAchieved, nextRecurringDueDate, reorderSubtasks, weeklyHabitProgress, weeklyFocusMinutes } from "../lib/focus-flow/utils";
+import { dayKey, getGateRuleSummaries, getGateSummary, habitStreak, isHabitCompleteOn, isItemRequiredDuringActiveGate, isScheduleActive, isTodoAchieved, nextRecurringDueDate, reorderSubtasks, weeklyHabitProgress, weeklyFocusMinutes } from "../lib/focus-flow/utils";
 
 const base = new Date(2026, 7, 13, 12, 0, 0);
 
@@ -58,6 +58,21 @@ describe("Focus Flowの日付・習慣計算", () => {
     expect(isScheduleActive(schedule, new Date(2026, 7, 10, 23, 0, 0))).toBe(true);
     expect(isScheduleActive(schedule, new Date(2026, 7, 11, 5, 30, 0))).toBe(true);
     expect(isScheduleActive(schedule, new Date(2026, 7, 11, 6, 0, 0))).toBe(false);
+  });
+
+  it("時間帯必須のTodo・習慣は選択した時間帯内だけ解除条件になる", () => {
+    const evening: GateSchedule = { id: "evening", label: "夜の集中", enabled: true, days: [1], startTime: "19:00", endTime: "21:00" };
+    const todo = { id: "t-evening", title: "復習", priority: "high" as const, isRequired: true, requiredWindowMode: "scheduled" as const, requiredScheduleIds: ["evening"], completed: false, createdAt: "2026-08-10T00:00:00.000Z" };
+    const habit: Habit = { id: "h-evening", title: "読書", color: "#246B5A", goalPerWeek: 5, isRequired: true, requiredWindowMode: "scheduled", requiredScheduleIds: ["evening"], completedDates: [], createdAt: "2026-08-10T00:00:00.000Z" };
+    const data: FocusFlowData = { todos: [todo], habits: [habit], memos: [], focusSessions: [], gateConfig: { enabled: true, blockedPackages: ["com.example.video"], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: false, schedules: [evening] }, displaySettings: { fontScale: "standard", theme: "mist", cardOpacity: "solid" } };
+    const before = new Date(2026, 7, 10, 18, 59, 0);
+    const during = new Date(2026, 7, 10, 19, 0, 0);
+    const after = new Date(2026, 7, 10, 21, 0, 0);
+    expect(isItemRequiredDuringActiveGate(todo, data.gateConfig, before)).toBe(false);
+    expect(getGateSummary(data, before)).toMatchObject({ pendingCount: 0, message: "現在は制限時間外です" });
+    expect(isItemRequiredDuringActiveGate(todo, data.gateConfig, during)).toBe(true);
+    expect(getGateSummary(data, during)).toMatchObject({ pendingTodos: 1, pendingHabits: 1, pendingCount: 2 });
+    expect(getGateSummary(data, after)).toMatchObject({ pendingCount: 0, message: "現在は制限時間外です" });
   });
 
   it("時間帯ごとに制限アプリは変えられるが、解除条件は必須項目に統一する", () => {

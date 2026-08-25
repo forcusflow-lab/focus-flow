@@ -1,6 +1,7 @@
 export type Priority = "high" | "medium" | "low";
 export type ProgressUnit = "check" | "count" | "minutes";
 export type RepeatRule = "none" | "daily" | "weekly";
+export type RequiredWindowMode = "always" | "scheduled";
 export type WidgetThemeKind = "unified" | "overview" | "progress" | "next" | "habit" | "routine";
 export type WidgetBackgroundTheme = "default" | "forest" | "ocean" | "violet" | "amber" | "blush" | "ink";
 export type WidgetAccentTheme = "auto" | "mint" | "sky" | "violet" | "coral" | "gold" | "ink";
@@ -25,6 +26,10 @@ export type Todo = {
   priority: Priority;
   dueDate?: string;
   isRequired: boolean;
+  /** 必須項目を常時扱うか、選択した集中時間帯だけ扱うか。 */
+  requiredWindowMode?: RequiredWindowMode;
+  /** requiredWindowMode が scheduled のときに使う GateSchedule のID。 */
+  requiredScheduleIds?: string[];
   completed: boolean;
   completedAt?: string;
   progressUnit?: ProgressUnit;
@@ -45,6 +50,10 @@ export type Habit = {
   color: string;
   goalPerWeek: number;
   isRequired: boolean;
+  /** 必須項目を常時扱うか、選択した集中時間帯だけ扱うか。 */
+  requiredWindowMode?: RequiredWindowMode;
+  /** requiredWindowMode が scheduled のときに使う GateSchedule のID。 */
+  requiredScheduleIds?: string[];
   completedDates: string[];
   progressUnit?: ProgressUnit;
   targetValue?: number;
