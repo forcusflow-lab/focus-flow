@@ -47,5 +47,6 @@ Widgetは、余白を持つ一枚のsurfaceカードに統一する。ヘッダ�
 | Lint | `pnpm lint` 成功 |
 | 通常版クリーン生成 | versionCode 21、Provider、3行layout、丸角Pill/丸形チェックdrawable、禁止Collection経路不在を確認 |
 | 本人用クリーン生成 | `com.app.focusflow.personal` / versionCode 11、専用scheme、Provider、3行layout、新drawable、禁止Collection経路不在を確認 |
+| 本人用署名APK | GitHub Actions run `33019053821`の成果物をZIP整合性、SHA-256、package/versionCode、v2署名、既存証明書、専用scheme、Provider、3行Widget資産、旧Collection経路不在まで独立確認 |
 
-これらはソースと生成資産の検証であり、ランチャー上で外形・行数が実際に変わることは保証しない。小・標準・大のリサイズ、ライト/ダーク、必須Pill、丸形完了操作は実機スクリーンショットで受入する。
+署名成果物の識別情報と実機受入シートは `release/V11_PERSONAL_SIGNED_BUILD_RECORD.md` に記録する。これらはソースと生成資産の検証であり、ランチャー上で外形・行数が実際に変わることは保証しない。小・標準・大のリサイズ、ライト/ダーク、必須Pill、丸形完了操作は実機スクリーンショットで受入する。

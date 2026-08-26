@@ -329,3 +329,4 @@
 - [ ] 本体の習慣カードとToday習慣カードで必須Pillが「必」に切れる不具合を、Todoと同じPill構造・幅制約・overflow制御へ統一し、文字サイズ3段階で`必須`を完全表示する
 - [x] v11でリサイズcallbackの受信Bundleから現在のMIN幅・高さを判定し、1/2/3行の単一リストカード、丸角必須Pill、丸形完了操作、通常21/本人用11の生成資産を実装して76件の自動回帰・クリーン生成で検証する
 - [x] 本体の習慣カードとToday習慣カードの必須Pillを補足と別行にし、共有Pill最小幅を68dpへ強化する実装と静的契約を追加する
+- [x] GitHub Actions run 33019053821で本人用v11署名APKを生成し、ZIP整合性、versionCode 11、v2署名、既存証明書、専用scheme、Provider、3行Widget資産、旧Collection経路不在を独立検証する
