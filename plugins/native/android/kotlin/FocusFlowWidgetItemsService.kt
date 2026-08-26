@@ -36,15 +36,17 @@ private class FocusFlowWidgetItemsFactory(private val context: Context, private 
     val opacity = state.optInt("widgetOpacity", 86).coerceIn(0, 100)
     val titleColor = paletteColor(palette, "text", if (dark) "#F2FAF6" else "#1A2925")
     val mutedColor = paletteColor(palette, "muted", if (dark) "#B3C7BE" else "#64736D")
-    val completedColor = Color.parseColor(if (dark) "#C2D0CA" else "#66736D")
+    val completedColor = mutedColor
     val primaryColor = paletteColor(palette, "primary", "#1B6B62")
     val completed = item.optBoolean("completed", false)
     val required = item.optBoolean("required", false)
     val windowLabel = item.optString("windowLabel", "")
     val timedLocked = item.optBoolean("timedLocked", false)
     val canToggle = item.optBoolean("canToggle", false)
-    val highContrast = opacity < 55
-    views.setInt(R.id.focus_flow_widget_item_root, "setBackgroundResource", when { completed && highContrast && !dark -> R.drawable.focus_flow_widget_item_done_light; completed && highContrast -> R.drawable.focus_flow_widget_item_done_dark; highContrast && !dark -> R.drawable.focus_flow_widget_item_light; highContrast -> R.drawable.focus_flow_widget_item_dark; completed -> R.drawable.focus_flow_widget_item_done; required -> R.drawable.focus_flow_widget_item_required; else -> R.drawable.focus_flow_widget_item_background })
+    views.setInt(R.id.focus_flow_widget_item_root, "setBackgroundColor", Color.TRANSPARENT)
+    views.setViewVisibility(R.id.focus_flow_widget_item_required_rail, if (required) View.VISIBLE else View.INVISIBLE)
+    views.setInt(R.id.focus_flow_widget_item_required_rail, "setBackgroundColor", primaryColor)
+    views.setInt(R.id.focus_flow_widget_item_divider, "setBackgroundColor", paletteColor(palette, "border", if (dark) "#3B554B" else "#D7E2DD"))
     val title = item.optString("title")
     views.setTextViewText(R.id.focus_flow_widget_item_title, if (completed) struck(title) else title)
     views.setTextColor(R.id.focus_flow_widget_item_title, if (completed) completedColor else titleColor)
@@ -64,9 +66,9 @@ private class FocusFlowWidgetItemsFactory(private val context: Context, private 
       views.setImageViewResource(R.id.focus_flow_widget_item_check, if (timedLocked) R.drawable.focus_flow_widget_check_locked else R.drawable.focus_flow_widget_check_empty)
     }
     views.setFloat(R.id.focus_flow_widget_item_check, "setAlpha", if (canToggle || completed) 1f else 0.45f)
-    val scale = when (state.optJSONObject("widgetTextSizes")?.optString("unified", "standard")) { "compact" -> 0.90f; "large" -> 1.15f; else -> 1f }
-    views.setTextViewTextSize(R.id.focus_flow_widget_item_title, TypedValue.COMPLEX_UNIT_SP, 14f * scale)
-    views.setTextViewTextSize(R.id.focus_flow_widget_item_badge, TypedValue.COMPLEX_UNIT_SP, 10f * scale)
+    val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
+    views.setTextViewTextSize(R.id.focus_flow_widget_item_title, TypedValue.COMPLEX_UNIT_DIP, 13f * scale)
+    views.setTextViewTextSize(R.id.focus_flow_widget_item_badge, TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
     // Completion uses a dedicated 48dp touch target. The item copy is a separate
     // view, so the widget cannot treat a checkbox tap as a Deep Link tap.
     views.setOnClickFillInIntent(R.id.focus_flow_widget_item_content, Intent().apply { action = FocusFlowWidgetProvider.ACTION_OPEN_ITEM; putExtra(FocusFlowWidgetProvider.EXTRA_TARGET_ID, item.optString("id")); putExtra(FocusFlowWidgetProvider.EXTRA_KIND, item.optString("kind")) })

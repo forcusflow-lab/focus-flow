@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Platform, Share, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 
 import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
-import { COLORS } from "@/components/focus-flow/ui";
+import { COLORS, useFocusPalette } from "@/components/focus-flow/ui";
 import { ScreenContainer } from "@/components/screen-container";
 import { getGateDiagnostics, type GateDiagnostics } from "@/lib/focus-flow/android-gate";
 import { isEnglish } from "@/lib/focus-flow/i18n";
@@ -59,6 +59,7 @@ function status(value: boolean | null | undefined, english: boolean) {
 export default function SupportScreen() {
   const router = useRouter();
   const { displaySettings } = useFocusFlow();
+  const palette = useFocusPalette();
   const [openQuestion, setOpenQuestion] = useState<number | null>(0);
   const [diagnostics, setDiagnostics] = useState<GateDiagnostics | undefined>();
   const [loading, setLoading] = useState(true);
@@ -101,21 +102,21 @@ export default function SupportScreen() {
     <ScreenContainer className="px-5" containerClassName="bg-background">
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <TouchableOpacity accessibilityRole="button" accessibilityLabel={t("その他へ戻る", "Back to More")} onPress={() => router.back()} style={styles.back}>
-          <MaterialIcons name="arrow-back" size={20} color={COLORS.forest} />
+          <MaterialIcons name="arrow-back" size={20} color={palette.primary} />
           <Text style={styles.backText}>{t("その他へ戻る", "Back to More")}</Text>
         </TouchableOpacity>
         <Text style={styles.eyebrow}>{t("サポート", "SUPPORT")}</Text>
         <Text style={styles.title}>{t("よくある質問・不具合報告", "FAQ & bug reports")}</Text>
         <Text style={styles.intro}>{isAndroid ? t("よくある質問を確認し、うまく動かない場合は必要な情報だけを含むレポートを共有してください。", "Find quick answers, then send a clear report if something does not work as expected.") : t("このiPhoneビルドについてよくある質問を確認し、必要な情報だけを含むレポートを共有してください。", "Find quick answers for this iPhone build, then send a clear report if something does not work as expected.")}</Text>
         <Text style={styles.sectionTitle}>{t("よくある質問", "Frequently asked questions")}</Text>
-        <View style={styles.faqGroup}>
+        <View style={[styles.faqGroup, { backgroundColor: palette.surface, borderColor: palette.border }]}> 
           {faqs.map((faq, index) => {
             const open = openQuestion === index;
             return (
-              <View key={faq.question} style={[styles.faqItem, open && styles.faqOpen]}>
+              <View key={faq.question} style={[styles.faqItem, { borderBottomColor: palette.border }, open && { backgroundColor: palette.elevated }]}>
                 <TouchableOpacity accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpenQuestion(open ? null : index)} style={styles.faqButton}>
                   <Text style={styles.faqQuestion}>{faq.question}</Text>
-                  <MaterialIcons name={open ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={22} color={COLORS.forest} />
+                  <MaterialIcons name={open ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={22} color={palette.primary} />
                 </TouchableOpacity>
                 {open ? <Text style={styles.faqAnswer}>{faq.answer}</Text> : null}
               </View>
@@ -123,20 +124,20 @@ export default function SupportScreen() {
           })}
         </View>
         <View style={styles.reportHeader}>
-          <View style={styles.reportIcon}><MaterialIcons name="bug-report" size={21} color={COLORS.blue} /></View>
+          <View style={[styles.reportIcon, { backgroundColor: palette.elevated }]}><MaterialIcons name="bug-report" size={21} color={palette.primary} /></View>
           <View style={styles.reportCopy}>
             <Text style={styles.sectionTitle}>{t("不具合を報告する", "Report a problem")}</Text>
             <Text style={styles.reportIntro}>{isAndroid ? t("このテンプレートには端末と集中ルールの情報だけを追加します。Todoやメモの内容は含めません。", "This template adds device and App limits details without including your tasks or notes.") : t("このテンプレートにはiPhoneの端末情報だけを追加します。Todoやメモの内容は含めません。", "This template adds iPhone device details without including your tasks or notes.")}</Text>
           </View>
         </View>
-        <TouchableOpacity accessibilityRole="button" onPress={() => void loadDiagnostics()} style={styles.refreshButton}>
-          <MaterialIcons name="refresh" size={18} color={COLORS.forest} />
+        <TouchableOpacity accessibilityRole="button" onPress={() => void loadDiagnostics()} style={[styles.refreshButton, { backgroundColor: palette.primarySoft }]}>
+          <MaterialIcons name="refresh" size={18} color={palette.primary} />
           <Text style={styles.refreshText}>{loading ? t("端末情報を確認しています…", "Checking device info…") : isAndroid ? t("端末情報を再確認", "Refresh device info") : t("iPhone情報を再確認", "Refresh iPhone info")}</Text>
-          {loading ? <ActivityIndicator size="small" color={COLORS.forest} /> : null}
+          {loading ? <ActivityIndicator size="small" color={palette.primary} /> : null}
         </TouchableOpacity>
         <Text style={styles.templateLabel}>{t("このテンプレートをコピーまたは共有", "Copy or share this template")}</Text>
-        <TextInput value={report} editable={false} selectTextOnFocus multiline style={styles.template} accessibilityLabel={t("不具合報告テンプレート", "Bug report template")} />
-        <TouchableOpacity accessibilityRole="button" onPress={() => void shareReport()} style={styles.shareButton}>
+        <TextInput value={report} editable={false} selectTextOnFocus multiline style={[styles.template, { borderColor: palette.border, backgroundColor: palette.surface, color: palette.text }]} accessibilityLabel={t("不具合報告テンプレート", "Bug report template")} />
+        <TouchableOpacity accessibilityRole="button" onPress={() => void shareReport()} style={[styles.shareButton, { backgroundColor: palette.primary }]}>
           <MaterialIcons name="ios-share" size={19} color={COLORS.white} />
           <Text style={styles.shareText}>{t("レポートを共有", "Share report")}</Text>
         </TouchableOpacity>

@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
-import { COLORS } from "@/components/focus-flow/ui";
+import { COLORS, useFocusPalette } from "@/components/focus-flow/ui";
 import { ScreenContainer } from "@/components/screen-container";
 import { isEnglish } from "@/lib/focus-flow/i18n";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
@@ -11,6 +11,7 @@ import { useFocusFlow } from "@/lib/focus-flow/provider";
 export default function LegalScreen() {
   const router = useRouter();
   const { displaySettings } = useFocusFlow();
+  const palette = useFocusPalette();
   const english = isEnglish(displaySettings);
   const t = (ja: string, en: string) => english ? en : ja;
   const sections = [
@@ -21,7 +22,7 @@ export default function LegalScreen() {
     { title: t("データと端末", "Data and devices"), body: t("Focus FlowのTodo、習慣、メモ、日課、表示設定は端末内に保存されます。Plusはストアの購入状態を確認するために使われますが、計画データを端末外へ送信しません。データの扱いと端末内データの削除は「プライバシーとデータ」で確認できます。", "Focus Flow stores tasks, habits, notes, routines, and display settings on your device. Plus checks your store purchase status but does not send planning data off your device. Review data handling and delete on-device data in Privacy & data.") },
     { title: t("大切なお知らせ", "Important notice"), body: t("Focus Flowは、目標管理と集中を支援する一般的なツールです。医療、緊急対応、診断のためのサービスではありません。Androidのアプリ制限は任意で、Androidの設定からいつでも無効にできます。", "Focus Flow is a general planning and focus tool. It is not a medical, emergency, or diagnostic service. Android App limits are optional and can be disabled at any time in Android settings.") },
   ];
-  return <ScreenContainer className="px-5" containerClassName="bg-background"><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}><TouchableOpacity accessibilityRole="button" accessibilityLabel={t("その他へ戻る", "Back to More")} onPress={() => router.back()} style={styles.back}><MaterialIcons name="arrow-back" size={20} color={COLORS.forest} /><Text style={styles.backText}>{t("その他へ戻る", "Back to More")}</Text></TouchableOpacity><Text style={styles.eyebrow}>{t("透明性", "TRANSPARENCY")}</Text><Text style={styles.title}>{t("利用条件とサブスクリプション", "Terms & subscriptions")}</Text><Text style={styles.intro}>{t("購入前に、無料で使える範囲とPlusの対象を確認できます。", "Review what stays free and what Plus includes before you buy.")}</Text>{sections.map((section) => <View key={section.title} style={styles.card}><Text style={styles.cardTitle}>{section.title}</Text><Text style={styles.cardBody}>{section.body}</Text></View>)}</ScrollView></ScreenContainer>;
+  return <ScreenContainer className="px-5" containerClassName="bg-background"><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}><TouchableOpacity accessibilityRole="button" accessibilityLabel={t("その他へ戻る", "Back to More")} onPress={() => router.back()} style={styles.back}><MaterialIcons name="arrow-back" size={20} color={palette.primary} /><Text style={styles.backText}>{t("その他へ戻る", "Back to More")}</Text></TouchableOpacity><Text style={styles.eyebrow}>{t("透明性", "TRANSPARENCY")}</Text><Text style={styles.title}>{t("利用条件とサブスクリプション", "Terms & subscriptions")}</Text><Text style={styles.intro}>{t("購入前に、無料で使える範囲とPlusの対象を確認できます。", "Review what stays free and what Plus includes before you buy.")}</Text>{sections.map((section) => <View key={section.title} style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}><Text style={styles.cardTitle}>{section.title}</Text><Text style={styles.cardBody}>{section.body}</Text></View>)}</ScrollView></ScreenContainer>;
 }
 
 const styles = StyleSheet.create({ content: { paddingTop: 14, paddingBottom: 44 }, back: { minHeight: 40, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 2 }, backText: { color: COLORS.forest, fontSize: 13, fontWeight: "800" }, eyebrow: { color: COLORS.forest, fontSize: 12, letterSpacing: 0.7, fontWeight: "900", marginTop: 9 }, title: { color: COLORS.text, fontSize: 28, lineHeight: 34, letterSpacing: -0.5, fontWeight: "900", marginTop: 2 }, intro: { color: COLORS.muted, fontSize: 14, lineHeight: 21, marginTop: 7, marginBottom: 8 }, card: { backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border, borderRadius: 18, padding: 16, marginTop: 12 }, cardTitle: { color: COLORS.text, fontSize: 16, lineHeight: 22, fontWeight: "900" }, cardBody: { color: "#46645B", fontSize: 14, lineHeight: 21, marginTop: 7 } });

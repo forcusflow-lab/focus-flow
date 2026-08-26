@@ -6,9 +6,9 @@ import * as SplashScreen from "expo-splash-screen";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
-import { Animated, Easing, Platform, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, Platform, StyleSheet, Text, View, useColorScheme } from "react-native";
 import "@/lib/_core/nativewind-pressable";
-import { ThemeProvider } from "@/lib/theme-provider";
+import { ThemeProvider, useThemeContext } from "@/lib/theme-provider";
 import {
   SafeAreaFrameContext,
   SafeAreaInsetsContext,
@@ -21,6 +21,7 @@ import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { initializeReminders } from "@/lib/focus-flow/reminders";
 import { FocusFlowProvider, useFocusFlow } from "@/lib/focus-flow/provider";
+import { resolveAppearance } from "@/lib/focus-flow/app-themes";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
@@ -59,6 +60,19 @@ function FocusFlowLaunchShell() {
     <StatusBar style={visible ? "light" : "auto"} />
     {visible ? <Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[launchStyles.overlay, { opacity }]}><View style={launchStyles.haloOne} /><View style={launchStyles.haloTwo} /><View style={launchStyles.content}><View style={launchStyles.mark}><View style={launchStyles.markArc} /><View style={launchStyles.markCore} /></View><Text style={launchStyles.wordmark}>Focus Flow</Text><Text style={launchStyles.tagline}>今日を、ひとつずつ。</Text><View style={launchStyles.rule} /></View><Text style={launchStyles.footer}>PLAN · FOCUS · FINISH</Text></Animated.View> : null}
   </View>;
+}
+
+function FocusFlowThemeBridge({ children }: { children: React.ReactNode }) {
+  const { displaySettings } = useFocusFlow();
+  const { setColorScheme } = useThemeContext();
+  const systemScheme = useColorScheme() === "dark" ? "dark" : "light";
+  const resolved = resolveAppearance(displaySettings, systemScheme);
+
+  useEffect(() => {
+    setColorScheme(resolved);
+  }, [resolved, setColorScheme]);
+
+  return <>{children}</>;
 }
 
 export default function RootLayout() {
@@ -118,7 +132,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
-          <FocusFlowProvider><FocusFlowLaunchShell /></FocusFlowProvider>
+          <FocusFlowProvider><FocusFlowThemeBridge><FocusFlowLaunchShell /></FocusFlowThemeBridge></FocusFlowProvider>
         </QueryClientProvider>
       </trpc.Provider>
     </GestureHandlerRootView>

@@ -124,19 +124,20 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(source).toContain("android.permission.BIND_REMOTEVIEWS");
   });
 
-  it("Widgetは可変行高と48dpのチェック領域を維持し、長い本文・補足・小さいセルで重ならない", () => {
+  it("Widgetは高密度48dp行と48dpのチェック領域を維持し、本文・補足・小さいセルで重ならない", () => {
     const shell = fs.readFileSync(widgetShellLayout, "utf8");
     const item = fs.readFileSync(widgetItemLayout, "utf8");
     const metadata = fs.readFileSync(widgetInfoXml, "utf8");
 
-    expect(item).toContain('android:layout_height="wrap_content"');
-    expect(item).toContain('android:minHeight="68dp"');
+    expect(item).toContain('android:layout_height="48dp"');
+    expect(item).toContain('android:minHeight="48dp"');
     expect(item).toContain('android:layout_width="48dp"');
     expect(item).toContain('android:layout_width="0dp"');
-    expect(item).toContain('android:maxLines="2"');
-    expect(item).toContain('android:paddingTop="10dp"');
-    expect(item).toContain('android:paddingBottom="10dp"');
-    expect(shell).toContain('android:dividerHeight="6dp"');
+    expect(item).toContain('android:gravity="center_vertical"');
+    expect(item).toContain('android:maxLines="1"');
+    expect(item).toContain('android:layout_gravity="bottom"');
+    expect(shell).toContain('android:minHeight="36dp"');
+    expect(shell).toContain('android:dividerHeight="0dp"');
     expect(metadata).toContain('android:minHeight="132dp"');
     expect(metadata).toContain('android:targetCellHeight="2"');
   });

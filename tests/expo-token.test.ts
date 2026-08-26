@@ -24,5 +24,5 @@ describe("Expoアクセストークン", () => {
 
     expect(body.errors).toBeUndefined();
     expect(body.data?.me?.id).toBeTruthy();
-  });
+  }, 20_000);
 });

@@ -1,11 +1,12 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useEffect, useState } from "react";
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 
 import { getAppLanguage, localized } from "@/lib/focus-flow/i18n";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
 import type { Habit, ProgressUnit } from "@/lib/focus-flow/types";
 import { RequiredWindowSelector } from "./required-window-selector";
+import { ScaledText as Text } from "./scaled-text";
 import { COLORS, HABIT_COLORS, safeHaptic } from "./ui";
 
 type HabitInput = { title: string; color: string; goalPerWeek: number; isRequired: boolean; requiredWindowMode: "always" | "scheduled"; requiredScheduleIds: string[]; progressUnit: ProgressUnit; targetValue: number };

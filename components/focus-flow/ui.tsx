@@ -22,6 +22,11 @@ export const COLORS = {
 
 export const HABIT_COLORS = ["#246B5A", "#315B8C", "#A76439", "#76569B", "#4B9B72"];
 
+export function useFocusPalette() {
+  const { displaySettings } = useFocusFlow();
+  return getAppPalette(displaySettings, useColorScheme() === "dark" ? "dark" : "light");
+}
+
 export function ScreenHeading({ eyebrow, title, action }: { eyebrow?: string; title: string; action?: ReactNode }) {
   const { displaySettings } = useFocusFlow();
   const palette = getAppPalette(displaySettings, useColorScheme() === "dark" ? "dark" : "light");
@@ -37,37 +42,40 @@ export function ScreenHeading({ eyebrow, title, action }: { eyebrow?: string; ti
 }
 
 export function IconButton({ icon, label, onPress, variant = "plain" }: { icon: IconName; label: string; onPress: () => void; variant?: "plain" | "filled" }) {
+  const palette = useFocusPalette();
   return (
     <TouchableOpacity
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
       activeOpacity={0.72}
-      style={[styles.iconButton, variant === "filled" && styles.iconButtonFilled]}
+      style={[styles.iconButton, { backgroundColor: variant === "filled" ? palette.primary : palette.surface, borderColor: palette.border }]}
     >
-      <MaterialIcons name={icon} size={22} color={variant === "filled" ? COLORS.white : COLORS.forest} />
+      <MaterialIcons name={icon} size={22} color={variant === "filled" ? COLORS.white : palette.primary} />
     </TouchableOpacity>
   );
 }
 
 export function LoadingScreen() {
+  const palette = useFocusPalette();
   return (
     <View style={styles.loading}>
-      <ActivityIndicator size="small" color={COLORS.forest} />
-      <ScaledText style={styles.loadingText}>あなたの記録を読み込んでいます</ScaledText>
+      <ActivityIndicator size="small" color={palette.primary} />
+      <ScaledText style={[styles.loadingText, { color: palette.muted }]}>あなたの記録を読み込んでいます</ScaledText>
     </View>
   );
 }
 
 export function EmptyState({ icon, title, description, actionLabel, onAction }: { icon: IconName; title: string; description: string; actionLabel: string; onAction: () => void }) {
+  const palette = useFocusPalette();
   return (
-    <View style={styles.empty}>
-      <View style={styles.emptyIcon}>
-        <MaterialIcons name={icon} size={28} color={COLORS.forest} />
+    <View style={[styles.empty, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+      <View style={[styles.emptyIcon, { backgroundColor: palette.primarySoft }]}>
+        <MaterialIcons name={icon} size={28} color={palette.primary} />
       </View>
-      <ScaledText style={styles.emptyTitle}>{title}</ScaledText>
-      <ScaledText style={styles.emptyDescription}>{description}</ScaledText>
-      <TouchableOpacity accessibilityRole="button" onPress={onAction} activeOpacity={0.8} style={styles.emptyAction}>
+      <ScaledText style={[styles.emptyTitle, { color: palette.text }]}>{title}</ScaledText>
+      <ScaledText style={[styles.emptyDescription, { color: palette.muted }]}>{description}</ScaledText>
+      <TouchableOpacity accessibilityRole="button" onPress={onAction} activeOpacity={0.8} style={[styles.emptyAction, { backgroundColor: palette.primary }]}>
         <ScaledText style={styles.emptyActionText}>{actionLabel}</ScaledText>
       </TouchableOpacity>
     </View>
@@ -75,9 +83,11 @@ export function EmptyState({ icon, title, description, actionLabel, onAction }: 
 }
 
 export function Pill({ label, color = COLORS.forest, muted = false }: { label: string; color?: string; muted?: boolean }) {
+  const palette = useFocusPalette();
+  const resolvedColor = color === COLORS.forest ? palette.primary : color;
   return (
-    <View style={[styles.pill, { backgroundColor: muted ? "#EEF2EF" : `${color}18` }]}>
-      <ScaledText style={[styles.pillText, { color: muted ? COLORS.muted : color }]}>{label}</ScaledText>
+    <View style={[styles.pill, { backgroundColor: muted ? palette.elevated : `${resolvedColor}24` }]}>
+      <ScaledText style={[styles.pillText, { color: muted ? palette.muted : resolvedColor }]}>{label}</ScaledText>
     </View>
   );
 }

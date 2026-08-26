@@ -1,5 +1,7 @@
 import { Link } from "expo-router";
-import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
+import { useFocusPalette } from "@/components/focus-flow/ui";
 
 const SUPPORT_EMAIL = "forcus.flow@gmail.com";
 const EFFECTIVE_DATE = "2026年8月19日";
@@ -26,46 +28,47 @@ export function PublicInformationPage({
   sections,
   footer = "legal",
 }: PublicInformationPageProps) {
+  const palette = useFocusPalette();
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
+    <ScrollView contentContainerStyle={styles.content} style={[styles.screen, { backgroundColor: palette.background }]}>
       <View style={styles.brandRow}>
-        <View style={styles.mark} />
-        <Text style={styles.brand}>Focus Flow</Text>
+        <View style={[styles.mark, { backgroundColor: palette.primary }]} />
+        <Text style={[styles.brand, { color: palette.primary }]}>Focus Flow</Text>
       </View>
 
-      <Text accessibilityRole="header" style={styles.title}>{title}</Text>
-      {updated ? <Text style={styles.updated}>最終更新日: {EFFECTIVE_DATE}</Text> : null}
+      <Text accessibilityRole="header" style={[styles.title, { color: palette.text }]}>{title}</Text>
+      {updated ? <Text style={[styles.updated, { color: palette.muted }]}>最終更新日: {EFFECTIVE_DATE}</Text> : null}
 
       {sections.map((section) => (
         <View key={section.title} style={styles.section}>
-          <Text accessibilityRole="header" style={styles.heading}>{section.title}</Text>
+          <Text accessibilityRole="header" style={[styles.heading, { color: palette.text }]}>{section.title}</Text>
           {section.paragraphs.map((paragraph) => (
-            <Text key={paragraph} style={styles.body}>{paragraph}</Text>
+            <Text key={paragraph} style={[styles.body, { color: palette.text }]}>{paragraph}</Text>
           ))}
         </View>
       ))}
 
       {footer === "legal" ? (
-        <View style={styles.footerCard}>
-          <Text style={styles.footerTitle}>お問い合わせ</Text>
-          <Text style={styles.body}>本ページに関するお問い合わせは、以下のメールアドレスまでお送りください。</Text>
+        <View style={[styles.footerCard, { backgroundColor: palette.primarySoft, borderColor: palette.border }]}>
+          <Text style={[styles.footerTitle, { color: palette.text }]}>お問い合わせ</Text>
+          <Text style={[styles.body, { color: palette.text }]}>本ページに関するお問い合わせは、以下のメールアドレスまでお送りください。</Text>
           <Pressable accessibilityRole="link" onPress={openSupportEmail} style={({ pressed }) => [styles.emailButton, pressed && styles.pressed]}>
-            <Text style={styles.emailButtonText}>{SUPPORT_EMAIL}</Text>
+            <Text style={[styles.emailButtonText, { color: palette.primary }]}>{SUPPORT_EMAIL}</Text>
           </Pressable>
         </View>
       ) : (
-        <View style={styles.footerCard}>
-          <Text style={styles.footerTitle}>プライバシーと利用条件</Text>
-          <Text style={styles.body}>Focus Flowのデータの取り扱いと利用条件は、以下のページで確認できます。</Text>
+        <View style={[styles.footerCard, { backgroundColor: palette.primarySoft, borderColor: palette.border }]}>
+          <Text style={[styles.footerTitle, { color: palette.text }]}>プライバシーと利用条件</Text>
+          <Text style={[styles.body, { color: palette.text }]}>Focus Flowのデータの取り扱いと利用条件は、以下のページで確認できます。</Text>
           <View style={styles.linkRow}>
-            <Link accessibilityRole="link" href="/policy" style={styles.inlineLink}>プライバシーポリシー</Link>
-            <Text style={styles.dot}>・</Text>
-            <Link accessibilityRole="link" href="/terms" style={styles.inlineLink}>利用条件</Link>
+            <Link accessibilityRole="link" href="/policy" style={[styles.inlineLink, { color: palette.primary }]}>プライバシーポリシー</Link>
+            <Text style={[styles.dot, { color: palette.muted }]}>・</Text>
+            <Link accessibilityRole="link" href="/terms" style={[styles.inlineLink, { color: palette.primary }]}>利用条件</Link>
           </View>
         </View>
       )}
 
-      {Platform.OS === "web" ? <Text style={styles.webNote}>Focus Flow公式情報ページ</Text> : null}
+      {Platform.OS === "web" ? <Text style={[styles.webNote, { color: palette.muted }]}>Focus Flow公式情報ページ</Text> : null}
     </ScrollView>
   );
 }

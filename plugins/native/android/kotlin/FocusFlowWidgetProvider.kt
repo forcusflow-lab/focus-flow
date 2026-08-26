@@ -68,6 +68,10 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setTextColor(R.id.focus_flow_widget_title, title)
     views.setTextColor(R.id.focus_flow_widget_status, detail)
     views.setTextColor(R.id.focus_flow_widget_empty, detail)
+    val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
+    views.setTextViewTextSize(R.id.focus_flow_widget_title, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
+    views.setTextViewTextSize(R.id.focus_flow_widget_status, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
+    views.setTextViewTextSize(R.id.focus_flow_widget_empty, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
     views.setTextViewText(R.id.focus_flow_widget_title, if (english) "TODAY" else "今日の項目")
     views.setTextViewText(R.id.focus_flow_widget_status, if (!active) if (english) "App limits off" else "集中制限はオフ" else if (pending == 0) if (english) "Must-dos complete" else "必須項目を完了しました" else if (english) "$pending must-do${if (pending == 1) "" else "s"} remaining" else "必須項目 残り${pending}件")
   }

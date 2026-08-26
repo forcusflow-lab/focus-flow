@@ -18,19 +18,20 @@ describe("Focus Flowカード密度", () => {
     expect(today).toContain('itemCard: { position: "relative", minHeight: 68');
   });
 
-  it("ウィジェットは内容に応じる行高と非表示の空補足行で、カードの重なり・過剰な空白を防ぐ", () => {
+  it("ウィジェットは高密度の固定行と条件付き補足で、カードの重なり・過剰な空白を防ぐ", () => {
     const layout = projectFile("plugins", "native", "android", "res", "layout", "focus_flow_widget_item.xml");
     const service = projectFile("plugins", "native", "android", "kotlin", "FocusFlowWidgetItemsService.kt");
 
-    expect(layout).toContain('android:layout_height="wrap_content"');
-    expect(layout).toContain('android:minHeight="68dp"');
+    expect(layout).toContain('android:layout_height="48dp"');
+    expect(layout).toContain('android:minHeight="48dp"');
     expect(layout).toContain('android:id="@+id/focus_flow_widget_item_check"');
     expect(layout).toContain('android:layout_width="20dp"');
     expect(layout).toContain('android:layout_height="20dp"');
     expect(layout).toContain('android:id="@+id/focus_flow_widget_item_action"');
     expect(layout).toContain('android:layout_width="48dp"');
     expect(layout).toContain('android:id="@+id/focus_flow_widget_item_content"');
-    expect(layout).toContain('android:maxLines="2"');
+    expect(layout).toContain('android:gravity="center"');
+    expect(layout).toContain('android:maxLines="1"');
     expect(service).toContain('View.GONE');
   });
 
@@ -44,7 +45,8 @@ describe("Focus Flowカード密度", () => {
       expect(source).toContain('color: "#75827C", textDecorationLine: "line-through"');
       expect(source).not.toMatch(/taskRowDone: \{ opacity|habitRowDone: \{ opacity/);
     });
-    expect(widgetService).toContain('"#C2D0CA" else "#66736D"');
+    expect(widgetService).toContain("val completedColor = mutedColor");
+    expect(widgetService).toContain('if (dark) "#B3C7BE" else "#64736D"');
     expect(widgetService).toContain("StyleSpan(Typeface.BOLD)");
   });
 });
