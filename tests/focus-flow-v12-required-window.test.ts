@@ -36,13 +36,13 @@ describe("v12 時間帯必須・起動・Today UX", () => {
   it("Todayは現在必要な項目と開始待ちの項目を分け、ウィジェットにも時間帯を渡す", () => {
     const today = source("app", "(tabs)", "index.tsx");
     const androidGate = source("lib", "focus-flow", "android-gate.ts");
-    const widgetService = source("plugins", "native", "android", "kotlin", "FocusFlowWidgetItemsService.kt");
+    const widgetProvider = source("plugins", "native", "android", "kotlin", "FocusFlowWidgetProvider.kt");
     expect(today).toContain('title: t("今やる", "Do now")');
     expect(today).toContain('title: t("この後", "Up next")');
     expect(today).toContain("waitingTodoIds");
     expect(androidGate).toContain("windowLabelFor");
-    expect(widgetService).toContain('optString("windowLabel", "")');
-    expect(widgetService).toContain("listOfNotNull");
+    expect(widgetProvider).toContain('optString("windowLabel", "")');
+    expect(widgetProvider).toContain("listOfNotNull");
   });
 
   it("Todayではチェックが画面遷移を起こさず、本文は一覧タブを経由せず直接詳細を開く", () => {

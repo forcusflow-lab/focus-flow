@@ -14,7 +14,7 @@ describe("本人専用の制限なしAPK", () => {
     expect(config).toContain('process.env.FOCUS_FLOW_PERSONAL_UNLIMITED === "1"');
     expect(config).toContain('"com.app.focusflow.personal"');
     expect(config).toContain('"manusfocusflowpersonal"');
-    expect(config).toContain("versionCode: isPersonalUnlimitedBuild ? 5 : 15");
+    expect(config).toContain("versionCode: isPersonalUnlimitedBuild ? 6 : 16");
     expect(config).toContain("personalUnlimitedBuild: isPersonalUnlimitedBuild");
     expect(config).toContain("scheme: env.scheme,");
     expect(config).not.toContain('host: "*"');

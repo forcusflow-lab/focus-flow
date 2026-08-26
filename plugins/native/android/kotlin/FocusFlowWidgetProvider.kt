@@ -9,17 +9,21 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.StrikethroughSpan
+import android.text.style.StyleSpan
+import android.graphics.Typeface
+import android.view.View
 import android.widget.RemoteViews
 import org.json.JSONArray
 import org.json.JSONObject
 
 class FocusFlowWidgetProvider : AppWidgetProvider() {
-  // The launcher calls onUpdate while it is binding a brand-new widget. Do not
-  // replace the static initial RemoteViews with a collection in that critical
-  // transaction: some hosts abort the add when they cannot yet bind the
-  // RemoteViewsService or inflate a collection. The app state sync performs
-  // the first collection update later through refreshAll().
-  override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) { ids.forEach { updateInitialWidget(context, manager, it) } }
+  // Collection RemoteViews failed on the target launcher even after initial
+  // layout isolation. This provider now uses only a static RemoteViews tree so
+  // widget placement and later state synchronization share the same safe path.
+  override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) { ids.forEach { safeUpdateWidget(context, manager, it) } }
   override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: android.os.Bundle) { safeUpdateWidget(context, manager, id) }
 
   override fun onReceive(context: Context, intent: Intent) {
@@ -38,41 +42,26 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   }
 
   // This layout is intentionally free of AdapterView, layout_weight and 0dp
-  // sizing. It must remain safe for the launcher to inflate during add.
+  // sizing. It must remain safe for the launcher to inflate during add and
+  // later refreshes, even before the app has synchronized any item state.
   private fun updateInitialWidget(context: Context, manager: AppWidgetManager, id: Int, fallback: Boolean = false) {
     val state = state(context)
     val english = state.optString("language", "ja") == "en"
     val views = RemoteViews(context.packageName, R.layout.focus_flow_widget_initial)
     bindTheme(views, state)
     bindHeader(views, state, english)
-    views.setTextViewText(R.id.focus_flow_widget_empty, if (fallback) if (english) "Open Focus Flow to refresh your list" else "Focus Flowを開くと項目を更新します" else if (english) "Open Focus Flow to show today’s list" else "Focus Flowを開くと今日の項目を表示します")
+    bindStaticRows(context, views, state, id, english)
+    if (fallback) views.setTextViewText(R.id.focus_flow_widget_empty, if (english) "Open Focus Flow to refresh your list" else "Focus Flowを開くと項目を更新します")
     views.setOnClickPendingIntent(R.id.focus_flow_widget_root, todayIntent(context, id))
     manager.updateAppWidget(id, views)
   }
 
-  // A collection adapter can fail after placement on a launcher. Keep the
-  // placed widget valid and offer a route into Today instead of an error host.
+  // Keep a placed widget valid and offer a route into Today on an unexpected
+  // Provider-side failure. No collection or RemoteViewsService is involved.
   private fun updateFallbackWidget(context: Context, manager: AppWidgetManager, id: Int) = updateInitialWidget(context, manager, id, true)
 
   private fun updateWidget(context: Context, manager: AppWidgetManager, id: Int) {
-    val state = state(context)
-    val english = state.optString("language", "ja") == "en"
-    val views = RemoteViews(context.packageName, R.layout.focus_flow_widget)
-    bindTheme(views, state)
-    bindHeader(views, state, english)
-    val serviceIntent = Intent(context, FocusFlowWidgetItemsService::class.java).apply {
-      putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
-      data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
-    }
-    views.setRemoteAdapter(R.id.focus_flow_widget_list, serviceIntent)
-    views.setEmptyView(R.id.focus_flow_widget_list, R.id.focus_flow_widget_empty)
-    // The collection template intentionally has no action. Each row supplies its own
-    // fill-in action (open, complete, or restore); mutability is required for Android
-    // to merge that action and the row identifiers into the broadcast.
-    val template = PendingIntent.getBroadcast(context, id, Intent(context, FocusFlowWidgetProvider::class.java).apply { putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id) }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
-    views.setPendingIntentTemplate(R.id.focus_flow_widget_list, template)
-    views.setOnClickPendingIntent(R.id.focus_flow_widget_root, todayIntent(context, id))
-    manager.updateAppWidget(id, views)
+    updateInitialWidget(context, manager, id)
   }
 
   private fun state(context: Context): JSONObject {
@@ -104,6 +93,64 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setTextViewText(R.id.focus_flow_widget_title, if (english) "TODAY" else "今日の項目")
     views.setTextViewText(R.id.focus_flow_widget_status, if (!active) if (english) "App limits off" else "集中制限はオフ" else if (pending == 0) if (english) "Must-dos complete" else "必須項目を完了しました" else if (english) "$pending must-do${if (pending == 1) "" else "s"} remaining" else "必須項目 残り${pending}件")
   }
+
+  private data class StaticRowIds(val row: Int, val action: Int, val content: Int, val title: Int, val badge: Int)
+
+  private fun staticRowIds(index: Int): StaticRowIds = if (index == 0) {
+    StaticRowIds(R.id.focus_flow_widget_static_row_one, R.id.focus_flow_widget_static_row_one_action, R.id.focus_flow_widget_static_row_one_content, R.id.focus_flow_widget_static_row_one_title, R.id.focus_flow_widget_static_row_one_badge)
+  } else {
+    StaticRowIds(R.id.focus_flow_widget_static_row_two, R.id.focus_flow_widget_static_row_two_action, R.id.focus_flow_widget_static_row_two_content, R.id.focus_flow_widget_static_row_two_title, R.id.focus_flow_widget_static_row_two_badge)
+  }
+
+  private fun bindStaticRows(context: Context, views: RemoteViews, state: JSONObject, widgetId: Int, english: Boolean) {
+    val all = state.optJSONArray("widgetItems") ?: JSONArray()
+    val rows = mutableListOf<JSONObject>()
+    for (index in 0 until all.length()) all.optJSONObject(index)?.let { if (rows.size < 2) rows.add(it) }
+    val palette = state.optJSONObject("widgetPalette")
+    val dark = palette?.optBoolean("isDark", false) ?: false
+    val titleColor = if (dark) Color.parseColor("#F4FBF7") else Color.parseColor("#13251F")
+    val mutedColor = if (dark) Color.parseColor("#B7CCC2") else Color.parseColor("#4E655B")
+    val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
+    views.setViewVisibility(R.id.focus_flow_widget_empty, if (rows.isEmpty()) View.VISIBLE else View.GONE)
+    if (rows.isEmpty()) views.setTextViewText(R.id.focus_flow_widget_empty, if (english) "Open Focus Flow to add today’s items" else "今日の項目はありません")
+    for (index in 0..1) {
+      val ids = staticRowIds(index)
+      val item = rows.getOrNull(index)
+      views.setViewVisibility(ids.row, if (item == null) View.GONE else View.VISIBLE)
+      if (item != null) bindStaticRow(context, views, ids, item, widgetId, english, titleColor, mutedColor, scale)
+    }
+  }
+
+  private fun bindStaticRow(context: Context, views: RemoteViews, ids: StaticRowIds, item: JSONObject, widgetId: Int, english: Boolean, titleColor: Int, mutedColor: Int, scale: Float) {
+    val completed = item.optBoolean("completed", false)
+    val canToggle = item.optBoolean("canToggle", false)
+    val timedLocked = item.optBoolean("timedLocked", false)
+    val title = item.optString("title")
+    val requiredLabel = if (english) "MUST" else "必須"
+    val badge = listOfNotNull(if (item.optBoolean("required", false)) requiredLabel else null, item.optString("windowLabel", "").ifBlank { null }).joinToString(" · ")
+    views.setTextViewText(ids.title, if (completed) struck(title) else title)
+    views.setTextColor(ids.title, if (completed) mutedColor else titleColor)
+    views.setTextViewTextSize(ids.title, android.util.TypedValue.COMPLEX_UNIT_DIP, 13f * scale)
+    views.setViewVisibility(ids.badge, if (badge.isBlank()) View.GONE else View.VISIBLE)
+    views.setTextViewText(ids.badge, badge)
+    views.setTextColor(ids.badge, mutedColor)
+    views.setTextViewTextSize(ids.badge, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
+    if (completed) {
+      views.setInt(ids.action, "setBackgroundColor", paletteColor(state(context).optJSONObject("widgetPalette"), "primary", "#1B6B62"))
+      views.setImageViewResource(ids.action, R.drawable.focus_flow_widget_check_mark)
+    } else {
+      views.setInt(ids.action, "setBackgroundResource", R.drawable.focus_flow_widget_checkbox)
+      views.setImageViewResource(ids.action, if (timedLocked) R.drawable.focus_flow_widget_check_locked else R.drawable.focus_flow_widget_check_empty)
+    }
+    views.setFloat(ids.action, "setAlpha", if (canToggle || completed) 1f else 0.45f)
+    val itemId = item.optString("id")
+    val kind = item.optString("kind")
+    views.setOnClickPendingIntent(ids.content, detailIntent(context, widgetId, itemId, kind))
+    val action = if (completed) ACTION_RESTORE else ACTION_COMPLETE
+    views.setOnClickPendingIntent(ids.action, if (canToggle) actionIntent(context, widgetId, action, itemId, kind) else todayIntent(context, widgetId + if (ids.row == R.id.focus_flow_widget_static_row_one) 20 else 21))
+  }
+
+  private fun struck(value: String): CharSequence = SpannableString(value).apply { setSpan(StrikethroughSpan(), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE); setSpan(StyleSpan(Typeface.BOLD), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
 
   private fun complete(context: Context, targetId: String, kind: String): Boolean {
     if (targetId.isBlank() || (kind != "todo" && kind != "habit")) return false
@@ -164,6 +211,8 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
 
   private fun openItem(context: Context, targetId: String, kind: String) { if (targetId.isBlank() || (kind != "todo" && kind != "habit")) return; context.startActivity(deepLink(context, if (kind == "habit") "habits" else "todos", targetId).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)) }
   private fun todayIntent(context: Context, id: Int): PendingIntent = PendingIntent.getActivity(context, id, deepLink(context, "today"), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+  private fun detailIntent(context: Context, widgetId: Int, targetId: String, kind: String): PendingIntent = PendingIntent.getActivity(context, ("detail:$widgetId:$kind:$targetId").hashCode(), deepLink(context, if (kind == "habit") "habits" else "todos", targetId), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+  private fun actionIntent(context: Context, widgetId: Int, action: String, targetId: String, kind: String): PendingIntent = PendingIntent.getBroadcast(context, ("action:$widgetId:$action:$kind:$targetId").hashCode(), Intent(context, FocusFlowWidgetProvider::class.java).apply { this.action = action; data = Uri.parse("$DEEP_LINK_SCHEME://widget/$widgetId/$action/$kind/$targetId"); putExtra(EXTRA_TARGET_ID, targetId); putExtra(EXTRA_KIND, kind) }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
   private fun deepLink(context: Context, destination: String, targetId: String? = null): Intent {
     val uri = Uri.parse("$DEEP_LINK_SCHEME:///").buildUpon().apply {
       when (destination) {
@@ -182,6 +231,6 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     const val ACTION_OPEN_ITEM = "focusflow.widget.OPEN_ITEM"
     const val EXTRA_TARGET_ID = "targetId"
     const val EXTRA_KIND = "kind"
-    fun refreshAll(context: Context) { val manager = AppWidgetManager.getInstance(context); val provider = FocusFlowWidgetProvider(); manager.getAppWidgetIds(ComponentName(context, FocusFlowWidgetProvider::class.java)).forEach { id -> provider.safeUpdateWidget(context, manager, id) }; manager.notifyAppWidgetViewDataChanged(manager.getAppWidgetIds(ComponentName(context, FocusFlowWidgetProvider::class.java)), R.id.focus_flow_widget_list) }
+    fun refreshAll(context: Context) { val manager = AppWidgetManager.getInstance(context); val provider = FocusFlowWidgetProvider(); manager.getAppWidgetIds(ComponentName(context, FocusFlowWidgetProvider::class.java)).forEach { id -> provider.safeUpdateWidget(context, manager, id) } }
   }
 }
