@@ -277,3 +277,5 @@
 - [x] v7の完了状態で必要な20dpチェック背景drawableをAndroidプラグイン生成資産へ追加し、クリーン生成でも欠落しないようにする
 - [x] コンパクト12spタイトルと通常版17／本人用7へ更新した仕様に既存Widget・versionCode回帰テストを整合させる
 - [x] v7の重複排除・行固有操作・20dp視覚チェックについて、全Vitest、型検査、Lint、通常・本人用クリーンAndroid生成を通過させる
+- [x] 本人用v7署名APKをGitHub Actionsで生成し、ZIP整合性・package・versionCode・署名・Provider metadata・20dp静的layout・Collection service不在を独立検証する
+- [ ] 本人用v7 APKを実機へ上書き更新し、Todo 1件／2件の表示、上段・下段の完了／復元、詳細／Today導線、20dpチェック、ライト／ダーク、文字サイズ、リサイズを受入確認する
