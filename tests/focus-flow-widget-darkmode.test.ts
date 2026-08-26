@@ -22,8 +22,9 @@ describe("Focus Flow 高密度Widgetとダークモード", () => {
     expect(layout).toContain('android:maxLines="1"');
   });
 
-  it("静的Widget行とヘッダーはライト・ダークで明示した高コントラスト本文色を使い、可変パレットの本文色を直接流用しない", () => {
+  it("静的Widgetはライト・ダークの明示コントラストと5段階カードdrawableを使い、RemoteViews動的alphaに依存しない", () => {
     const provider = read("plugins", "native", "android", "kotlin", "FocusFlowWidgetProvider.kt");
+    const plugin = read("plugins", "with-focus-flow-android.js");
 
     expect(provider).toContain('Color.parseColor("#13251F")');
     expect(provider).toContain('Color.parseColor("#F4FBF7")');
@@ -31,10 +32,14 @@ describe("Focus Flow 高密度Widgetとダークモード", () => {
     expect(provider).toContain('Color.parseColor("#B7CCC2")');
     expect(provider).not.toContain('paletteColor(palette, "text"');
     expect(provider).not.toContain('paletteColor(palette, "muted"');
-    expect(provider).toContain('R.drawable.focus_flow_widget_card_light');
-    expect(provider).toContain('R.drawable.focus_flow_widget_card_dark');
-    expect(provider).toContain('R.id.focus_flow_widget_card_background');
-    expect(provider).not.toContain('setFloat(R.id.focus_flow_widget_card, "setAlpha"');
+    expect(provider).toContain('R.id.focus_flow_widget_card, "setBackgroundResource"');
+    expect(provider).toContain('widgetCardDrawable');
+    ["light_0", "light_25", "light_50", "light_75", "light_100", "dark_0", "dark_25", "dark_50", "dark_75", "dark_100"].forEach((name) => {
+      expect(provider).toContain(`focus_flow_widget_card_${name}`);
+      expect(plugin).toContain(name);
+    });
+    expect(provider).not.toContain('R.id.focus_flow_widget_card_background');
+    expect(provider).not.toContain('setFloat(');
     expect(provider).toContain('Color.parseColor("#D8E3DC")');
     expect(provider).toContain('Color.parseColor("#355047")');
   });
@@ -77,7 +82,7 @@ describe("Focus Flow 高密度Widgetとダークモード", () => {
   it("共通UIの空状態とアイコン操作は固定ライトsurfaceを持ち込まず、paletteで面・境界・文字色を決める", () => {
     const ui = read("components", "focus-flow", "ui.tsx");
 
-    expect(ui).toContain("backgroundColor: variant === \"filled\" ? palette.primary : palette.surface");
+    expect(ui).toContain('backgroundColor: variant === "filled" ? palette.primary : palette.surface');
     expect(ui).toContain("backgroundColor: palette.surface, borderColor: palette.border");
     expect(ui).toContain("backgroundColor: palette.primarySoft");
     expect(ui).not.toContain('backgroundColor: "rgba(255,255,255,0.74)"');

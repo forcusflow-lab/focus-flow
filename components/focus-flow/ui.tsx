@@ -115,6 +115,6 @@ const styles = StyleSheet.create({
   emptyDescription: { color: COLORS.muted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 7 },
   emptyAction: { minHeight: 44, justifyContent: "center", paddingHorizontal: 18, borderRadius: 22, marginTop: 18 },
   emptyActionText: { fontSize: 14, fontWeight: "800" },
-  pill: { minHeight: 26, paddingHorizontal: 9, justifyContent: "center", borderRadius: 13, alignSelf: "flex-start" },
+  pill: { minWidth: 42, minHeight: 26, paddingHorizontal: 10, justifyContent: "center", alignItems: "center", borderRadius: 13, alignSelf: "flex-start", flexShrink: 0 },
   pillText: { fontSize: 12, lineHeight: 16, fontWeight: "700" },
 });

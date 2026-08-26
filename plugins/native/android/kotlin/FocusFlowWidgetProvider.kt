@@ -72,11 +72,35 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   private fun bindTheme(views: RemoteViews, state: JSONObject) {
     val palette = state.optJSONObject("widgetPalette")
     val dark = palette?.optBoolean("isDark", false) ?: false
-    views.setInt(R.id.focus_flow_widget_card_background, "setBackgroundResource", if (dark) R.drawable.focus_flow_widget_card_dark else R.drawable.focus_flow_widget_card_light)
-    // Transparency applies to the card surface only. Applying alpha to the
-    // parent would fade text and controls along with the background.
-    views.setFloat(R.id.focus_flow_widget_card_background, "setAlpha", state.optInt("widgetOpacity", 86).coerceIn(0, 100) / 100f)
+    views.setInt(R.id.focus_flow_widget_card, "setBackgroundResource", widgetCardDrawable(dark, state.optInt("widgetOpacity", 86).coerceIn(0, 100)))
+    // Use pre-rendered alpha backgrounds rather than setAlpha. RemoteViews
+    // hosts render only a restricted hierarchy, and text must not fade with
+    // the card surface.
+    views.setTextViewText(R.id.focus_flow_widget_static_divider, "")
     views.setInt(R.id.focus_flow_widget_static_divider, "setBackgroundColor", if (dark) Color.parseColor("#355047") else Color.parseColor("#D8E3DC"))
+  }
+
+  private fun widgetCardDrawable(dark: Boolean, opacity: Int): Int {
+    val level = when {
+      opacity < 13 -> 0
+      opacity < 38 -> 25
+      opacity < 63 -> 50
+      opacity < 88 -> 75
+      else -> 100
+    }
+    return if (dark) when (level) {
+      0 -> R.drawable.focus_flow_widget_card_dark_0
+      25 -> R.drawable.focus_flow_widget_card_dark_25
+      50 -> R.drawable.focus_flow_widget_card_dark_50
+      75 -> R.drawable.focus_flow_widget_card_dark_75
+      else -> R.drawable.focus_flow_widget_card_dark_100
+    } else when (level) {
+      0 -> R.drawable.focus_flow_widget_card_light_0
+      25 -> R.drawable.focus_flow_widget_card_light_25
+      50 -> R.drawable.focus_flow_widget_card_light_50
+      75 -> R.drawable.focus_flow_widget_card_light_75
+      else -> R.drawable.focus_flow_widget_card_light_100
+    }
   }
 
   private fun bindHeader(views: RemoteViews, state: JSONObject, english: Boolean) {
@@ -169,7 +193,6 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       views.setInt(ids.check, "setBackgroundResource", R.drawable.focus_flow_widget_checkbox)
       views.setImageViewResource(ids.check, if (timedLocked) R.drawable.focus_flow_widget_check_locked else R.drawable.focus_flow_widget_check_empty)
     }
-    views.setFloat(ids.check, "setAlpha", if (canToggle || completed) 1f else 0.45f)
     val itemId = item.optString("id")
     val kind = item.optString("kind")
     views.setOnClickPendingIntent(ids.content, detailIntent(context, widgetId, ids.position, itemId, kind))

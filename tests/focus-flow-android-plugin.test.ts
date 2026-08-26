@@ -16,8 +16,9 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(provider).toContain("uniqueStaticItems");
     expect(provider).toContain("matches.size != 1");
     expect(provider).toContain("compactBadge");
-    expect(provider).toContain("focus_flow_widget_card_light");
-    expect(provider).toContain("focus_flow_widget_card_dark");
+    expect(provider).toContain("widgetCardDrawable");
+    expect(provider).toContain("focus_flow_widget_card_light_100");
+    expect(provider).toContain("focus_flow_widget_card_dark_100");
     expect(provider).toContain("focus_flow_widget_static_divider");
     expect(provider).toContain("focus_flow_widget_static_row_one");
     expect(provider).toContain("focus_flow_widget_static_row_two");
@@ -34,17 +35,18 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(provider).not.toContain("setPendingIntentTemplate");
     expect(provider).not.toContain("FocusFlowWidgetItemsService");
     expect(provider).not.toContain("notifyAppWidgetViewDataChanged");
+    expect(provider).not.toContain("setFloat(");
     expect(moduleSource).toContain("consumeWidgetActions");
     expect(moduleSource).toContain("WIDGET_ACTIONS");
   });
 
-  it("クリーン生成時に静的Widgetの初期layout・metadataだけを登録し、RemoteViewsServiceをManifestへ戻さない", () => {
+  it("クリーン生成で段階別カード背景を含む静的Widget資産だけを登録し、RemoteViewsServiceをManifestへ戻さない", () => {
     const plugin = projectFile("plugins", "with-focus-flow-android.js");
 
     expect(plugin).toContain("focus_flow_widget_initial.xml");
     expect(plugin).toContain("focus_flow_widget_initial_info.xml");
-    expect(plugin).toContain("focus_flow_widget_card_light.xml");
-    expect(plugin).toContain("focus_flow_widget_card_dark.xml");
+    expect(plugin).toContain("const cardDrawables");
+    ["light_0", "light_25", "light_50", "light_75", "light_100", "dark_0", "dark_25", "dark_50", "dark_75", "dark_100"].forEach((name) => expect(plugin).toContain(name));
     expect(plugin).toContain("FocusFlowWidgetProvider");
     expect(plugin).toContain('application.service = (application.service || []).filter');
     expect(plugin).not.toContain('"FocusFlowWidgetItemsService.kt"');
@@ -53,16 +55,19 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(plugin).not.toContain('"focus_flow_widget_item.xml"');
   });
 
-  it("静的Widget初期面はRemoteViews互換のFrameLayoutと48dp行だけを使い、ListView・weight・0dp高さを含まない", () => {
+  it("静的Widget初期面は許容RemoteViewsと直接カード背景だけを使い、生View・weight・0dp高さを含まない", () => {
     const initialLayout = projectFile("plugins", "native", "android", "res", "layout", "focus_flow_widget_initial.xml");
     const initialMetadata = projectFile("plugins", "native", "android", "res", "xml", "focus_flow_widget_initial_info.xml");
 
     expect(initialMetadata).toContain('@layout/focus_flow_widget_initial');
     expect(initialMetadata).toContain('android:widgetCategory="home_screen"');
     expect(initialLayout).toContain("<FrameLayout");
+    expect(initialLayout).toContain("<LinearLayout");
+    expect(initialLayout).toContain("<TextView");
+    expect(initialLayout).toContain("<ImageView");
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_root"');
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_card"');
-    expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_card_background"');
+    expect(initialLayout).toContain('android:background="@drawable/focus_flow_widget_card_light_100"');
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_divider"');
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_one"');
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_two"');
@@ -70,10 +75,10 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(initialLayout).toContain('android:layout_height="48dp"');
     expect(initialLayout).toContain('android:layout_width="48dp"');
     expect(initialLayout).toContain('android:layout_width="20dp"');
+    expect(initialLayout).not.toContain("<View");
     expect(initialLayout).not.toContain("ListView");
     expect(initialLayout).not.toContain("android:layout_weight");
     expect(initialLayout).not.toContain('android:layout_height="0dp"');
-    expect(initialLayout).not.toContain('android:background=');
   });
 
   it("テンプレートと生成済みサービスが同じ継続前面監視・遮断オーバーレイ・実行診断を持つ", () => {
