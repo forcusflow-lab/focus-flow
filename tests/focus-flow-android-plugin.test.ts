@@ -13,6 +13,8 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(provider).toContain("class FocusFlowWidgetProvider : AppWidgetProvider()");
     expect(provider).toContain("bindStaticRows");
     expect(provider).toContain("StaticRowIds");
+    expect(provider).toContain("uniqueStaticItems");
+    expect(provider).toContain("matches.size != 1");
     expect(provider).toContain("focus_flow_widget_static_row_one");
     expect(provider).toContain("focus_flow_widget_static_row_two");
     expect(provider).toContain("ACTION_COMPLETE");
@@ -55,8 +57,10 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_root"');
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_one"');
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_two"');
+    expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_one_check"');
     expect(initialLayout).toContain('android:layout_height="48dp"');
     expect(initialLayout).toContain('android:layout_width="48dp"');
+    expect(initialLayout).toContain('android:layout_width="20dp"');
     expect(initialLayout).not.toContain("ListView");
     expect(initialLayout).not.toContain("android:layout_weight");
     expect(initialLayout).not.toContain('android:layout_height="0dp"');

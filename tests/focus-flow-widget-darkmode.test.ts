@@ -11,7 +11,7 @@ describe("Focus Flow 高密度Widgetとダークモード", () => {
     const layout = read("plugins", "native", "android", "res", "layout", "focus_flow_widget_initial.xml");
 
     expect(source).toContain('state.optString("widgetTextScale", "standard")');
-    expect(source).toContain('13f * scale');
+    expect(source).toContain('12f * scale');
     expect(source).toContain('10f * scale');
     expect(source).toContain('View.GONE');
     expect(source).toContain('joinToString(" · ")');

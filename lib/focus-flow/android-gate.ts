@@ -3,6 +3,7 @@ import { dayKey, getGateRuleSummaries, getGateSummary, getTodoSubtasks, habitTim
 import type { FocusFlowData } from "./types";
 import { getAppLanguage } from "./i18n";
 import { getAppPalette } from "./app-themes";
+import { uniqueWidgetItems } from "./widget-items";
 
 type LaunchableApp = { packageName: string; label: string };
 export type GateDiagnostics = { accessibilityEnabled: boolean; batteryOptimizationIgnored: boolean | null; backgroundRestricted: boolean; apiLevel: number; manufacturer: string; model: string; lastGateStateUpdatedAt: number; lastGateEventAt: number; lastGateEventPackage: string; lastBlockedAt: number; lastBlockedPackage: string; gateStateActive: boolean; configuredRuleCount: number; configuredBlockedPackageCount: number };
@@ -52,7 +53,7 @@ export async function syncAndroidGate(data: FocusFlowData) {
   const completedTodoItems = data.todos.filter((todo) => isTodoAchieved(todo) && todo.completedAt?.startsWith(today));
   const completedHabitItems = data.habits.filter((habit) => isHabitCompleteOn(habit, today));
   const windowLabelFor = (item: { requiredScheduleIds?: string[] }) => data.gateConfig.schedules.filter((schedule) => item.requiredScheduleIds?.includes(schedule.id)).map((schedule) => `${schedule.label} ${schedule.startTime}–${schedule.endTime}`).join(" · ");
-  const widgetItems = [
+  const widgetItems = uniqueWidgetItems([
     ...orderedPendingTodos.map((todo) => ({ id: todo.id, title: todo.title, kind: "todo", required: true, windowLabel: windowLabelFor(todo), timedLocked: timedLockedTodoIds.includes(todo.id), completed: false, canToggle: !timedLockedTodoIds.includes(todo.id) && todo.repeatRule === "none" })),
     ...pendingHabitItems.map((habit) => ({ id: habit.id, title: habit.title, kind: "habit", required: true, windowLabel: windowLabelFor(habit), timedLocked: timedLockedHabitIds.includes(habit.id), completed: false, canToggle: !timedLockedHabitIds.includes(habit.id) })),
     ...regularTodos.sort((left, right) => priorityRank[left.priority] - priorityRank[right.priority]).map((todo) => ({ id: todo.id, title: todo.title, kind: "todo", required: false, windowLabel: windowLabelFor(todo), timedLocked: isTimedTodo(todo) && !isTodoTimeReady(todo), completed: false, canToggle: !(isTimedTodo(todo) && !isTodoTimeReady(todo)) && todo.repeatRule === "none" })),
@@ -61,7 +62,7 @@ export async function syncAndroidGate(data: FocusFlowData) {
       ...completedTodoItems.map((todo) => ({ id: todo.id, title: todo.title, kind: "todo", required: requiredTodoIds.has(todo.id), windowLabel: windowLabelFor(todo), timedLocked: false, completed: true, canToggle: todo.repeatRule === "none" })),
       ...completedHabitItems.map((habit) => ({ id: habit.id, title: habit.title, kind: "habit", required: requiredHabitIds.has(habit.id), windowLabel: windowLabelFor(habit), timedLocked: false, completed: true, canToggle: true })),
     ] : []),
-  ];
+  ]);
   const legacyOpacity = data.displaySettings.widgetTransparency === "clear" ? 68 : data.displaySettings.widgetTransparency === "solid" ? 100 : 86;
   const widgetOpacity = Math.max(0, Math.min(100, Number(data.displaySettings.widgetOpacity ?? legacyOpacity)));
   await module.saveGateState(JSON.stringify({ active: data.gateConfig.enabled, strictMode: Boolean(data.gateConfig.strictMode), language, pendingCount: summary.pendingCount, pendingTodos: summary.pendingTodos, pendingHabits: summary.pendingHabits, message: summary.message, rules: rulesWithTimedUnlocks, timedLockedTodoIds, timedLockedHabitIds, widgetPalette, widgetTextScale: data.displaySettings.fontScale, widgetOpacity, widgetCompletedDisplay, widgetItems, requiredTodoTotal: requiredTodos.length, requiredHabitTotal: requiredHabits.length, completedTodoTotal: requiredTodos.length - pendingTodoItems.length, completedHabitTotal: requiredHabits.length - pendingHabitItems.length, todoQueue: orderedPendingTodos.map((todo) => ({ id: todo.id, title: todo.title })), habitQueue: pendingHabitItems.map((habit) => ({ id: habit.id, title: habit.title })), nextTodoId: nextTodo?.id ?? "", nextTodoTitle: nextTodo?.title ?? "", nextHabitId: nextHabit?.id ?? "", nextHabitTitle: nextHabit?.title ?? "", nextRequiredId: nextTodo?.id ?? nextHabit?.id ?? "", nextRequiredTitle: nextTodo?.title ?? nextHabit?.title ?? "", nextRequiredKind: nextTodo ? "todo" : nextHabit ? "habit" : "", routineActive: Boolean(activeRoutine?.isActive), routineLabel: activeRoutine?.label ?? "" }));

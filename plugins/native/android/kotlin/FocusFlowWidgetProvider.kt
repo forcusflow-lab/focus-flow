@@ -94,18 +94,17 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setTextViewText(R.id.focus_flow_widget_status, if (!active) if (english) "App limits off" else "集中制限はオフ" else if (pending == 0) if (english) "Must-dos complete" else "必須項目を完了しました" else if (english) "$pending must-do${if (pending == 1) "" else "s"} remaining" else "必須項目 残り${pending}件")
   }
 
-  private data class StaticRowIds(val row: Int, val action: Int, val content: Int, val title: Int, val badge: Int)
+  private data class StaticRowIds(val position: Int, val row: Int, val action: Int, val check: Int, val content: Int, val title: Int, val badge: Int)
 
   private fun staticRowIds(index: Int): StaticRowIds = if (index == 0) {
-    StaticRowIds(R.id.focus_flow_widget_static_row_one, R.id.focus_flow_widget_static_row_one_action, R.id.focus_flow_widget_static_row_one_content, R.id.focus_flow_widget_static_row_one_title, R.id.focus_flow_widget_static_row_one_badge)
+    StaticRowIds(0, R.id.focus_flow_widget_static_row_one, R.id.focus_flow_widget_static_row_one_action, R.id.focus_flow_widget_static_row_one_check, R.id.focus_flow_widget_static_row_one_content, R.id.focus_flow_widget_static_row_one_title, R.id.focus_flow_widget_static_row_one_badge)
   } else {
-    StaticRowIds(R.id.focus_flow_widget_static_row_two, R.id.focus_flow_widget_static_row_two_action, R.id.focus_flow_widget_static_row_two_content, R.id.focus_flow_widget_static_row_two_title, R.id.focus_flow_widget_static_row_two_badge)
+    StaticRowIds(1, R.id.focus_flow_widget_static_row_two, R.id.focus_flow_widget_static_row_two_action, R.id.focus_flow_widget_static_row_two_check, R.id.focus_flow_widget_static_row_two_content, R.id.focus_flow_widget_static_row_two_title, R.id.focus_flow_widget_static_row_two_badge)
   }
 
   private fun bindStaticRows(context: Context, views: RemoteViews, state: JSONObject, widgetId: Int, english: Boolean) {
     val all = state.optJSONArray("widgetItems") ?: JSONArray()
-    val rows = mutableListOf<JSONObject>()
-    for (index in 0 until all.length()) all.optJSONObject(index)?.let { if (rows.size < 2) rows.add(it) }
+    val rows = uniqueStaticItems(all)
     val palette = state.optJSONObject("widgetPalette")
     val dark = palette?.optBoolean("isDark", false) ?: false
     val titleColor = if (dark) Color.parseColor("#F4FBF7") else Color.parseColor("#13251F")
@@ -117,8 +116,31 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       val ids = staticRowIds(index)
       val item = rows.getOrNull(index)
       views.setViewVisibility(ids.row, if (item == null) View.GONE else View.VISIBLE)
-      if (item != null) bindStaticRow(context, views, ids, item, widgetId, english, titleColor, mutedColor, scale)
+      if (item != null) bindStaticRow(context, views, ids, item, widgetId, english, titleColor, mutedColor, scale) else clearStaticRow(views, ids)
     }
+  }
+
+  private fun uniqueStaticItems(all: JSONArray): List<JSONObject> {
+    val seen = mutableSetOf<String>()
+    val rows = mutableListOf<JSONObject>()
+    for (index in 0 until all.length()) {
+      val item = all.optJSONObject(index) ?: continue
+      val itemId = item.optString("id").trim()
+      val kind = item.optString("kind").trim()
+      if (itemId.isBlank() || (kind != "todo" && kind != "habit")) continue
+      if (!seen.add("$kind:$itemId")) continue
+      rows.add(item)
+      if (rows.size == 2) break
+    }
+    return rows
+  }
+
+  private fun clearStaticRow(views: RemoteViews, ids: StaticRowIds) {
+    views.setTextViewText(ids.title, "")
+    views.setTextViewText(ids.badge, "")
+    views.setViewVisibility(ids.badge, View.GONE)
+    views.setInt(ids.check, "setBackgroundResource", R.drawable.focus_flow_widget_checkbox)
+    views.setImageViewResource(ids.check, R.drawable.focus_flow_widget_check_empty)
   }
 
   private fun bindStaticRow(context: Context, views: RemoteViews, ids: StaticRowIds, item: JSONObject, widgetId: Int, english: Boolean, titleColor: Int, mutedColor: Int, scale: Float) {
@@ -130,24 +152,24 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val badge = listOfNotNull(if (item.optBoolean("required", false)) requiredLabel else null, item.optString("windowLabel", "").ifBlank { null }).joinToString(" · ")
     views.setTextViewText(ids.title, if (completed) struck(title) else title)
     views.setTextColor(ids.title, if (completed) mutedColor else titleColor)
-    views.setTextViewTextSize(ids.title, android.util.TypedValue.COMPLEX_UNIT_DIP, 13f * scale)
+    views.setTextViewTextSize(ids.title, android.util.TypedValue.COMPLEX_UNIT_DIP, 12f * scale)
     views.setViewVisibility(ids.badge, if (badge.isBlank()) View.GONE else View.VISIBLE)
     views.setTextViewText(ids.badge, badge)
     views.setTextColor(ids.badge, mutedColor)
     views.setTextViewTextSize(ids.badge, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
     if (completed) {
-      views.setInt(ids.action, "setBackgroundColor", paletteColor(state(context).optJSONObject("widgetPalette"), "primary", "#1B6B62"))
-      views.setImageViewResource(ids.action, R.drawable.focus_flow_widget_check_mark)
+      views.setInt(ids.check, "setBackgroundResource", R.drawable.focus_flow_widget_checkbox_done)
+      views.setImageViewResource(ids.check, R.drawable.focus_flow_widget_check_mark)
     } else {
-      views.setInt(ids.action, "setBackgroundResource", R.drawable.focus_flow_widget_checkbox)
-      views.setImageViewResource(ids.action, if (timedLocked) R.drawable.focus_flow_widget_check_locked else R.drawable.focus_flow_widget_check_empty)
+      views.setInt(ids.check, "setBackgroundResource", R.drawable.focus_flow_widget_checkbox)
+      views.setImageViewResource(ids.check, if (timedLocked) R.drawable.focus_flow_widget_check_locked else R.drawable.focus_flow_widget_check_empty)
     }
-    views.setFloat(ids.action, "setAlpha", if (canToggle || completed) 1f else 0.45f)
+    views.setFloat(ids.check, "setAlpha", if (canToggle || completed) 1f else 0.45f)
     val itemId = item.optString("id")
     val kind = item.optString("kind")
-    views.setOnClickPendingIntent(ids.content, detailIntent(context, widgetId, itemId, kind))
+    views.setOnClickPendingIntent(ids.content, detailIntent(context, widgetId, ids.position, itemId, kind))
     val action = if (completed) ACTION_RESTORE else ACTION_COMPLETE
-    views.setOnClickPendingIntent(ids.action, if (canToggle) actionIntent(context, widgetId, action, itemId, kind) else todayIntent(context, widgetId + if (ids.row == R.id.focus_flow_widget_static_row_one) 20 else 21))
+    views.setOnClickPendingIntent(ids.action, if (canToggle) actionIntent(context, widgetId, ids.position, action, itemId, kind) else todayIntent(context, widgetId + 20 + ids.position))
   }
 
   private fun struck(value: String): CharSequence = SpannableString(value).apply { setSpan(StrikethroughSpan(), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE); setSpan(StyleSpan(Typeface.BOLD), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
@@ -157,9 +179,9 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val preferences = context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE)
     val current = state(context)
     val items = current.optJSONArray("widgetItems") ?: return false
-    var target: JSONObject? = null
-    for (index in 0 until items.length()) { val item = items.optJSONObject(index); if (item?.optString("id") == targetId && item.optString("kind") == kind) target = item }
-    val item = target ?: return false
+    val matches = matchingItems(items, targetId, kind)
+    if (matches.size != 1) return false
+    val item = matches.single()
     if (item.optBoolean("timedLocked", false) || !item.optBoolean("canToggle", false) || item.optBoolean("completed", false)) return false
     val actions = widgetActions(preferences)
     for (index in 0 until actions.length()) { val action = actions.optJSONObject(index); if (action?.optString("id") == targetId && action.optString("kind") == kind && action.optString("operation") == "complete") return false }
@@ -175,9 +197,9 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val preferences = context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE)
     val current = state(context)
     val items = current.optJSONArray("widgetItems") ?: return false
-    var target: JSONObject? = null
-    for (index in 0 until items.length()) { val item = items.optJSONObject(index); if (item?.optString("id") == targetId && item.optString("kind") == kind) target = item }
-    val item = target ?: return false
+    val matches = matchingItems(items, targetId, kind)
+    if (matches.size != 1) return false
+    val item = matches.single()
     if (!item.optBoolean("completed", false) || !item.optBoolean("canToggle", false)) return false
     item.put("completed", false)
     item.put("timedLocked", false)
@@ -188,6 +210,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     return true
   }
 
+  private fun matchingItems(items: JSONArray, targetId: String, kind: String): List<JSONObject> = (0 until items.length()).mapNotNull { items.optJSONObject(it) }.filter { it.optString("id") == targetId && it.optString("kind") == kind }
   private fun paletteColor(palette: JSONObject?, key: String, fallback: String): Int = try { Color.parseColor(palette?.optString(key, fallback) ?: fallback) } catch (_: Exception) { Color.parseColor(fallback) }
   private fun withOpacity(color: Int, opacity: Int): Int = Color.argb((opacity * 2.55f).toInt(), Color.red(color), Color.green(color), Color.blue(color))
 
@@ -211,8 +234,16 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
 
   private fun openItem(context: Context, targetId: String, kind: String) { if (targetId.isBlank() || (kind != "todo" && kind != "habit")) return; context.startActivity(deepLink(context, if (kind == "habit") "habits" else "todos", targetId).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)) }
   private fun todayIntent(context: Context, id: Int): PendingIntent = PendingIntent.getActivity(context, id, deepLink(context, "today"), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-  private fun detailIntent(context: Context, widgetId: Int, targetId: String, kind: String): PendingIntent = PendingIntent.getActivity(context, ("detail:$widgetId:$kind:$targetId").hashCode(), deepLink(context, if (kind == "habit") "habits" else "todos", targetId), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-  private fun actionIntent(context: Context, widgetId: Int, action: String, targetId: String, kind: String): PendingIntent = PendingIntent.getBroadcast(context, ("action:$widgetId:$action:$kind:$targetId").hashCode(), Intent(context, FocusFlowWidgetProvider::class.java).apply { this.action = action; data = Uri.parse("$DEEP_LINK_SCHEME://widget/$widgetId/$action/$kind/$targetId"); putExtra(EXTRA_TARGET_ID, targetId); putExtra(EXTRA_KIND, kind) }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+  private fun detailIntent(context: Context, widgetId: Int, row: Int, targetId: String, kind: String): PendingIntent = PendingIntent.getActivity(context, ("detail:$widgetId:$row:$kind:$targetId").hashCode(), deepLink(context, if (kind == "habit") "habits" else "todos", targetId), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+  private fun actionIntent(context: Context, widgetId: Int, row: Int, action: String, targetId: String, kind: String): PendingIntent {
+    val identity = "$widgetId:$row:$action:$kind:$targetId"
+    return PendingIntent.getBroadcast(context, identity.hashCode(), Intent(context, FocusFlowWidgetProvider::class.java).apply {
+      this.action = action
+      data = Uri.parse("$DEEP_LINK_SCHEME:///widget/$widgetId/$row/$action/$kind/$targetId")
+      putExtra(EXTRA_TARGET_ID, targetId)
+      putExtra(EXTRA_KIND, kind)
+    }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+  }
   private fun deepLink(context: Context, destination: String, targetId: String? = null): Intent {
     val uri = Uri.parse("$DEEP_LINK_SCHEME:///").buildUpon().apply {
       when (destination) {
