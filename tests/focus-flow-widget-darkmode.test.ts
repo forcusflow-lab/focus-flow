@@ -20,6 +20,20 @@ describe("Focus Flow 高密度Widgetとダークモード", () => {
     expect(layout).toContain('android:maxLines="1"');
   });
 
+  it("Widget行とヘッダーはライト・ダークで明示した高コントラスト本文色を使い、可変パレットの本文色を直接流用しない", () => {
+    const provider = read("plugins", "native", "android", "kotlin", "FocusFlowWidgetProvider.kt");
+    const items = read("plugins", "native", "android", "kotlin", "FocusFlowWidgetItemsService.kt");
+
+    [provider, items].forEach((source) => {
+      expect(source).toContain('Color.parseColor("#13251F")');
+      expect(source).toContain('Color.parseColor("#F4FBF7")');
+      expect(source).toContain('Color.parseColor("#4E655B")');
+      expect(source).toContain('Color.parseColor("#B7CCC2")');
+    });
+    expect(items).not.toContain('paletteColor(palette, "text"');
+    expect(items).not.toContain('paletteColor(palette, "muted"');
+  });
+
   it("外観設定をアプリ全体のテーマへ橋渡しし、共通テキストが意味色を動的パレットへ解決する", () => {
     const rootLayout = read("app", "_layout.tsx");
     const text = read("components", "focus-flow", "scaled-text.tsx");

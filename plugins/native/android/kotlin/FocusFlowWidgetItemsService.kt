@@ -34,8 +34,10 @@ private class FocusFlowWidgetItemsFactory(private val context: Context, private 
     val palette = state.optJSONObject("widgetPalette")
     val dark = palette?.optBoolean("isDark", false) ?: false
     val opacity = state.optInt("widgetOpacity", 86).coerceIn(0, 100)
-    val titleColor = paletteColor(palette, "text", if (dark) "#F2FAF6" else "#1A2925")
-    val mutedColor = paletteColor(palette, "muted", if (dark) "#B3C7BE" else "#64736D")
+    // Keep row copy readable even when app palette state is stale, incomplete,
+    // or being refreshed while the launcher creates the Collection Widget.
+    val titleColor = if (dark) Color.parseColor("#F4FBF7") else Color.parseColor("#13251F")
+    val mutedColor = if (dark) Color.parseColor("#B7CCC2") else Color.parseColor("#4E655B")
     val completedColor = mutedColor
     val primaryColor = paletteColor(palette, "primary", "#1B6B62")
     val completed = item.optBoolean("completed", false)
@@ -46,7 +48,7 @@ private class FocusFlowWidgetItemsFactory(private val context: Context, private 
     views.setInt(R.id.focus_flow_widget_item_root, "setBackgroundColor", Color.TRANSPARENT)
     views.setViewVisibility(R.id.focus_flow_widget_item_required_rail, if (required) View.VISIBLE else View.INVISIBLE)
     views.setInt(R.id.focus_flow_widget_item_required_rail, "setBackgroundColor", primaryColor)
-    views.setInt(R.id.focus_flow_widget_item_divider, "setBackgroundColor", paletteColor(palette, "border", if (dark) "#3B554B" else "#D7E2DD"))
+    views.setInt(R.id.focus_flow_widget_item_divider, "setBackgroundColor", if (dark) Color.parseColor("#466157") else Color.parseColor("#C9D8D1"))
     val title = item.optString("title")
     views.setTextViewText(R.id.focus_flow_widget_item_title, if (completed) struck(title) else title)
     views.setTextColor(R.id.focus_flow_widget_item_title, if (completed) completedColor else titleColor)

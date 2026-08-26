@@ -46,7 +46,7 @@ describe("Focus Flowカード密度", () => {
       expect(source).not.toMatch(/taskRowDone: \{ opacity|habitRowDone: \{ opacity/);
     });
     expect(widgetService).toContain("val completedColor = mutedColor");
-    expect(widgetService).toContain('if (dark) "#B3C7BE" else "#64736D"');
+    expect(widgetService).toContain('if (dark) Color.parseColor("#B7CCC2") else Color.parseColor("#4E655B")');
     expect(widgetService).toContain("StyleSpan(Typeface.BOLD)");
   });
 });

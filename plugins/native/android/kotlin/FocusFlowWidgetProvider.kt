@@ -14,8 +14,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 class FocusFlowWidgetProvider : AppWidgetProvider() {
-  override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) { ids.forEach { updateWidget(context, manager, it) } }
-  override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: android.os.Bundle) { updateWidget(context, manager, id) }
+  override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) { ids.forEach { safeUpdateWidget(context, manager, it) } }
+  override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: android.os.Bundle) { safeUpdateWidget(context, manager, id) }
 
   override fun onReceive(context: Context, intent: Intent) {
     val updated = when (intent.action) {
@@ -26,6 +26,24 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     }
     if (updated != null) { if (updated) refreshAll(context); return }
     super.onReceive(context, intent)
+  }
+
+  private fun safeUpdateWidget(context: Context, manager: AppWidgetManager, id: Int) {
+    try { updateWidget(context, manager, id) } catch (_: Exception) { updateFallbackWidget(context, manager, id) }
+  }
+
+  // A collection adapter can be unavailable while a launcher is adding the
+  // widget. This minimal RemoteViews update keeps the widget addable and gives
+  // the user a tappable route into Today rather than failing the add operation.
+  private fun updateFallbackWidget(context: Context, manager: AppWidgetManager, id: Int) {
+    val state = state(context)
+    val english = state.optString("language", "ja") == "en"
+    val views = RemoteViews(context.packageName, R.layout.focus_flow_widget_initial)
+    bindTheme(views, state)
+    bindHeader(views, state, english)
+    views.setTextViewText(R.id.focus_flow_widget_empty, if (english) "Open Focus Flow to refresh your list" else "Focus Flowを開くと項目を更新します")
+    views.setOnClickPendingIntent(R.id.focus_flow_widget_root, todayIntent(context, id))
+    manager.updateAppWidget(id, views)
   }
 
   private fun updateWidget(context: Context, manager: AppWidgetManager, id: Int) {
@@ -61,8 +79,11 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
 
   private fun bindHeader(views: RemoteViews, state: JSONObject, english: Boolean) {
     val palette = state.optJSONObject("widgetPalette")
-    val title = paletteColor(palette, "text", "#1A2925")
-    val detail = paletteColor(palette, "muted", "#64736D")
+    // Widget copy must not inherit a near-background app palette. These are
+    // deliberate light/dark semantic colors with readable fallback contrast.
+    val dark = palette?.optBoolean("isDark", false) ?: false
+    val title = if (dark) Color.parseColor("#F4FBF7") else Color.parseColor("#13251F")
+    val detail = if (dark) Color.parseColor("#B7CCC2") else Color.parseColor("#4E655B")
     val pending = state.optInt("pendingCount", 0)
     val active = state.optBoolean("active", false)
     views.setTextColor(R.id.focus_flow_widget_title, title)
@@ -153,6 +174,6 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     const val ACTION_OPEN_ITEM = "focusflow.widget.OPEN_ITEM"
     const val EXTRA_TARGET_ID = "targetId"
     const val EXTRA_KIND = "kind"
-    fun refreshAll(context: Context) { val manager = AppWidgetManager.getInstance(context); val provider = FocusFlowWidgetProvider(); manager.getAppWidgetIds(ComponentName(context, FocusFlowWidgetProvider::class.java)).forEach { id -> provider.updateWidget(context, manager, id) }; manager.notifyAppWidgetViewDataChanged(manager.getAppWidgetIds(ComponentName(context, FocusFlowWidgetProvider::class.java)), R.id.focus_flow_widget_list) }
+    fun refreshAll(context: Context) { val manager = AppWidgetManager.getInstance(context); val provider = FocusFlowWidgetProvider(); manager.getAppWidgetIds(ComponentName(context, FocusFlowWidgetProvider::class.java)).forEach { id -> provider.safeUpdateWidget(context, manager, id) }; manager.notifyAppWidgetViewDataChanged(manager.getAppWidgetIds(ComponentName(context, FocusFlowWidgetProvider::class.java)), R.id.focus_flow_widget_list) }
   }
 }
