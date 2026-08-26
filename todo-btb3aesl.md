@@ -294,3 +294,5 @@
 - [x] 起動画面を固定濃色からdisplaySettingsのpaletteへ移行し、ライト／ダークでStatusBar・面・文字・装飾が同期するよう修正する
 - [x] 固定色監査を画面・部品別に記録し、Settings／Today／HabitsをP0、Notes／Insights／More／formsをP1、device setupをP2として反復移行対象を明確化する
 - [ ] Settings、Today、HabitsのP0画面をpalette tokenへ移行し、light／darkのカード・入力・選択・必須・完了・空・モーダルを静的・実機で受入する
+- [x] v18の本人用versionCode 8をGitHub Actionsで署名ビルドし、ZIP整合性・package・署名・Provider metadata・一覧カードlayout・旧Collection service不在を独立検証する
+- [ ] 本人用v8 APKを実機へ上書き更新し、内容高のlistCard、短い補足、透明度、light／dark、文字サイズ、行ごとの操作を受入確認する
