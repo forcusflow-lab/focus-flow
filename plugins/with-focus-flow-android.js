@@ -80,4 +80,4 @@ function withFocusFlowAndroid(config) {
     return config;
   }]);
 }
-module.exports = createRunOncePlugin(withFocusFlowAndroid, PLUGIN_NAME, "1.0.11");
+module.exports = createRunOncePlugin(withFocusFlowAndroid, PLUGIN_NAME, "1.0.12");

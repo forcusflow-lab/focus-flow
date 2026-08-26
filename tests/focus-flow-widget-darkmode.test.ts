@@ -17,7 +17,7 @@ describe("Focus Flow 高密度Widgetとダークモード", () => {
     expect(source).toContain('View.GONE');
     expect(source).toContain('compactBadge');
     expect(source).toContain('"MUST · TIME"');
-    expect(layout).toContain('android:layout_height="48dp"');
+    expect(layout).toContain('android:layout_height="56dp"');
     expect(layout).toContain('android:gravity="center_vertical"');
     expect(layout).toContain('android:maxLines="1"');
   });
@@ -26,12 +26,9 @@ describe("Focus Flow 高密度Widgetとダークモード", () => {
     const provider = read("plugins", "native", "android", "kotlin", "FocusFlowWidgetProvider.kt");
     const plugin = read("plugins", "with-focus-flow-android.js");
 
-    expect(provider).toContain('Color.parseColor("#13251F")');
-    expect(provider).toContain('Color.parseColor("#F4FBF7")');
-    expect(provider).toContain('Color.parseColor("#4E655B")');
-    expect(provider).toContain('Color.parseColor("#B7CCC2")');
-    expect(provider).not.toContain('paletteColor(palette, "text"');
-    expect(provider).not.toContain('paletteColor(palette, "muted"');
+    expect(provider).toContain('paletteColor(palette, "text"');
+    expect(provider).toContain('paletteColor(palette, "muted"');
+    expect(provider).toContain('paletteColor(palette, "primarySoft"');
     expect(provider).toContain('R.id.focus_flow_widget_card, "setBackgroundResource"');
     expect(provider).toContain('widgetCardDrawable');
     ["light_0", "light_25", "light_50", "light_75", "light_100", "dark_0", "dark_25", "dark_50", "dark_75", "dark_100"].forEach((name) => {
@@ -40,8 +37,8 @@ describe("Focus Flow 高密度Widgetとダークモード", () => {
     });
     expect(provider).not.toContain('R.id.focus_flow_widget_card_background');
     expect(provider).not.toContain('setFloat(');
-    expect(provider).toContain('Color.parseColor("#D8E3DC")');
-    expect(provider).toContain('Color.parseColor("#355047")');
+    expect(provider).toContain('Color.parseColor("#C8D9D1")');
+    expect(provider).toContain('Color.parseColor("#526B61")');
   });
 
   it("外観設定をアプリ全体のテーマへ橋渡しし、共通テキストが意味色を動的パレットへ解決する", () => {

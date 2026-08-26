@@ -3,7 +3,7 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, 
 import { AppState, Platform } from "react-native";
 import Constants from "expo-constants";
 
-import { consumeWidgetActions, syncAndroidGate } from "./android-gate";
+import { consumeWidgetActions, syncAndroidGate, type WidgetOperation } from "./android-gate";
 import { EARLY_COMPLETION_PRODUCT_ID, PLUS_PRODUCT_ID, type EarlyCompletionStatus, type PlusStatus } from "./billing";
 import { finishPlatformPurchase, openSubscriptionManagement, usePlatformIAP, type IapProduct, type IapSubscription } from "./iap-bridge";
 import { canSelectBlockedApp as canSelectBlockedAppForPlan, capBlockedApps, countUncompletedTodos, isFreeItemLimitReached } from "./limits";
@@ -193,21 +193,41 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
     if (!actions.length) return;
     commit((current) => {
       const today = dayKey();
-      const byTarget = new Map(actions.map((action) => [`${action.kind}:${action.id}`, action.operation]));
+      const byTarget = actions.reduce((map, action) => {
+        const key = `${action.kind}:${action.id}`;
+        map.set(key, [...(map.get(key) ?? []), action.operation]);
+        return map;
+      }, new Map<string, WidgetOperation[]>());
       const todos = current.todos.map((todo) => {
-        const operation = byTarget.get(`todo:${todo.id}`);
+        const operations = byTarget.get(`todo:${todo.id}`);
+        const operation = operations?.at(-1);
         if (!operation || todo.repeatRule !== "none") return todo;
         if (operation === "restore" && isTodoAchieved(todo)) return { ...todo, completed: false, completedAt: undefined, progressValue: 0, timerStartedAt: undefined, earlyCompletionAt: undefined, subtasks: getTodoSubtasks(todo).map((subtask) => ({ ...subtask, completed: false })) };
         if (operation === "complete" && !isTodoAchieved(todo) && !isTimedTodo(todo)) return { ...todo, completed: true, completedAt: new Date().toISOString(), progressValue: todo.targetValue, subtasks: getTodoSubtasks(todo).map((subtask) => ({ ...subtask, completed: true })) };
         return todo;
       });
       const habits = current.habits.map((habit) => {
-        const operation = byTarget.get(`habit:${habit.id}`);
-        if (!operation || (habit.progressUnit ?? "check") === "minutes") return habit;
-        const completed = habit.completedDates.includes(today);
-        if (operation === "restore" && completed) return { ...habit, completedDates: habit.completedDates.filter((item) => item !== today), dailyProgress: { ...(habit.dailyProgress ?? {}), [today]: 0 } };
-        if (operation === "complete" && !completed) return { ...habit, completedDates: Array.from(new Set([...habit.completedDates, today])).sort(), dailyProgress: { ...(habit.dailyProgress ?? {}), [today]: habit.targetValue ?? 1 } };
-        return habit;
+        const operations = byTarget.get(`habit:${habit.id}`);
+        if (!operations?.length) return habit;
+        return operations.reduce((currentHabit, operation) => {
+          const unit = currentHabit.progressUnit ?? "check";
+          const completed = currentHabit.completedDates.includes(today);
+          if (operation === "restore" && completed) return { ...currentHabit, completedDates: currentHabit.completedDates.filter((item) => item !== today), dailyProgress: { ...(currentHabit.dailyProgress ?? {}), [today]: 0 }, timerStartedAtByDate: Object.fromEntries(Object.entries(currentHabit.timerStartedAtByDate ?? {}).filter(([date]) => date !== today)), earlyCompletionDates: (currentHabit.earlyCompletionDates ?? []).filter((date) => date !== today) };
+          if (unit === "minutes") {
+            if (operation === "timer_start" && !completed && !currentHabit.timerStartedAtByDate?.[today]) return { ...currentHabit, timerStartedAtByDate: { ...(currentHabit.timerStartedAtByDate ?? {}), [today]: new Date().toISOString() } };
+            return currentHabit;
+          }
+          if (unit === "count") {
+            const delta = operation === "increment" ? 1 : operation === "decrement" ? -1 : 0;
+            if (delta) {
+              const target = currentHabit.targetValue ?? 1;
+              const value = Math.min(Math.max((currentHabit.dailyProgress?.[today] ?? 0) + delta, 0), target);
+              return { ...currentHabit, dailyProgress: { ...(currentHabit.dailyProgress ?? {}), [today]: value }, completedDates: value >= target ? Array.from(new Set([...currentHabit.completedDates, today])).sort() : currentHabit.completedDates.filter((date) => date !== today) };
+            }
+          }
+          if (operation === "complete" && !completed) return { ...currentHabit, completedDates: Array.from(new Set([...currentHabit.completedDates, today])).sort(), dailyProgress: { ...(currentHabit.dailyProgress ?? {}), [today]: currentHabit.targetValue ?? 1 } };
+          return currentHabit;
+        }, habit);
       });
       return { ...current, todos, habits };
     });

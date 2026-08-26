@@ -87,7 +87,7 @@ export function Pill({ label, color = COLORS.forest, muted = false }: { label: s
   const resolvedColor = color === COLORS.forest ? palette.primary : color;
   return (
     <View style={[styles.pill, { backgroundColor: muted ? palette.elevated : `${resolvedColor}24` }]}>
-      <ScaledText style={[styles.pillText, { color: muted ? palette.muted : resolvedColor }]}>{label}</ScaledText>
+      <ScaledText numberOfLines={1} ellipsizeMode="clip" style={[styles.pillText, { color: muted ? palette.muted : resolvedColor }]}>{label}</ScaledText>
     </View>
   );
 }
@@ -115,6 +115,6 @@ const styles = StyleSheet.create({
   emptyDescription: { color: COLORS.muted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 7 },
   emptyAction: { minHeight: 44, justifyContent: "center", paddingHorizontal: 18, borderRadius: 22, marginTop: 18 },
   emptyActionText: { fontSize: 14, fontWeight: "800" },
-  pill: { minWidth: 42, minHeight: 26, paddingHorizontal: 10, justifyContent: "center", alignItems: "center", borderRadius: 13, alignSelf: "flex-start", flexShrink: 0 },
-  pillText: { fontSize: 12, lineHeight: 16, fontWeight: "700" },
+  pill: { minWidth: 54, height: 28, paddingHorizontal: 12, justifyContent: "center", alignItems: "center", borderRadius: 14, alignSelf: "flex-start", flexShrink: 0, overflow: "visible" },
+  pillText: { fontSize: 13, lineHeight: 18, fontWeight: "800", flexShrink: 0, includeFontPadding: false },
 });

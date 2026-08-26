@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 const projectFile = (...parts: string[]) => fs.readFileSync(path.join(process.cwd(), ...parts), "utf8");
 
 describe("Focus Flow Androidネイティブプラグイン", () => {
-  it("WidgetをRemoteViewsServiceなしの静的面で更新し、最大2件のTodo・習慣を安全に操作する", () => {
+  it("WidgetをRemoteViewsServiceなしのサイズ追従する静的面で更新し、Todo・習慣を安全に操作する", () => {
     const provider = projectFile("plugins", "native", "android", "kotlin", "FocusFlowWidgetProvider.kt");
     const moduleSource = projectFile("plugins", "native", "android", "kotlin", "FocusGateModule.kt");
 
@@ -22,6 +22,7 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(provider).toContain("focus_flow_widget_static_divider");
     expect(provider).toContain("focus_flow_widget_static_row_one");
     expect(provider).toContain("focus_flow_widget_static_row_two");
+    expect(provider).toContain("focus_flow_widget_static_row_four");
     expect(provider).toContain("ACTION_COMPLETE");
     expect(provider).toContain("ACTION_RESTORE");
     expect(provider).toContain("detailIntent");
@@ -29,8 +30,10 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(provider).toContain("WIDGET_ACTIONS");
     expect(provider).toContain("forEach { id -> provider.safeUpdateWidget(context, manager, id) }");
     expect(provider).toContain('Uri.parse("$DEEP_LINK_SCHEME:///")');
-    expect(provider).toContain('Color.parseColor("#13251F")');
-    expect(provider).toContain('Color.parseColor("#F4FBF7")');
+    expect(provider).toContain('paletteColor(palette, "text"');
+    expect(provider).toContain('paletteColor(palette, "muted"');
+    expect(provider).toContain("ACTION_INCREMENT");
+    expect(provider).toContain("ACTION_TIMER_START");
     expect(provider).not.toContain("setRemoteAdapter");
     expect(provider).not.toContain("setPendingIntentTemplate");
     expect(provider).not.toContain("FocusFlowWidgetItemsService");
@@ -68,11 +71,13 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_root"');
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_card"');
     expect(initialLayout).toContain('android:background="@drawable/focus_flow_widget_card_light_100"');
-    expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_divider"');
+    expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_divider_one"');
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_one"');
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_two"');
+    expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_four"');
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_one_check"');
-    expect(initialLayout).toContain('android:layout_height="48dp"');
+    expect(initialLayout).toContain('android:layout_height="56dp"');
+    expect(initialLayout).toContain('android:minHeight="48dp"');
     expect(initialLayout).toContain('android:layout_width="48dp"');
     expect(initialLayout).toContain('android:layout_width="20dp"');
     expect(initialLayout).not.toContain("<View");

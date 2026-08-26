@@ -20,6 +20,6 @@ export function uniqueWidgetItems<T extends WidgetItemIdentity>(items: T[]): T[]
   });
 }
 
-export function widgetRowActionKey({ widgetId, row, operation, kind, itemId }: { widgetId: number; row: number; operation: "complete" | "restore"; kind: string; itemId: string }) {
+export function widgetRowActionKey({ widgetId, row, operation, kind, itemId }: { widgetId: number; row: number; operation: "complete" | "restore" | "increment" | "decrement" | "timer_start"; kind: string; itemId: string }) {
   return `${widgetId}:${row}:${operation}:${kind}:${itemId}`;
 }

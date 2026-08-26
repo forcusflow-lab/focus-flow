@@ -15,7 +15,7 @@ describe("Focus Flow統合ウィジェットの設定", () => {
     expect(bridge).toContain('const widgetCompletedDisplay = data.displaySettings.widgetCompletedDisplay ?? "dim"');
     expect(bridge).toContain('const widgetOpacity = Math.max(0, Math.min(100, Number(data.displaySettings.widgetOpacity ?? legacyOpacity)))');
     expect(bridge).toContain("const widgetPalette = getAppPalette");
-    expect(bridge).toContain("widgetPalette, widgetTextScale: data.displaySettings.fontScale, widgetOpacity, widgetCompletedDisplay");
+    expect(bridge).toContain('widgetPalette, widgetTheme: data.displaySettings.appTheme ?? "mist", widgetTextScale: data.displaySettings.fontScale, widgetOpacity, widgetCompletedDisplay');
     expect(bridge).toContain('widgetTextScale: data.displaySettings.fontScale');
     expect(bridge).toContain('completed: true');
     expect(settings).toContain("onCompletedDisplay");

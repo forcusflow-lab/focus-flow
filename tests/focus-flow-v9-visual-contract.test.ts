@@ -11,7 +11,7 @@ describe("v9 実機視覚品質の静的契約", () => {
     const provider = source("plugins", "native", "android", "kotlin", "FocusFlowWidgetProvider.kt");
 
     expect(layout).not.toMatch(/<View[\s>]/);
-    expect(layout).toContain("<TextView android:id=\"@+id/focus_flow_widget_static_divider\"");
+    expect(layout).toContain("<TextView android:id=\"@+id/focus_flow_widget_static_divider_one\"");
     expect(layout).toContain('android:id="@+id/focus_flow_widget_card"');
     expect(provider).not.toContain('setFloat(R.id.focus_flow_widget_card_background, "setAlpha"');
     expect(provider).not.toContain('setFloat(ids.check, "setAlpha"');
@@ -22,7 +22,7 @@ describe("v9 実機視覚品質の静的契約", () => {
     const ui = source("components", "focus-flow", "ui.tsx");
     const habits = source("app", "(tabs)", "habits.tsx");
 
-    expect(ui).toContain("minWidth: 42");
+    expect(ui).toContain("minWidth: 54");
     expect(ui).toContain("flexShrink: 0");
     expect(habits).not.toContain("requiredSlot: { width: 38");
     expect(habits).toContain("label={t(\"必須\", \"Must-do\")}");

@@ -30,6 +30,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val updated = when (intent.action) {
       ACTION_COMPLETE -> complete(context, intent.getStringExtra(EXTRA_TARGET_ID).orEmpty(), intent.getStringExtra(EXTRA_KIND).orEmpty())
       ACTION_RESTORE -> restore(context, intent.getStringExtra(EXTRA_TARGET_ID).orEmpty(), intent.getStringExtra(EXTRA_KIND).orEmpty())
+      ACTION_INCREMENT, ACTION_DECREMENT, ACTION_TIMER_START -> adjustHabitFromWidget(context, intent.getStringExtra(EXTRA_TARGET_ID).orEmpty(), intent.getStringExtra(EXTRA_KIND).orEmpty(), intent.action.orEmpty())
       ACTION_OPEN_ITEM -> { openItem(context, intent.getStringExtra(EXTRA_TARGET_ID).orEmpty(), intent.getStringExtra(EXTRA_KIND).orEmpty()); false }
       else -> null
     }
@@ -47,10 +48,11 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   private fun updateInitialWidget(context: Context, manager: AppWidgetManager, id: Int, fallback: Boolean = false) {
     val state = state(context)
     val english = state.optString("language", "ja") == "en"
+    val bucket = widgetBucket(manager, id)
     val views = RemoteViews(context.packageName, R.layout.focus_flow_widget_initial)
     bindTheme(views, state)
     bindHeader(views, state, english)
-    bindStaticRows(context, views, state, id, english)
+    bindStaticRows(context, views, state, id, english, bucket)
     if (fallback) views.setTextViewText(R.id.focus_flow_widget_empty, if (english) "Open Focus Flow to refresh your list" else "Focus Flowを開くと項目を更新します")
     views.setOnClickPendingIntent(R.id.focus_flow_widget_root, todayIntent(context, id))
     manager.updateAppWidget(id, views)
@@ -69,16 +71,32 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     return try { JSONObject(saved ?: "{}") } catch (_: Exception) { JSONObject() }
   }
 
+  private data class WidgetBucket(val maxRows: Int, val showControls: Boolean, val compactHeader: Boolean)
+
+  private fun widgetBucket(manager: AppWidgetManager, id: Int): WidgetBucket {
+    val options = manager.getAppWidgetOptions(id)
+    val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 180))
+    val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 110))
+    return when {
+      width < 200 || height < 150 -> WidgetBucket(1, false, true)
+      height < 250 -> WidgetBucket(2, true, false)
+      else -> WidgetBucket(4, true, false)
+    }
+  }
+
   private fun bindTheme(views: RemoteViews, state: JSONObject) {
     val palette = state.optJSONObject("widgetPalette")
     val dark = palette?.optBoolean("isDark", false) ?: false
     views.setInt(R.id.focus_flow_widget_card, "setBackgroundResource", widgetCardDrawable(dark, state.optInt("widgetOpacity", 86).coerceIn(0, 100)))
+    views.setInt(R.id.focus_flow_widget_header, "setBackgroundColor", paletteColor(palette, "primarySoft", if (dark) "#23483C" else "#E3F1EC"))
     // Use pre-rendered alpha backgrounds rather than setAlpha. RemoteViews
     // hosts render only a restricted hierarchy, and text must not fade with
     // the card surface.
-    views.setTextViewText(R.id.focus_flow_widget_static_divider, "")
-    views.setInt(R.id.focus_flow_widget_static_divider, "setBackgroundColor", if (dark) Color.parseColor("#355047") else Color.parseColor("#D8E3DC"))
+    val divider = if (dark) Color.parseColor("#526B61") else Color.parseColor("#C8D9D1")
+    listOf(R.id.focus_flow_widget_static_divider_one, R.id.focus_flow_widget_static_divider_two, R.id.focus_flow_widget_static_divider_three).forEach { dividerId -> views.setTextViewText(dividerId, ""); views.setInt(dividerId, "setBackgroundColor", divider) }
   }
+
+  private fun paletteColor(palette: JSONObject?, key: String, fallback: String): Int = try { Color.parseColor(palette?.optString(key, fallback) ?: fallback) } catch (_: Exception) { Color.parseColor(fallback) }
 
   private fun widgetCardDrawable(dark: Boolean, opacity: Int): Int {
     val level = when {
@@ -88,28 +106,14 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       opacity < 88 -> 75
       else -> 100
     }
-    return if (dark) when (level) {
-      0 -> R.drawable.focus_flow_widget_card_dark_0
-      25 -> R.drawable.focus_flow_widget_card_dark_25
-      50 -> R.drawable.focus_flow_widget_card_dark_50
-      75 -> R.drawable.focus_flow_widget_card_dark_75
-      else -> R.drawable.focus_flow_widget_card_dark_100
-    } else when (level) {
-      0 -> R.drawable.focus_flow_widget_card_light_0
-      25 -> R.drawable.focus_flow_widget_card_light_25
-      50 -> R.drawable.focus_flow_widget_card_light_50
-      75 -> R.drawable.focus_flow_widget_card_light_75
-      else -> R.drawable.focus_flow_widget_card_light_100
-    }
+    return if (dark) when (level) { 0 -> R.drawable.focus_flow_widget_card_dark_0; 25 -> R.drawable.focus_flow_widget_card_dark_25; 50 -> R.drawable.focus_flow_widget_card_dark_50; 75 -> R.drawable.focus_flow_widget_card_dark_75; else -> R.drawable.focus_flow_widget_card_dark_100 } else when (level) { 0 -> R.drawable.focus_flow_widget_card_light_0; 25 -> R.drawable.focus_flow_widget_card_light_25; 50 -> R.drawable.focus_flow_widget_card_light_50; 75 -> R.drawable.focus_flow_widget_card_light_75; else -> R.drawable.focus_flow_widget_card_light_100 }
   }
 
   private fun bindHeader(views: RemoteViews, state: JSONObject, english: Boolean) {
     val palette = state.optJSONObject("widgetPalette")
-    // Widget copy must not inherit a near-background app palette. These are
-    // deliberate light/dark semantic colors with readable fallback contrast.
     val dark = palette?.optBoolean("isDark", false) ?: false
-    val title = if (dark) Color.parseColor("#F4FBF7") else Color.parseColor("#13251F")
-    val detail = if (dark) Color.parseColor("#B7CCC2") else Color.parseColor("#4E655B")
+    val title = paletteColor(palette, "text", if (dark) "#F4FBF7" else "#13251F")
+    val detail = paletteColor(palette, "muted", if (dark) "#B7CCC2" else "#4E655B")
     val pending = state.optInt("pendingCount", 0)
     val active = state.optBoolean("active", false)
     views.setTextColor(R.id.focus_flow_widget_title, title)
@@ -123,34 +127,39 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setTextViewText(R.id.focus_flow_widget_status, if (!active) if (english) "App limits off" else "集中制限はオフ" else if (pending == 0) if (english) "Must-dos complete" else "必須項目を完了しました" else if (english) "$pending must-do${if (pending == 1) "" else "s"} remaining" else "必須項目 残り${pending}件")
   }
 
-  private data class StaticRowIds(val position: Int, val row: Int, val action: Int, val check: Int, val content: Int, val title: Int, val badge: Int)
+  private data class StaticRowIds(val position: Int, val row: Int, val action: Int, val check: Int, val content: Int, val title: Int, val badge: Int, val meta: Int, val controls: Int, val decrement: Int, val progress: Int, val increment: Int, val timer: Int)
 
-  private fun staticRowIds(index: Int): StaticRowIds = if (index == 0) {
-    StaticRowIds(0, R.id.focus_flow_widget_static_row_one, R.id.focus_flow_widget_static_row_one_action, R.id.focus_flow_widget_static_row_one_check, R.id.focus_flow_widget_static_row_one_content, R.id.focus_flow_widget_static_row_one_title, R.id.focus_flow_widget_static_row_one_badge)
-  } else {
-    StaticRowIds(1, R.id.focus_flow_widget_static_row_two, R.id.focus_flow_widget_static_row_two_action, R.id.focus_flow_widget_static_row_two_check, R.id.focus_flow_widget_static_row_two_content, R.id.focus_flow_widget_static_row_two_title, R.id.focus_flow_widget_static_row_two_badge)
+  private fun staticRowIds(index: Int): StaticRowIds = when (index) {
+    0 -> StaticRowIds(0, R.id.focus_flow_widget_static_row_one, R.id.focus_flow_widget_static_row_one_action, R.id.focus_flow_widget_static_row_one_check, R.id.focus_flow_widget_static_row_one_content, R.id.focus_flow_widget_static_row_one_title, R.id.focus_flow_widget_static_row_one_badge, R.id.focus_flow_widget_static_row_one_meta, R.id.focus_flow_widget_static_row_one_controls, R.id.focus_flow_widget_static_row_one_decrement, R.id.focus_flow_widget_static_row_one_progress, R.id.focus_flow_widget_static_row_one_increment, R.id.focus_flow_widget_static_row_one_timer)
+    1 -> StaticRowIds(1, R.id.focus_flow_widget_static_row_two, R.id.focus_flow_widget_static_row_two_action, R.id.focus_flow_widget_static_row_two_check, R.id.focus_flow_widget_static_row_two_content, R.id.focus_flow_widget_static_row_two_title, R.id.focus_flow_widget_static_row_two_badge, R.id.focus_flow_widget_static_row_two_meta, R.id.focus_flow_widget_static_row_two_controls, R.id.focus_flow_widget_static_row_two_decrement, R.id.focus_flow_widget_static_row_two_progress, R.id.focus_flow_widget_static_row_two_increment, R.id.focus_flow_widget_static_row_two_timer)
+    2 -> StaticRowIds(2, R.id.focus_flow_widget_static_row_three, R.id.focus_flow_widget_static_row_three_action, R.id.focus_flow_widget_static_row_three_check, R.id.focus_flow_widget_static_row_three_content, R.id.focus_flow_widget_static_row_three_title, R.id.focus_flow_widget_static_row_three_badge, R.id.focus_flow_widget_static_row_three_meta, R.id.focus_flow_widget_static_row_three_controls, R.id.focus_flow_widget_static_row_three_decrement, R.id.focus_flow_widget_static_row_three_progress, R.id.focus_flow_widget_static_row_three_increment, R.id.focus_flow_widget_static_row_three_timer)
+    else -> StaticRowIds(3, R.id.focus_flow_widget_static_row_four, R.id.focus_flow_widget_static_row_four_action, R.id.focus_flow_widget_static_row_four_check, R.id.focus_flow_widget_static_row_four_content, R.id.focus_flow_widget_static_row_four_title, R.id.focus_flow_widget_static_row_four_badge, R.id.focus_flow_widget_static_row_four_meta, R.id.focus_flow_widget_static_row_four_controls, R.id.focus_flow_widget_static_row_four_decrement, R.id.focus_flow_widget_static_row_four_progress, R.id.focus_flow_widget_static_row_four_increment, R.id.focus_flow_widget_static_row_four_timer)
   }
 
-  private fun bindStaticRows(context: Context, views: RemoteViews, state: JSONObject, widgetId: Int, english: Boolean) {
+  private fun bindStaticRows(context: Context, views: RemoteViews, state: JSONObject, widgetId: Int, english: Boolean, bucket: WidgetBucket) {
     val all = state.optJSONArray("widgetItems") ?: JSONArray()
-    val rows = uniqueStaticItems(all)
+    val rows = uniqueStaticItems(all, bucket.maxRows)
     val palette = state.optJSONObject("widgetPalette")
-    val dark = palette?.optBoolean("isDark", false) ?: false
-    val titleColor = if (dark) Color.parseColor("#F4FBF7") else Color.parseColor("#13251F")
-    val mutedColor = if (dark) Color.parseColor("#B7CCC2") else Color.parseColor("#4E655B")
+    val titleColor = paletteColor(palette, "text", "#13251F")
+    val mutedColor = paletteColor(palette, "muted", "#4E655B")
+    val primary = paletteColor(palette, "primary", "#1B6B62")
+    val primarySoft = paletteColor(palette, "primarySoft", "#E3F1EC")
+    val elevated = paletteColor(palette, "elevated", "#EDF4F0")
+    val onPrimary = paletteColor(palette, "background", "#F7F8F5")
     val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
     views.setViewVisibility(R.id.focus_flow_widget_empty, if (rows.isEmpty()) View.VISIBLE else View.GONE)
     if (rows.isEmpty()) views.setTextViewText(R.id.focus_flow_widget_empty, if (english) "Open Focus Flow to add today’s items" else "今日の項目はありません")
-    views.setViewVisibility(R.id.focus_flow_widget_static_divider, if (rows.size > 1) View.VISIBLE else View.GONE)
-    for (index in 0..1) {
+    val dividers = listOf(R.id.focus_flow_widget_static_divider_one, R.id.focus_flow_widget_static_divider_two, R.id.focus_flow_widget_static_divider_three)
+    for (index in 0..3) {
       val ids = staticRowIds(index)
       val item = rows.getOrNull(index)
       views.setViewVisibility(ids.row, if (item == null) View.GONE else View.VISIBLE)
-      if (item != null) bindStaticRow(context, views, ids, item, widgetId, english, titleColor, mutedColor, scale) else clearStaticRow(views, ids)
+      if (index < dividers.size) views.setViewVisibility(dividers[index], if (index < rows.size - 1) View.VISIBLE else View.GONE)
+      if (item != null) bindStaticRow(context, views, ids, item, widgetId, english, titleColor, mutedColor, primary, primarySoft, elevated, onPrimary, scale, bucket.showControls) else clearStaticRow(views, ids)
     }
   }
 
-  private fun uniqueStaticItems(all: JSONArray): List<JSONObject> {
+  private fun uniqueStaticItems(all: JSONArray, limit: Int): List<JSONObject> {
     val seen = mutableSetOf<String>()
     val rows = mutableListOf<JSONObject>()
     for (index in 0 until all.length()) {
@@ -160,7 +169,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       if (itemId.isBlank() || (kind != "todo" && kind != "habit")) continue
       if (!seen.add("$kind:$itemId")) continue
       rows.add(item)
-      if (rows.size == 2) break
+      if (rows.size == limit) break
     }
     return rows
   }
@@ -168,12 +177,16 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   private fun clearStaticRow(views: RemoteViews, ids: StaticRowIds) {
     views.setTextViewText(ids.title, "")
     views.setTextViewText(ids.badge, "")
+    views.setTextViewText(ids.meta, "")
     views.setViewVisibility(ids.badge, View.GONE)
+    views.setViewVisibility(ids.meta, View.GONE)
+    views.setViewVisibility(ids.controls, View.GONE)
+    views.setViewVisibility(ids.timer, View.GONE)
     views.setInt(ids.check, "setBackgroundResource", R.drawable.focus_flow_widget_checkbox)
     views.setImageViewResource(ids.check, R.drawable.focus_flow_widget_check_empty)
   }
 
-  private fun bindStaticRow(context: Context, views: RemoteViews, ids: StaticRowIds, item: JSONObject, widgetId: Int, english: Boolean, titleColor: Int, mutedColor: Int, scale: Float) {
+  private fun bindStaticRow(context: Context, views: RemoteViews, ids: StaticRowIds, item: JSONObject, widgetId: Int, english: Boolean, titleColor: Int, mutedColor: Int, primary: Int, primarySoft: Int, elevated: Int, onPrimary: Int, scale: Float, showControls: Boolean) {
     val completed = item.optBoolean("completed", false)
     val canToggle = item.optBoolean("canToggle", false)
     val timedLocked = item.optBoolean("timedLocked", false)
@@ -184,8 +197,14 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setTextViewTextSize(ids.title, android.util.TypedValue.COMPLEX_UNIT_DIP, 13f * scale)
     views.setViewVisibility(ids.badge, if (badge.isBlank()) View.GONE else View.VISIBLE)
     views.setTextViewText(ids.badge, badge)
-    views.setTextColor(ids.badge, mutedColor)
+    views.setTextColor(ids.badge, primary)
+    views.setInt(ids.badge, "setBackgroundColor", primarySoft)
     views.setTextViewTextSize(ids.badge, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
+    val meta = item.optString("windowLabel", "")
+    views.setViewVisibility(ids.meta, if (meta.isBlank()) View.GONE else View.VISIBLE)
+    views.setTextViewText(ids.meta, meta)
+    views.setTextColor(ids.meta, mutedColor)
+    views.setTextViewTextSize(ids.meta, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
     if (completed) {
       views.setInt(ids.check, "setBackgroundResource", R.drawable.focus_flow_widget_checkbox_done)
       views.setImageViewResource(ids.check, R.drawable.focus_flow_widget_check_mark)
@@ -198,6 +217,26 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setOnClickPendingIntent(ids.content, detailIntent(context, widgetId, ids.position, itemId, kind))
     val action = if (completed) ACTION_RESTORE else ACTION_COMPLETE
     views.setOnClickPendingIntent(ids.action, if (canToggle) actionIntent(context, widgetId, ids.position, action, itemId, kind) else todayIntent(context, widgetId + 20 + ids.position))
+    val unit = item.optString("progressUnit", "check")
+    val supportsControls = showControls && kind == "habit" && !completed && (unit == "count" || unit == "minutes")
+    views.setViewVisibility(ids.controls, if (supportsControls) View.VISIBLE else View.GONE)
+    views.setViewVisibility(ids.timer, if (supportsControls && unit == "minutes") View.VISIBLE else View.GONE)
+    if (supportsControls && unit == "count") {
+      listOf(ids.decrement, ids.progress, ids.increment).forEach { control -> views.setViewVisibility(control, View.VISIBLE) }
+      val value = item.optInt("progressValue", 0)
+      val target = item.optInt("targetValue", 1).coerceAtLeast(1)
+      views.setTextViewText(ids.progress, "$value/$target")
+      views.setTextColor(ids.progress, primary)
+      listOf(ids.decrement, ids.increment).forEach { control -> views.setTextColor(control, primary); views.setInt(control, "setBackgroundColor", elevated) }
+      views.setOnClickPendingIntent(ids.decrement, actionIntent(context, widgetId, ids.position, ACTION_DECREMENT, itemId, kind))
+      views.setOnClickPendingIntent(ids.increment, actionIntent(context, widgetId, ids.position, ACTION_INCREMENT, itemId, kind))
+    } else if (supportsControls) {
+      listOf(ids.decrement, ids.progress, ids.increment).forEach { control -> views.setViewVisibility(control, View.GONE) }
+      views.setTextViewText(ids.timer, if (item.optBoolean("timerRunning", false)) if (english) "Running" else "計測中" else if (english) "Start" else "開始")
+      views.setTextColor(ids.timer, onPrimary)
+      views.setInt(ids.timer, "setBackgroundColor", primary)
+      views.setOnClickPendingIntent(ids.timer, actionIntent(context, widgetId, ids.position, ACTION_TIMER_START, itemId, kind))
+    }
   }
 
   private fun compactBadge(item: JSONObject, english: Boolean): String {
@@ -249,6 +288,41 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     return true
   }
 
+  private fun adjustHabitFromWidget(context: Context, targetId: String, kind: String, action: String): Boolean {
+    if (targetId.isBlank() || kind != "habit") return false
+    val preferences = context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE)
+    val current = state(context)
+    val items = current.optJSONArray("widgetItems") ?: return false
+    val matches = matchingItems(items, targetId, kind)
+    if (matches.size != 1) return false
+    val item = matches.single()
+    if (item.optBoolean("completed", false)) return false
+    val unit = item.optString("progressUnit", "check")
+    val operation = when (action) { ACTION_INCREMENT -> "increment"; ACTION_DECREMENT -> "decrement"; ACTION_TIMER_START -> "timer_start"; else -> return false }
+    if (operation == "timer_start") {
+      if (unit != "minutes" || item.optBoolean("timerRunning", false)) return false
+      item.put("timerRunning", true)
+    } else {
+      if (unit != "count") return false
+      val target = item.optInt("targetValue", 1).coerceAtLeast(1)
+      val delta = if (operation == "increment") 1 else -1
+      val previous = item.optInt("progressValue", 0).coerceIn(0, target)
+      val next = (previous + delta).coerceIn(0, target)
+      if (next == previous) return false
+      item.put("progressValue", next)
+      val becameComplete = next >= target && previous < target
+      val becameOpen = next < target && previous >= target
+      item.put("completed", next >= target)
+      if (becameComplete && item.optBoolean("required", false)) updateRequiredState(current, targetId, kind)
+      if (becameOpen && item.optBoolean("required", false)) restoreRequiredState(current, item, kind)
+    }
+    val actions = widgetActions(preferences)
+    if (operation == "timer_start" && (0 until actions.length()).any { index -> actions.optJSONObject(index)?.let { it.optString("id") == targetId && it.optString("kind") == kind && it.optString("operation") == operation } == true }) return false
+    actions.put(JSONObject().put("id", targetId).put("kind", kind).put("operation", operation))
+    preferences.edit().putString(FocusGateModule.GATE_STATE, current.put("widgetItems", items).toString()).putString(FocusGateModule.WIDGET_ACTIONS, actions.toString()).putLong(FocusGateModule.GATE_STATE_UPDATED_AT, System.currentTimeMillis()).apply()
+    return true
+  }
+
   private fun matchingItems(items: JSONArray, targetId: String, kind: String): List<JSONObject> = (0 until items.length()).mapNotNull { items.optJSONObject(it) }.filter { it.optString("id") == targetId && it.optString("kind") == kind }
 
   private fun updateRequiredState(state: JSONObject, targetId: String, kind: String) {
@@ -296,6 +370,9 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   companion object {
     const val ACTION_COMPLETE = "focusflow.widget.COMPLETE"
     const val ACTION_RESTORE = "focusflow.widget.RESTORE"
+    const val ACTION_INCREMENT = "focusflow.widget.INCREMENT"
+    const val ACTION_DECREMENT = "focusflow.widget.DECREMENT"
+    const val ACTION_TIMER_START = "focusflow.widget.TIMER_START"
     const val ACTION_OPEN_ITEM = "focusflow.widget.OPEN_ITEM"
     const val EXTRA_TARGET_ID = "targetId"
     const val EXTRA_KIND = "kind"
