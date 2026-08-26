@@ -266,3 +266,5 @@
 - [ ] 本人用v5でも再現したWidget追加失敗を、Collection ListView・RemoteViewsService・Provider更新を完全に外した静的RemoteViews Widgetで原因分離し、追加成功を実機確認してから一覧・操作機能を段階的に復帰する
 - [x] Collection ListView・RemoteViewsServiceを生成Manifestと更新経路から除去し、最大2件のTodo／習慣を静的RemoteViewsで描画・操作するWidgetへ切り替える
 - [x] v5実機失敗の表示位置とAndroid公式RemoteViews制約を根拠に、静的Widget原因分離仕様・受入基準・Collection復帰条件を記録する
+- [x] 静的Widget原因分離版を通常versionCode 16／本人用versionCode 6で署名ビルドし、APKの整合性・パッケージ・署名・Provider metadata・initialLayout・Collection service不在を独立検証する
+- [ ] 本人用v6 APKを実機へ上書き更新し、Widget追加、アプリ同期後の本文領域、静的2行のチェック／詳細／Today、ライト／ダーク、文字サイズ、リサイズを受入確認する
