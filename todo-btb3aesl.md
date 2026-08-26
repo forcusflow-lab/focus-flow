@@ -262,3 +262,4 @@
 - [x] 初期安全レイアウトからも`layout_weight`と`0dp`高さを除去し、追加時にランチャーがinflateする全レイアウトを同じ互換基準へ揃える
 - [x] Widget追加互換設計を含む通常版versionCode 15／本人用versionCode 5をGitHub Actionsで署名ビルドし、APKの整合性・パッケージ・署名・Provider metadata・初期layoutを独立検証する
 - [ ] 本人用v5 APKを実機へ上書き更新し、Widget追加、初期面から一覧への更新、ライト／ダーク可読性、文字サイズ、リサイズ、チェック／詳細／Today／遮断導線を再受入する
+- [ ] 本人用v5 APKのチャット添付ダウンロード失敗を解消し、端末で取得可能な別配布URLとAPKのファイル名・容量を確認して再案内する
