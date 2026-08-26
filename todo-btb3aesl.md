@@ -260,3 +260,5 @@
 - [x] Widget初回追加時は静的initial RemoteViewsだけを更新し、Collection更新はアプリ状態同期後へ遅延するよう分離する
 - [x] Collection Widget shellから`layout_weight`と`0dp`高さを除去し、ランチャー互換のFrameLayout固定ヘッダー構成へ変更する
 - [x] 初期安全レイアウトからも`layout_weight`と`0dp`高さを除去し、追加時にランチャーがinflateする全レイアウトを同じ互換基準へ揃える
+- [x] Widget追加互換設計を含む通常版versionCode 15／本人用versionCode 5をGitHub Actionsで署名ビルドし、APKの整合性・パッケージ・署名・Provider metadata・初期layoutを独立検証する
+- [ ] 本人用v5 APKを実機へ上書き更新し、Widget追加、初期面から一覧への更新、ライト／ダーク可読性、文字サイズ、リサイズ、チェック／詳細／Today／遮断導線を再受入する
