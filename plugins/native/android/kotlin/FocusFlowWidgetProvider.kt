@@ -24,7 +24,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   // layout isolation. This provider now uses only a static RemoteViews tree so
   // widget placement and later state synchronization share the same safe path.
   override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) { ids.forEach { safeUpdateWidget(context, manager, it) } }
-  override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: android.os.Bundle) { safeUpdateWidget(context, manager, id) }
+  override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: android.os.Bundle) { safeUpdateWidget(context, manager, id, options) }
 
   override fun onReceive(context: Context, intent: Intent) {
     val updated = when (intent.action) {
@@ -38,17 +38,17 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     super.onReceive(context, intent)
   }
 
-  private fun safeUpdateWidget(context: Context, manager: AppWidgetManager, id: Int) {
-    try { updateWidget(context, manager, id) } catch (_: Exception) { updateFallbackWidget(context, manager, id) }
+  private fun safeUpdateWidget(context: Context, manager: AppWidgetManager, id: Int, options: android.os.Bundle? = null) {
+    try { updateWidget(context, manager, id, options) } catch (_: Exception) { updateFallbackWidget(context, manager, id, options) }
   }
 
   // This layout is intentionally free of AdapterView, layout_weight and 0dp
   // sizing. It must remain safe for the launcher to inflate during add and
   // later refreshes, even before the app has synchronized any item state.
-  private fun updateInitialWidget(context: Context, manager: AppWidgetManager, id: Int, fallback: Boolean = false) {
+  private fun updateInitialWidget(context: Context, manager: AppWidgetManager, id: Int, fallback: Boolean = false, options: android.os.Bundle? = null) {
     val state = state(context)
     val english = state.optString("language", "ja") == "en"
-    val bucket = widgetBucket(manager, id)
+    val bucket = widgetBucket(manager, id, options)
     val views = RemoteViews(context.packageName, R.layout.focus_flow_widget_initial)
     bindTheme(views, state)
     bindHeader(views, state, english)
@@ -60,10 +60,10 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
 
   // Keep a placed widget valid and offer a route into Today on an unexpected
   // Provider-side failure. No collection or RemoteViewsService is involved.
-  private fun updateFallbackWidget(context: Context, manager: AppWidgetManager, id: Int) = updateInitialWidget(context, manager, id, true)
+  private fun updateFallbackWidget(context: Context, manager: AppWidgetManager, id: Int, options: android.os.Bundle? = null) = updateInitialWidget(context, manager, id, true, options)
 
-  private fun updateWidget(context: Context, manager: AppWidgetManager, id: Int) {
-    updateInitialWidget(context, manager, id)
+  private fun updateWidget(context: Context, manager: AppWidgetManager, id: Int, options: android.os.Bundle? = null) {
+    updateInitialWidget(context, manager, id, false, options)
   }
 
   private fun state(context: Context): JSONObject {
@@ -73,14 +73,17 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
 
   private data class WidgetBucket(val maxRows: Int, val showControls: Boolean, val compactHeader: Boolean)
 
-  private fun widgetBucket(manager: AppWidgetManager, id: Int): WidgetBucket {
-    val options = manager.getAppWidgetOptions(id)
-    val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 180))
-    val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 110))
+  private fun widgetBucket(manager: AppWidgetManager, id: Int, updatedOptions: android.os.Bundle? = null): WidgetBucket {
+    // The resize callback must use its new Bundle. MAX dimensions are the
+    // supported range, not the current size, and selecting them first made
+    // every launcher size render as the same large widget.
+    val options = updatedOptions ?: manager.getAppWidgetOptions(id)
+    val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 180))
+    val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 110))
     return when {
-      width < 200 || height < 150 -> WidgetBucket(1, false, true)
-      height < 250 -> WidgetBucket(2, true, false)
-      else -> WidgetBucket(4, true, false)
+      width < 190 || height < 155 -> WidgetBucket(1, false, true)
+      height < 270 -> WidgetBucket(2, false, false)
+      else -> WidgetBucket(3, false, false)
     }
   }
 
@@ -93,7 +96,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     // hosts render only a restricted hierarchy, and text must not fade with
     // the card surface.
     val divider = if (dark) Color.parseColor("#526B61") else Color.parseColor("#C8D9D1")
-    listOf(R.id.focus_flow_widget_static_divider_one, R.id.focus_flow_widget_static_divider_two, R.id.focus_flow_widget_static_divider_three).forEach { dividerId -> views.setTextViewText(dividerId, ""); views.setInt(dividerId, "setBackgroundColor", divider) }
+    listOf(R.id.focus_flow_widget_static_divider_one, R.id.focus_flow_widget_static_divider_two).forEach { dividerId -> views.setTextViewText(dividerId, ""); views.setInt(dividerId, "setBackgroundColor", divider) }
   }
 
   private fun paletteColor(palette: JSONObject?, key: String, fallback: String): Int = try { Color.parseColor(palette?.optString(key, fallback) ?: fallback) } catch (_: Exception) { Color.parseColor(fallback) }
@@ -133,13 +136,14 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     0 -> StaticRowIds(0, R.id.focus_flow_widget_static_row_one, R.id.focus_flow_widget_static_row_one_action, R.id.focus_flow_widget_static_row_one_check, R.id.focus_flow_widget_static_row_one_content, R.id.focus_flow_widget_static_row_one_title, R.id.focus_flow_widget_static_row_one_badge, R.id.focus_flow_widget_static_row_one_meta, R.id.focus_flow_widget_static_row_one_controls, R.id.focus_flow_widget_static_row_one_decrement, R.id.focus_flow_widget_static_row_one_progress, R.id.focus_flow_widget_static_row_one_increment, R.id.focus_flow_widget_static_row_one_timer)
     1 -> StaticRowIds(1, R.id.focus_flow_widget_static_row_two, R.id.focus_flow_widget_static_row_two_action, R.id.focus_flow_widget_static_row_two_check, R.id.focus_flow_widget_static_row_two_content, R.id.focus_flow_widget_static_row_two_title, R.id.focus_flow_widget_static_row_two_badge, R.id.focus_flow_widget_static_row_two_meta, R.id.focus_flow_widget_static_row_two_controls, R.id.focus_flow_widget_static_row_two_decrement, R.id.focus_flow_widget_static_row_two_progress, R.id.focus_flow_widget_static_row_two_increment, R.id.focus_flow_widget_static_row_two_timer)
     2 -> StaticRowIds(2, R.id.focus_flow_widget_static_row_three, R.id.focus_flow_widget_static_row_three_action, R.id.focus_flow_widget_static_row_three_check, R.id.focus_flow_widget_static_row_three_content, R.id.focus_flow_widget_static_row_three_title, R.id.focus_flow_widget_static_row_three_badge, R.id.focus_flow_widget_static_row_three_meta, R.id.focus_flow_widget_static_row_three_controls, R.id.focus_flow_widget_static_row_three_decrement, R.id.focus_flow_widget_static_row_three_progress, R.id.focus_flow_widget_static_row_three_increment, R.id.focus_flow_widget_static_row_three_timer)
-    else -> StaticRowIds(3, R.id.focus_flow_widget_static_row_four, R.id.focus_flow_widget_static_row_four_action, R.id.focus_flow_widget_static_row_four_check, R.id.focus_flow_widget_static_row_four_content, R.id.focus_flow_widget_static_row_four_title, R.id.focus_flow_widget_static_row_four_badge, R.id.focus_flow_widget_static_row_four_meta, R.id.focus_flow_widget_static_row_four_controls, R.id.focus_flow_widget_static_row_four_decrement, R.id.focus_flow_widget_static_row_four_progress, R.id.focus_flow_widget_static_row_four_increment, R.id.focus_flow_widget_static_row_four_timer)
+    else -> StaticRowIds(2, R.id.focus_flow_widget_static_row_three, R.id.focus_flow_widget_static_row_three_action, R.id.focus_flow_widget_static_row_three_check, R.id.focus_flow_widget_static_row_three_content, R.id.focus_flow_widget_static_row_three_title, R.id.focus_flow_widget_static_row_three_badge, R.id.focus_flow_widget_static_row_three_meta, R.id.focus_flow_widget_static_row_three_controls, R.id.focus_flow_widget_static_row_three_decrement, R.id.focus_flow_widget_static_row_three_progress, R.id.focus_flow_widget_static_row_three_increment, R.id.focus_flow_widget_static_row_three_timer)
   }
 
   private fun bindStaticRows(context: Context, views: RemoteViews, state: JSONObject, widgetId: Int, english: Boolean, bucket: WidgetBucket) {
     val all = state.optJSONArray("widgetItems") ?: JSONArray()
     val rows = uniqueStaticItems(all, bucket.maxRows)
     val palette = state.optJSONObject("widgetPalette")
+    val dark = palette?.optBoolean("isDark", false) ?: false
     val titleColor = paletteColor(palette, "text", "#13251F")
     val mutedColor = paletteColor(palette, "muted", "#4E655B")
     val primary = paletteColor(palette, "primary", "#1B6B62")
@@ -149,13 +153,13 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
     views.setViewVisibility(R.id.focus_flow_widget_empty, if (rows.isEmpty()) View.VISIBLE else View.GONE)
     if (rows.isEmpty()) views.setTextViewText(R.id.focus_flow_widget_empty, if (english) "Open Focus Flow to add today’s items" else "今日の項目はありません")
-    val dividers = listOf(R.id.focus_flow_widget_static_divider_one, R.id.focus_flow_widget_static_divider_two, R.id.focus_flow_widget_static_divider_three)
-    for (index in 0..3) {
+    val dividers = listOf(R.id.focus_flow_widget_static_divider_one, R.id.focus_flow_widget_static_divider_two)
+    for (index in 0..2) {
       val ids = staticRowIds(index)
       val item = rows.getOrNull(index)
       views.setViewVisibility(ids.row, if (item == null) View.GONE else View.VISIBLE)
       if (index < dividers.size) views.setViewVisibility(dividers[index], if (index < rows.size - 1) View.VISIBLE else View.GONE)
-      if (item != null) bindStaticRow(context, views, ids, item, widgetId, english, titleColor, mutedColor, primary, primarySoft, elevated, onPrimary, scale, bucket.showControls) else clearStaticRow(views, ids)
+      if (item != null) bindStaticRow(context, views, ids, item, widgetId, english, titleColor, mutedColor, primary, primarySoft, elevated, onPrimary, scale, bucket.showControls, dark) else clearStaticRow(views, ids)
     }
   }
 
@@ -186,7 +190,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setImageViewResource(ids.check, R.drawable.focus_flow_widget_check_empty)
   }
 
-  private fun bindStaticRow(context: Context, views: RemoteViews, ids: StaticRowIds, item: JSONObject, widgetId: Int, english: Boolean, titleColor: Int, mutedColor: Int, primary: Int, primarySoft: Int, elevated: Int, onPrimary: Int, scale: Float, showControls: Boolean) {
+  private fun bindStaticRow(context: Context, views: RemoteViews, ids: StaticRowIds, item: JSONObject, widgetId: Int, english: Boolean, titleColor: Int, mutedColor: Int, primary: Int, primarySoft: Int, elevated: Int, onPrimary: Int, scale: Float, showControls: Boolean, dark: Boolean) {
     val completed = item.optBoolean("completed", false)
     val canToggle = item.optBoolean("canToggle", false)
     val timedLocked = item.optBoolean("timedLocked", false)
@@ -198,7 +202,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setViewVisibility(ids.badge, if (badge.isBlank()) View.GONE else View.VISIBLE)
     views.setTextViewText(ids.badge, badge)
     views.setTextColor(ids.badge, primary)
-    views.setInt(ids.badge, "setBackgroundColor", primarySoft)
+    views.setInt(ids.badge, "setBackgroundResource", if (dark) R.drawable.focus_flow_widget_badge_dark else R.drawable.focus_flow_widget_badge_light)
     views.setTextViewTextSize(ids.badge, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
     val meta = item.optString("windowLabel", "")
     views.setViewVisibility(ids.meta, if (meta.isBlank()) View.GONE else View.VISIBLE)
@@ -206,10 +210,10 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setTextColor(ids.meta, mutedColor)
     views.setTextViewTextSize(ids.meta, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
     if (completed) {
-      views.setInt(ids.check, "setBackgroundResource", R.drawable.focus_flow_widget_checkbox_done)
+      views.setInt(ids.check, "setBackgroundResource", R.drawable.focus_flow_widget_check_circle_done)
       views.setImageViewResource(ids.check, R.drawable.focus_flow_widget_check_mark)
     } else {
-      views.setInt(ids.check, "setBackgroundResource", R.drawable.focus_flow_widget_checkbox)
+      views.setInt(ids.check, "setBackgroundResource", R.drawable.focus_flow_widget_check_circle)
       views.setImageViewResource(ids.check, if (timedLocked) R.drawable.focus_flow_widget_check_locked else R.drawable.focus_flow_widget_check_empty)
     }
     val itemId = item.optString("id")
@@ -243,7 +247,6 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val required = item.optBoolean("required", false)
     val hasWindow = item.optString("windowLabel", "").isNotBlank()
     return when {
-      required && hasWindow -> if (english) "MUST · TIME" else "必須 · 時間帯"
       required -> if (english) "MUST" else "必須"
       hasWindow -> if (english) "TIME" else "時間帯"
       else -> ""

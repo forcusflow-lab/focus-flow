@@ -43,7 +43,8 @@ describe("v12 時間帯必須・起動・Today UX", () => {
     expect(androidGate).toContain("windowLabelFor");
     expect(widgetProvider).toContain('optString("windowLabel", "")');
     expect(widgetProvider).toContain("compactBadge");
-    expect(widgetProvider).toContain('"必須 · 時間帯"');
+    expect(widgetProvider).toContain('required -> if (english) "MUST" else "必須"');
+    expect(widgetProvider).toContain('hasWindow -> if (english) "TIME" else "時間帯"');
   });
 
   it("Todayではチェックが画面遷移を起こさず、本文は一覧タブを経由せず直接詳細を開く", () => {

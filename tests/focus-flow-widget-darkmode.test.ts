@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 const read = (...segments: string[]) => fs.readFileSync(path.join(process.cwd(), ...segments), "utf8");
 
 describe("Focus Flow 高密度Widgetとダークモード", () => {
-  it("静的Widgetはアプリ文字サイズを本文と補足に同じ比率で反映し、必須表示で行高を増やさない", () => {
+  it("静的Widgetはアプリ文字サイズを本文と補足に同じ比率で反映し、必須タグを時間帯から分離する", () => {
     const source = read("plugins", "native", "android", "kotlin", "FocusFlowWidgetProvider.kt");
     const layout = read("plugins", "native", "android", "res", "layout", "focus_flow_widget_initial.xml");
 
@@ -16,8 +16,8 @@ describe("Focus Flow 高密度Widgetとダークモード", () => {
     expect(source).toContain('10f * scale');
     expect(source).toContain('View.GONE');
     expect(source).toContain('compactBadge');
-    expect(source).toContain('"MUST · TIME"');
-    expect(layout).toContain('android:layout_height="56dp"');
+    expect(source).toContain('required -> if (english) "MUST" else "必須"');
+    expect(layout).toContain('android:layout_height="48dp"');
     expect(layout).toContain('android:gravity="center_vertical"');
     expect(layout).toContain('android:maxLines="1"');
   });

@@ -22,7 +22,8 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(provider).toContain("focus_flow_widget_static_divider");
     expect(provider).toContain("focus_flow_widget_static_row_one");
     expect(provider).toContain("focus_flow_widget_static_row_two");
-    expect(provider).toContain("focus_flow_widget_static_row_four");
+    expect(provider).toContain("focus_flow_widget_static_row_three");
+    expect(provider).not.toContain("focus_flow_widget_static_row_four");
     expect(provider).toContain("ACTION_COMPLETE");
     expect(provider).toContain("ACTION_RESTORE");
     expect(provider).toContain("detailIntent");
@@ -74,12 +75,12 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_divider_one"');
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_one"');
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_two"');
-    expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_four"');
+    expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_three"');
+    expect(initialLayout).not.toContain('android:id="@+id/focus_flow_widget_static_row_four"');
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_one_check"');
-    expect(initialLayout).toContain('android:layout_height="56dp"');
-    expect(initialLayout).toContain('android:minHeight="48dp"');
+    expect(initialLayout).toContain('android:layout_height="48dp"');
     expect(initialLayout).toContain('android:layout_width="48dp"');
-    expect(initialLayout).toContain('android:layout_width="20dp"');
+    expect(initialLayout).toContain('android:layout_width="24dp"');
     expect(initialLayout).not.toContain("<View");
     expect(initialLayout).not.toContain("ListView");
     expect(initialLayout).not.toContain("android:layout_weight");

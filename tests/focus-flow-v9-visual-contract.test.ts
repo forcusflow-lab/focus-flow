@@ -22,7 +22,7 @@ describe("v9 実機視覚品質の静的契約", () => {
     const ui = source("components", "focus-flow", "ui.tsx");
     const habits = source("app", "(tabs)", "habits.tsx");
 
-    expect(ui).toContain("minWidth: 54");
+    expect(ui).toContain("minWidth: 68");
     expect(ui).toContain("flexShrink: 0");
     expect(habits).not.toContain("requiredSlot: { width: 38");
     expect(habits).toContain("label={t(\"必須\", \"Must-do\")}");
