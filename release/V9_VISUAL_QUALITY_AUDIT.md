@@ -23,7 +23,7 @@
 | A-02 | 全画面palette契約 | Notes/Insights/MoreとSettings共通surfaceが動的paletteを使用 | 合格（2 tests） |
 | A-03 | 全Vitest・型検査・Lint | 失敗0、警告0 | 合格：Vitest 22 files / 69 passed / 1 skipped、`pnpm check`、`pnpm lint` |
 | A-04 | 通常・本人用クリーンprebuild | package/versionCode、Provider、layout、10 drawableが生成先に存在 | 合格。通常`com.app.focusflow`/19、本人用`com.app.focusflow.personal`/9、各10 drawable、禁止階層・`setFloat`不在を確認 |
-| A-05 | 署名ビルド | 通常AAB 19・本人用APK 9の成果物署名・Manifest・資産解決を独立確認 | 未実施 |
+| A-05 | 署名ビルド | 通常AAB 19・本人用APK 9の成果物署名・Manifest・資産解決を独立確認 | 本人用APK 9は合格（run `33004087649`）。通常AAB 19は未実施 |
 
 ローカルの `:app:compileReleaseKotlin` は、依存関係評価中にサンドボックスの高メモリ警告が出たため安全のため停止した。これはコンパイル合格を意味しない。署名済みGitHub Actions成果物の検証を A-05 として別途必須とする。
 

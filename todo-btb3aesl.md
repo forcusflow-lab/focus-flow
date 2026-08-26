@@ -312,3 +312,7 @@
 - [x] v9で振り返り・その他・メモおよび設定ホーム・集中制限・開示モーダルの主要surfaceをpaletteへ移行し、全画面palette契約テストを追加する
 - [x] v9通常版19／本人用9のクリーンAndroid生成で、package・versionCode・専用scheme・Widget Provider・静的layout・10段階card drawable・禁止View/`setFloat`不在を確認する
 - [ ] v9の通常版19／本人用9をクリーン生成・署名ビルドで検証し、実機スクリーンショット品質ゲートの全ケースを受入するまでAPK配布を保留する
+- [x] GitHub Actionsで本人用Focus Flow v9（com.app.focusflow.personal、versionCode 9）の署名APKを生成し、独立検証後に実機受入用としてのみ保留する
+- [ ] 本人用v9署名APKでWidget・テーマ・必須ラベルを含む実機スクリーンショット品質ゲートを受入し、合格前はAPKを共有しない
+- [x] GitHub Actions run 32999982240が旧main由来の本人用versionCode 8 APKを生成した事実を記録し、最新v9チェックポイントをGitHub mainへ同期してversionCode 9成果物を再生成・検証する
+- [x] 本人用v9のWidget・テーマ・必須ラベル・遷移を実機スクリーンショットで判定する受入チェックシートを作成する
