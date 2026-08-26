@@ -27,3 +27,21 @@ Widget本文の色は、アプリのテーマ識別には追従するが、本�
 ## 4. レビュー結論
 
 今回の症状は、Widgetを「追加できる」ことを独立した受入基準にしていなかったこと、テーマ連携を「配色値が届く」ことだけで検査し「文字が読める」ことを検査していなかったことに起因する設計上の不足である。次の実装では、追加成功、初期レイアウト、本文コントラスト、Collection Widget更新、ライト／ダーク、文字サイズ、チェック・詳細遷移を一つの連続した品質ゲートとして扱う。
+
+## 5. v4実機再発による原因範囲の更新
+
+本人用versionCode 4でも、ランチャーの追加操作は「ウィジェットを追加できませんでした」となり、ホスト側の失敗表示がWidget内に重複して描画された。したがって、v14のProvider宣言・metadata・初期レイアウトの存在確認だけでは不十分であり、**Providerの`onUpdate`が追加トランザクション中にCollection RemoteViewsへ置換する経路**まで隔離しなければならないことが分かった。
+
+調査では、Collection shellと初期レイアウトに`layout_weight`と`0dp`高さが残っていた。これらは通常の画面レイアウトでは有効でも、ランチャーがinflateするRemoteViewsでは端末／ホームアプリ実装差の影響を受けやすい。さらに初回`onUpdate`は追加直後にCollection `ListView`と`RemoteViewsService`を要求していたため、ホスト側inflate・サービスbindの失敗はProvider内部のtry/catchでは救えない。
+
+## 6. v5登録互換設計
+
+| 層 | v4 | v5 |
+|---|---|---|
+| 初回追加 | `onUpdate`がただちにCollection Widgetへ更新する | `onUpdate`はListViewを含まない初期RemoteViewsだけを更新する |
+| 初期レイアウト | `layout_weight`と`0dp`高さを使用 | FrameLayoutと`match_parent`・固定マージンだけを使用 |
+| Collection shell | weightでヘッダーと一覧の残余高を算出 | FrameLayout固定ヘッダー＋マージン付きListViewへ変更 |
+| 通常更新 | 追加直後を含め常にCollection更新 | アプリ側`saveGateState()`が呼ぶ`refreshAll()`後にCollection更新する |
+| 失敗時 | Provider内例外時のみフォールバック | Collection更新失敗時は初期安全面へ戻し、Todayを開ける状態を保つ |
+
+この変更は、追加の成功を保証する主張ではなく、ランチャーが最も厳しい追加時にCollectionとweight依存のRemoteViewsを処理しないようにする互換設計である。versionCode 5の本人用APKで、追加操作そのものを最優先に実機再受入する。

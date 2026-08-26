@@ -14,7 +14,12 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 class FocusFlowWidgetProvider : AppWidgetProvider() {
-  override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) { ids.forEach { safeUpdateWidget(context, manager, it) } }
+  // The launcher calls onUpdate while it is binding a brand-new widget. Do not
+  // replace the static initial RemoteViews with a collection in that critical
+  // transaction: some hosts abort the add when they cannot yet bind the
+  // RemoteViewsService or inflate a collection. The app state sync performs
+  // the first collection update later through refreshAll().
+  override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) { ids.forEach { updateInitialWidget(context, manager, it) } }
   override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: android.os.Bundle) { safeUpdateWidget(context, manager, id) }
 
   override fun onReceive(context: Context, intent: Intent) {
@@ -32,19 +37,22 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     try { updateWidget(context, manager, id) } catch (_: Exception) { updateFallbackWidget(context, manager, id) }
   }
 
-  // A collection adapter can be unavailable while a launcher is adding the
-  // widget. This minimal RemoteViews update keeps the widget addable and gives
-  // the user a tappable route into Today rather than failing the add operation.
-  private fun updateFallbackWidget(context: Context, manager: AppWidgetManager, id: Int) {
+  // This layout is intentionally free of AdapterView, layout_weight and 0dp
+  // sizing. It must remain safe for the launcher to inflate during add.
+  private fun updateInitialWidget(context: Context, manager: AppWidgetManager, id: Int, fallback: Boolean = false) {
     val state = state(context)
     val english = state.optString("language", "ja") == "en"
     val views = RemoteViews(context.packageName, R.layout.focus_flow_widget_initial)
     bindTheme(views, state)
     bindHeader(views, state, english)
-    views.setTextViewText(R.id.focus_flow_widget_empty, if (english) "Open Focus Flow to refresh your list" else "Focus Flowを開くと項目を更新します")
+    views.setTextViewText(R.id.focus_flow_widget_empty, if (fallback) if (english) "Open Focus Flow to refresh your list" else "Focus Flowを開くと項目を更新します" else if (english) "Open Focus Flow to show today’s list" else "Focus Flowを開くと今日の項目を表示します")
     views.setOnClickPendingIntent(R.id.focus_flow_widget_root, todayIntent(context, id))
     manager.updateAppWidget(id, views)
   }
+
+  // A collection adapter can fail after placement on a launcher. Keep the
+  // placed widget valid and offer a route into Today instead of an error host.
+  private fun updateFallbackWidget(context: Context, manager: AppWidgetManager, id: Int) = updateInitialWidget(context, manager, id, true)
 
   private fun updateWidget(context: Context, manager: AppWidgetManager, id: Int) {
     val state = state(context)

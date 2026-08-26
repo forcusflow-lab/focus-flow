@@ -89,7 +89,9 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(source).toContain("PendingIntent.FLAG_MUTABLE");
     expect(source).toContain("widgetPalette");
     expect(source).toContain("forEach { id -> provider.safeUpdateWidget(context, manager, id) }");
+    expect(source).toContain("override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) { ids.forEach { updateInitialWidget(context, manager, it) } }");
     expect(source).toContain("private fun updateFallbackWidget");
+    expect(source).toContain("private fun updateInitialWidget");
     expect(source).toContain("R.layout.focus_flow_widget_initial");
     expect(source).toContain('Color.parseColor("#13251F")');
     expect(source).toContain('Color.parseColor("#F4FBF7")');
@@ -146,8 +148,11 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(item).toContain('android:gravity="center_vertical"');
     expect(item).toContain('android:maxLines="1"');
     expect(item).toContain('android:layout_gravity="bottom"');
-    expect(shell).toContain('android:minHeight="36dp"');
+    expect(shell).toContain('android:id="@+id/focus_flow_widget_header"');
+    expect(shell).toContain('android:layout_height="36dp"');
     expect(shell).toContain('android:dividerHeight="0dp"');
+    expect(shell).not.toContain("android:layout_weight");
+    expect(shell).not.toContain('android:layout_height="0dp"');
     expect(metadata).toContain('android:minHeight="132dp"');
     expect(metadata).toContain('android:targetCellHeight="2"');
   });
@@ -163,6 +168,8 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_status"');
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_empty"');
     expect(initialLayout).not.toContain("ListView");
+    expect(initialLayout).not.toContain("android:layout_weight");
+    expect(initialLayout).not.toContain('android:layout_height="0dp"');
   });
 
   it("テンプレートと生成済みサービスが同じ継続前面監視・遮断オーバーレイ・実行診断を持つ", () => {

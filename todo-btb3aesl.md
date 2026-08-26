@@ -256,3 +256,7 @@
 - [ ] Todo・習慣・Today・メモ・振り返り・その他・設定・通知・Plus・法務・サポート・起動・集中制限・Widget・戻る・Deep Link・空・読み込み・エラーの仕様書・設計書を再棚卸しし、必要な追加・削除・変更を根拠とともに反復実装・レビュー・テストする
 - [x] v14の通常版AABと本人用制限なしAPKをGitHub成果物から取得し、ZIP整合性、パッケージ／versionCode、署名、Widget Provider metadata、初期安全レイアウトを独立検証する
 - [ ] 本人用v4 APKを実機へ更新し、Widget追加、ライト／ダーク可読性、文字サイズ、リサイズ、チェック／詳細／Today／遮断導線を受入確認する
+- [ ] 本人用v4実機で再現したWidget追加失敗（ランチャーの「ウィジェットを追加できませんでした」およびWidget内の重複エラー表示）を、追加時のProvider・initialLayout・onUpdate・RemoteViews例外経路から再診断し、再発しない登録設計へ修正する
+- [x] Widget初回追加時は静的initial RemoteViewsだけを更新し、Collection更新はアプリ状態同期後へ遅延するよう分離する
+- [x] Collection Widget shellから`layout_weight`と`0dp`高さを除去し、ランチャー互換のFrameLayout固定ヘッダー構成へ変更する
+- [x] 初期安全レイアウトからも`layout_weight`と`0dp`高さを除去し、追加時にランチャーがinflateする全レイアウトを同じ互換基準へ揃える
