@@ -71,7 +71,12 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
 
   private fun bindTheme(views: RemoteViews, state: JSONObject) {
     val palette = state.optJSONObject("widgetPalette")
-    views.setInt(R.id.focus_flow_widget_root, "setBackgroundColor", withOpacity(paletteColor(palette, "background", "#F7F8F5"), state.optInt("widgetOpacity", 86).coerceIn(0, 100)))
+    val dark = palette?.optBoolean("isDark", false) ?: false
+    views.setInt(R.id.focus_flow_widget_card_background, "setBackgroundResource", if (dark) R.drawable.focus_flow_widget_card_dark else R.drawable.focus_flow_widget_card_light)
+    // Transparency applies to the card surface only. Applying alpha to the
+    // parent would fade text and controls along with the background.
+    views.setFloat(R.id.focus_flow_widget_card_background, "setAlpha", state.optInt("widgetOpacity", 86).coerceIn(0, 100) / 100f)
+    views.setInt(R.id.focus_flow_widget_static_divider, "setBackgroundColor", if (dark) Color.parseColor("#355047") else Color.parseColor("#D8E3DC"))
   }
 
   private fun bindHeader(views: RemoteViews, state: JSONObject, english: Boolean) {
@@ -87,7 +92,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setTextColor(R.id.focus_flow_widget_status, detail)
     views.setTextColor(R.id.focus_flow_widget_empty, detail)
     val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
-    views.setTextViewTextSize(R.id.focus_flow_widget_title, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
+    views.setTextViewTextSize(R.id.focus_flow_widget_title, android.util.TypedValue.COMPLEX_UNIT_DIP, 12f * scale)
     views.setTextViewTextSize(R.id.focus_flow_widget_status, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
     views.setTextViewTextSize(R.id.focus_flow_widget_empty, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
     views.setTextViewText(R.id.focus_flow_widget_title, if (english) "TODAY" else "今日の項目")
@@ -112,6 +117,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
     views.setViewVisibility(R.id.focus_flow_widget_empty, if (rows.isEmpty()) View.VISIBLE else View.GONE)
     if (rows.isEmpty()) views.setTextViewText(R.id.focus_flow_widget_empty, if (english) "Open Focus Flow to add today’s items" else "今日の項目はありません")
+    views.setViewVisibility(R.id.focus_flow_widget_static_divider, if (rows.size > 1) View.VISIBLE else View.GONE)
     for (index in 0..1) {
       val ids = staticRowIds(index)
       val item = rows.getOrNull(index)
@@ -148,11 +154,10 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val canToggle = item.optBoolean("canToggle", false)
     val timedLocked = item.optBoolean("timedLocked", false)
     val title = item.optString("title")
-    val requiredLabel = if (english) "MUST" else "必須"
-    val badge = listOfNotNull(if (item.optBoolean("required", false)) requiredLabel else null, item.optString("windowLabel", "").ifBlank { null }).joinToString(" · ")
+    val badge = compactBadge(item, english)
     views.setTextViewText(ids.title, if (completed) struck(title) else title)
     views.setTextColor(ids.title, if (completed) mutedColor else titleColor)
-    views.setTextViewTextSize(ids.title, android.util.TypedValue.COMPLEX_UNIT_DIP, 12f * scale)
+    views.setTextViewTextSize(ids.title, android.util.TypedValue.COMPLEX_UNIT_DIP, 13f * scale)
     views.setViewVisibility(ids.badge, if (badge.isBlank()) View.GONE else View.VISIBLE)
     views.setTextViewText(ids.badge, badge)
     views.setTextColor(ids.badge, mutedColor)
@@ -170,6 +175,17 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setOnClickPendingIntent(ids.content, detailIntent(context, widgetId, ids.position, itemId, kind))
     val action = if (completed) ACTION_RESTORE else ACTION_COMPLETE
     views.setOnClickPendingIntent(ids.action, if (canToggle) actionIntent(context, widgetId, ids.position, action, itemId, kind) else todayIntent(context, widgetId + 20 + ids.position))
+  }
+
+  private fun compactBadge(item: JSONObject, english: Boolean): String {
+    val required = item.optBoolean("required", false)
+    val hasWindow = item.optString("windowLabel", "").isNotBlank()
+    return when {
+      required && hasWindow -> if (english) "MUST · TIME" else "必須 · 時間帯"
+      required -> if (english) "MUST" else "必須"
+      hasWindow -> if (english) "TIME" else "時間帯"
+      else -> ""
+    }
   }
 
   private fun struck(value: String): CharSequence = SpannableString(value).apply { setSpan(StrikethroughSpan(), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE); setSpan(StyleSpan(Typeface.BOLD), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
@@ -211,8 +227,6 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   }
 
   private fun matchingItems(items: JSONArray, targetId: String, kind: String): List<JSONObject> = (0 until items.length()).mapNotNull { items.optJSONObject(it) }.filter { it.optString("id") == targetId && it.optString("kind") == kind }
-  private fun paletteColor(palette: JSONObject?, key: String, fallback: String): Int = try { Color.parseColor(palette?.optString(key, fallback) ?: fallback) } catch (_: Exception) { Color.parseColor(fallback) }
-  private fun withOpacity(color: Int, opacity: Int): Int = Color.argb((opacity * 2.55f).toInt(), Color.red(color), Color.green(color), Color.blue(color))
 
   private fun updateRequiredState(state: JSONObject, targetId: String, kind: String) {
     state.put("pendingCount", (state.optInt("pendingCount") - 1).coerceAtLeast(0))

@@ -51,7 +51,7 @@ export function IconButton({ icon, label, onPress, variant = "plain" }: { icon: 
       activeOpacity={0.72}
       style={[styles.iconButton, { backgroundColor: variant === "filled" ? palette.primary : palette.surface, borderColor: palette.border }]}
     >
-      <MaterialIcons name={icon} size={22} color={variant === "filled" ? COLORS.white : palette.primary} />
+      <MaterialIcons name={icon} size={22} color={variant === "filled" ? (palette.isDark ? palette.background : COLORS.white) : palette.primary} />
     </TouchableOpacity>
   );
 }
@@ -76,7 +76,7 @@ export function EmptyState({ icon, title, description, actionLabel, onAction }: 
       <ScaledText style={[styles.emptyTitle, { color: palette.text }]}>{title}</ScaledText>
       <ScaledText style={[styles.emptyDescription, { color: palette.muted }]}>{description}</ScaledText>
       <TouchableOpacity accessibilityRole="button" onPress={onAction} activeOpacity={0.8} style={[styles.emptyAction, { backgroundColor: palette.primary }]}>
-        <ScaledText style={styles.emptyActionText}>{actionLabel}</ScaledText>
+        <ScaledText style={[styles.emptyActionText, { color: palette.isDark ? palette.background : COLORS.white }]}>{actionLabel}</ScaledText>
       </TouchableOpacity>
     </View>
   );
@@ -105,16 +105,16 @@ const styles = StyleSheet.create({
   headingCopy: { flexShrink: 1 },
   eyebrow: { color: COLORS.forest, fontSize: 13, fontWeight: "700", letterSpacing: 0.5, marginBottom: 3 },
   headingTitle: { color: COLORS.text, fontSize: 26, lineHeight: 31, fontWeight: "800", letterSpacing: -0.6 },
-  iconButton: { width: 42, height: 42, alignItems: "center", justifyContent: "center", borderRadius: 14, backgroundColor: "rgba(255,255,255,0.74)", borderWidth: 1, borderColor: "#DCE5F3" },
+  iconButton: { width: 42, height: 42, alignItems: "center", justifyContent: "center", borderRadius: 14, borderWidth: 1 },
   iconButtonFilled: { backgroundColor: COLORS.forest },
   loading: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
   loadingText: { color: COLORS.muted, fontSize: 14 },
-  empty: { alignItems: "center", justifyContent: "center", paddingHorizontal: 28, paddingVertical: 28, backgroundColor: "rgba(255,255,255,0.72)", borderColor: COLORS.border, borderWidth: 1, borderRadius: 20, marginTop: 8 },
-  emptyIcon: { width: 50, height: 50, borderRadius: 17, backgroundColor: "#E2F0EF", alignItems: "center", justifyContent: "center", marginBottom: 12 },
+  empty: { alignItems: "center", justifyContent: "center", paddingHorizontal: 28, paddingVertical: 28, borderWidth: 1, borderRadius: 20, marginTop: 8 },
+  emptyIcon: { width: 50, height: 50, borderRadius: 17, alignItems: "center", justifyContent: "center", marginBottom: 12 },
   emptyTitle: { color: COLORS.text, fontSize: 17, lineHeight: 24, fontWeight: "800", textAlign: "center" },
   emptyDescription: { color: COLORS.muted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 7 },
-  emptyAction: { minHeight: 44, justifyContent: "center", paddingHorizontal: 18, borderRadius: 22, backgroundColor: COLORS.forest, marginTop: 18 },
-  emptyActionText: { color: COLORS.white, fontSize: 14, fontWeight: "800" },
+  emptyAction: { minHeight: 44, justifyContent: "center", paddingHorizontal: 18, borderRadius: 22, marginTop: 18 },
+  emptyActionText: { fontSize: 14, fontWeight: "800" },
   pill: { minHeight: 26, paddingHorizontal: 9, justifyContent: "center", borderRadius: 13, alignSelf: "flex-start" },
   pillText: { fontSize: 12, lineHeight: 16, fontWeight: "700" },
 });

@@ -280,3 +280,17 @@
 - [x] 本人用v7署名APKをGitHub Actionsで生成し、ZIP整合性・package・versionCode・署名・Provider metadata・20dp静的layout・Collection service不在を独立検証する
 - [x] 本人用v7 APKを実機へ上書き更新し、Todo 1件／2件の表示、上段・下段の完了／復元、詳細／Today導線、20dpチェック、ライト／ダーク、文字サイズ、リサイズを受入確認する（利用者報告：動作は完璧）
 - [ ] 本人用v7の実機合格を根拠に、通常版versionCode 17の署名AABを生成・独立検証し、Play内部テストへのアップロード・公開前に利用者の明示確認を得る
+- [ ] 実機で再確認されたWidgetの行レイアウト崩れ（補足文字切れ、過大な余白、情報階層の不明瞭さ、カードの可読性低下）を、参考デザインに沿う高密度一覧カード仕様へ再設計し、全サイズで受入する
+- [ ] アプリ本体とWidgetに残るライト／ダークの文字・面・境界・完了・必須・無効状態の低コントラストとテーマ反映漏れを、共通テーマ契約と画面別・状態別テストで再監査・修正する
+- [ ] WidgetおよびToday・Todo・習慣・メモ・振り返り・その他・設定・Plus・法務・サポート・起動・遮断・空・読み込み・エラーについて、デザイン案、レビュー、実装、テスト計画、静的・ネイティブ・実機テスト、再レビューを重大指摘がなくなるまで反復する
+- [x] 参考デザインと公式Material／Android Widget資料を根拠に、高密度一覧カード、20dp視覚チェック、inset divider、ライト／ダークテーマ契約、反復品質ゲートをv18仕様へ記録する
+- [x] 現行Widgetの全高濃色面・補足切れ・区切り不足・palette background流用と、共通UI／主要画面の固定ライト色を設計レビューし、外側透明・内側連続一覧カードと画面別テーマ監査を採用する
+- [x] v18のWidgetレイアウト、テーマ、共通UI、主要画面、Android生成、実機受入を対象とする反復テスト計画と出荷判定を確定する
+- [x] Widgetを外側透明・内側連続一覧カードへ変更し、32dpヘッダー、48dp行、inset divider、短い補足、ライト／ダーク別surfaceを実装する
+- [x] 共通UIのIconButtonとEmptyStateから固定ライトsurfaceを除去し、theme paletteに基づく面・境界・primary上の文字色へ移行する
+- [x] v18の外側透明・内側一覧カード、短い補足、inset divider、明示light／dark surface、共通UIpalette化を静的回帰テストへ追加する
+- [x] Widget透過率がカード全体のalphaを下げて文字・チェックの可読性まで落とす設計を廃止し、背景Viewだけを透過する二層構造へ変更する
+- [x] v18の通常版versionCode 18／本人用versionCode 8へ配布分離テストを更新する
+- [x] 起動画面を固定濃色からdisplaySettingsのpaletteへ移行し、ライト／ダークでStatusBar・面・文字・装飾が同期するよう修正する
+- [x] 固定色監査を画面・部品別に記録し、Settings／Today／HabitsをP0、Notes／Insights／More／formsをP1、device setupをP2として反復移行対象を明確化する
+- [ ] Settings、Today、HabitsのP0画面をpalette tokenへ移行し、light／darkのカード・入力・選択・必須・完了・空・モーダルを静的・実機で受入する

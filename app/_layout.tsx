@@ -21,7 +21,7 @@ import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { initializeReminders } from "@/lib/focus-flow/reminders";
 import { FocusFlowProvider, useFocusFlow } from "@/lib/focus-flow/provider";
-import { resolveAppearance } from "@/lib/focus-flow/app-themes";
+import { getAppPalette, resolveAppearance } from "@/lib/focus-flow/app-themes";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
@@ -36,7 +36,9 @@ if (Platform.OS !== "web") {
 }
 
 function FocusFlowLaunchShell() {
-  const { isReady } = useFocusFlow();
+  const { isReady, displaySettings } = useFocusFlow();
+  const systemScheme = useColorScheme() === "dark" ? "dark" : "light";
+  const palette = getAppPalette(displaySettings, systemScheme);
   const opacity = useRef(new Animated.Value(1)).current;
   const [visible, setVisible] = useState(true);
 
@@ -57,8 +59,8 @@ function FocusFlowLaunchShell() {
       <Stack.Screen name="terms" />
       <Stack.Screen name="oauth/callback" />
     </Stack>
-    <StatusBar style={visible ? "light" : "auto"} />
-    {visible ? <Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[launchStyles.overlay, { opacity }]}><View style={launchStyles.haloOne} /><View style={launchStyles.haloTwo} /><View style={launchStyles.content}><View style={launchStyles.mark}><View style={launchStyles.markArc} /><View style={launchStyles.markCore} /></View><Text style={launchStyles.wordmark}>Focus Flow</Text><Text style={launchStyles.tagline}>今日を、ひとつずつ。</Text><View style={launchStyles.rule} /></View><Text style={launchStyles.footer}>PLAN · FOCUS · FINISH</Text></Animated.View> : null}
+    <StatusBar style={visible ? (palette.isDark ? "light" : "dark") : "auto"} />
+    {visible ? <Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[launchStyles.overlay, { opacity, backgroundColor: palette.background }]}><View style={[launchStyles.haloOne, { backgroundColor: palette.elevated }]} /><View style={[launchStyles.haloTwo, { borderColor: palette.primary }]} /><View style={launchStyles.content}><View style={launchStyles.mark}><View style={[launchStyles.markArc, { borderColor: palette.primary }]} /><View style={[launchStyles.markCore, { backgroundColor: palette.primarySoft, shadowColor: palette.primary }]} /></View><Text style={[launchStyles.wordmark, { color: palette.text }]}>Focus Flow</Text><Text style={[launchStyles.tagline, { color: palette.muted }]}>今日を、ひとつずつ。</Text><View style={[launchStyles.rule, { backgroundColor: palette.primary }]} /></View><Text style={[launchStyles.footer, { color: palette.muted }]}>PLAN · FOCUS · FINISH</Text></Animated.View> : null}
   </View>;
 }
 
@@ -163,15 +165,15 @@ export default function RootLayout() {
 
 const launchStyles = StyleSheet.create({
   root: { flex: 1 },
-  overlay: { ...StyleSheet.absoluteFillObject, overflow: "hidden", alignItems: "center", justifyContent: "center", backgroundColor: "#163E35" },
-  haloOne: { position: "absolute", width: 460, height: 460, borderRadius: 230, backgroundColor: "#215A4D", opacity: 0.48, top: -150, right: -160 },
-  haloTwo: { position: "absolute", width: 360, height: 360, borderRadius: 180, borderWidth: 1, borderColor: "#78B5A4", opacity: 0.32, bottom: -155, left: -125 },
+  overlay: { ...StyleSheet.absoluteFillObject, overflow: "hidden", alignItems: "center", justifyContent: "center" },
+  haloOne: { position: "absolute", width: 460, height: 460, borderRadius: 230, opacity: 0.48, top: -150, right: -160 },
+  haloTwo: { position: "absolute", width: 360, height: 360, borderRadius: 180, borderWidth: 1, opacity: 0.32, bottom: -155, left: -125 },
   content: { alignItems: "center", transform: [{ translateY: -14 }] },
   mark: { width: 82, height: 82, alignItems: "center", justifyContent: "center", marginBottom: 20 },
-  markArc: { position: "absolute", width: 70, height: 70, borderRadius: 35, borderWidth: 2, borderColor: "#B7E4D7", borderTopColor: "transparent", transform: [{ rotate: "-34deg" }] },
-  markCore: { width: 30, height: 30, borderRadius: 15, backgroundColor: "#D9F1E9", shadowColor: "#D9F1E9", shadowOpacity: 0.35, shadowRadius: 18, elevation: 2 },
-  wordmark: { color: "#F6FBF8", fontSize: 31, lineHeight: 39, fontWeight: "700", letterSpacing: -0.8 },
-  tagline: { color: "#B8DCD1", fontSize: 14, lineHeight: 21, fontWeight: "600", letterSpacing: 1.4, marginTop: 8 },
-  rule: { width: 34, height: 2, borderRadius: 1, backgroundColor: "#7FC2AE", marginTop: 24 },
-  footer: { position: "absolute", bottom: 62, color: "#9FCABD", fontSize: 10, fontWeight: "700", letterSpacing: 2.2 },
+  markArc: { position: "absolute", width: 70, height: 70, borderRadius: 35, borderWidth: 2, borderTopColor: "transparent", transform: [{ rotate: "-34deg" }] },
+  markCore: { width: 30, height: 30, borderRadius: 15, shadowOpacity: 0.35, shadowRadius: 18, elevation: 2 },
+  wordmark: { fontSize: 31, lineHeight: 39, fontWeight: "700", letterSpacing: -0.8 },
+  tagline: { fontSize: 14, lineHeight: 21, fontWeight: "600", letterSpacing: 1.4, marginTop: 8 },
+  rule: { width: 34, height: 2, borderRadius: 1, marginTop: 24 },
+  footer: { position: "absolute", bottom: 62, fontSize: 10, fontWeight: "700", letterSpacing: 2.2 },
 });

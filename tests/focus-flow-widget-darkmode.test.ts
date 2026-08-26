@@ -11,10 +11,12 @@ describe("Focus Flow 高密度Widgetとダークモード", () => {
     const layout = read("plugins", "native", "android", "res", "layout", "focus_flow_widget_initial.xml");
 
     expect(source).toContain('state.optString("widgetTextScale", "standard")');
+    expect(source).toContain('13f * scale');
     expect(source).toContain('12f * scale');
     expect(source).toContain('10f * scale');
     expect(source).toContain('View.GONE');
-    expect(source).toContain('joinToString(" · ")');
+    expect(source).toContain('compactBadge');
+    expect(source).toContain('"MUST · TIME"');
     expect(layout).toContain('android:layout_height="48dp"');
     expect(layout).toContain('android:gravity="center_vertical"');
     expect(layout).toContain('android:maxLines="1"');
@@ -29,6 +31,12 @@ describe("Focus Flow 高密度Widgetとダークモード", () => {
     expect(provider).toContain('Color.parseColor("#B7CCC2")');
     expect(provider).not.toContain('paletteColor(palette, "text"');
     expect(provider).not.toContain('paletteColor(palette, "muted"');
+    expect(provider).toContain('R.drawable.focus_flow_widget_card_light');
+    expect(provider).toContain('R.drawable.focus_flow_widget_card_dark');
+    expect(provider).toContain('R.id.focus_flow_widget_card_background');
+    expect(provider).not.toContain('setFloat(R.id.focus_flow_widget_card, "setAlpha"');
+    expect(provider).toContain('Color.parseColor("#D8E3DC")');
+    expect(provider).toContain('Color.parseColor("#355047")');
   });
 
   it("外観設定をアプリ全体のテーマへ橋渡しし、共通テキストが意味色を動的パレットへ解決する", () => {
@@ -38,6 +46,9 @@ describe("Focus Flow 高密度Widgetとダークモード", () => {
     expect(rootLayout).toContain("FocusFlowThemeBridge");
     expect(rootLayout).toContain("resolveAppearance(displaySettings, systemScheme)");
     expect(rootLayout).toContain("setColorScheme(resolved)");
+    expect(rootLayout).toContain("getAppPalette(displaySettings, systemScheme)");
+    expect(rootLayout).toContain('backgroundColor: palette.background');
+    expect(rootLayout).toContain('palette.isDark ? "light" : "dark"');
     expect(text).toContain("semanticTextColor");
     expect(text).toContain("getAppPalette(displaySettings, systemScheme)");
     expect(text).toContain("palette.primary");
@@ -61,5 +72,15 @@ describe("Focus Flow 高密度Widgetとダークモード", () => {
       expect(source.includes("palette.surface") || source.includes("palette.primarySoft")).toBe(true);
       expect(source).toContain("palette.border");
     });
+  });
+
+  it("共通UIの空状態とアイコン操作は固定ライトsurfaceを持ち込まず、paletteで面・境界・文字色を決める", () => {
+    const ui = read("components", "focus-flow", "ui.tsx");
+
+    expect(ui).toContain("backgroundColor: variant === \"filled\" ? palette.primary : palette.surface");
+    expect(ui).toContain("backgroundColor: palette.surface, borderColor: palette.border");
+    expect(ui).toContain("backgroundColor: palette.primarySoft");
+    expect(ui).not.toContain('backgroundColor: "rgba(255,255,255,0.74)"');
+    expect(ui).not.toContain('backgroundColor: "rgba(255,255,255,0.72)"');
   });
 });

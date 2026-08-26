@@ -15,6 +15,10 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(provider).toContain("StaticRowIds");
     expect(provider).toContain("uniqueStaticItems");
     expect(provider).toContain("matches.size != 1");
+    expect(provider).toContain("compactBadge");
+    expect(provider).toContain("focus_flow_widget_card_light");
+    expect(provider).toContain("focus_flow_widget_card_dark");
+    expect(provider).toContain("focus_flow_widget_static_divider");
     expect(provider).toContain("focus_flow_widget_static_row_one");
     expect(provider).toContain("focus_flow_widget_static_row_two");
     expect(provider).toContain("ACTION_COMPLETE");
@@ -39,6 +43,8 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
 
     expect(plugin).toContain("focus_flow_widget_initial.xml");
     expect(plugin).toContain("focus_flow_widget_initial_info.xml");
+    expect(plugin).toContain("focus_flow_widget_card_light.xml");
+    expect(plugin).toContain("focus_flow_widget_card_dark.xml");
     expect(plugin).toContain("FocusFlowWidgetProvider");
     expect(plugin).toContain('application.service = (application.service || []).filter');
     expect(plugin).not.toContain('"FocusFlowWidgetItemsService.kt"');
@@ -55,6 +61,9 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(initialMetadata).toContain('android:widgetCategory="home_screen"');
     expect(initialLayout).toContain("<FrameLayout");
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_root"');
+    expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_card"');
+    expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_card_background"');
+    expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_divider"');
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_one"');
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_two"');
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_one_check"');
@@ -64,6 +73,7 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(initialLayout).not.toContain("ListView");
     expect(initialLayout).not.toContain("android:layout_weight");
     expect(initialLayout).not.toContain('android:layout_height="0dp"');
+    expect(initialLayout).not.toContain('android:background=');
   });
 
   it("テンプレートと生成済みサービスが同じ継続前面監視・遮断オーバーレイ・実行診断を持つ", () => {
