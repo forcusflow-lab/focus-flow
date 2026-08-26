@@ -4,10 +4,10 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("Google Play向けAndroidバージョンコード", () => {
-  it("既に内部テストへ配布済みのコード20を再利用せず、v11の通常版21と本人用11を設定する", () => {
+  it("既存コードを再利用せず、v12の通常版22と本人用12を設定する", () => {
     const configPath = path.join(process.cwd(), "app.config.ts");
     const configSource = fs.readFileSync(configPath, "utf8");
 
-    expect(configSource).toContain("versionCode: isPersonalUnlimitedBuild ? 11 : 21");
+    expect(configSource).toContain("versionCode: isPersonalUnlimitedBuild ? 12 : 22");
   });
 });

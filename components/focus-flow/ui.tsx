@@ -1,6 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ReactNode } from "react";
-import { ActivityIndicator, Platform, StyleSheet, TouchableOpacity, useColorScheme, View } from "react-native";
+import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, useColorScheme, View } from "react-native";
 import { ScaledText } from "./scaled-text";
 import { getAppPalette } from "@/lib/focus-flow/app-themes";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
@@ -83,11 +83,12 @@ export function EmptyState({ icon, title, description, actionLabel, onAction }: 
 }
 
 export function Pill({ label, color = COLORS.forest, muted = false }: { label: string; color?: string; muted?: boolean }) {
-  const palette = useFocusPalette();
+  const palette = useFocusPalette(); const { displaySettings } = useFocusFlow();
   const resolvedColor = color === COLORS.forest ? palette.primary : color;
+  const factor = displaySettings.fontScale === "compact" ? 0.92 : displaySettings.fontScale === "large" ? 1.14 : 1;
   return (
     <View style={[styles.pill, { backgroundColor: muted ? palette.elevated : `${resolvedColor}24` }]}>
-      <ScaledText numberOfLines={1} ellipsizeMode="clip" style={[styles.pillText, { color: muted ? palette.muted : resolvedColor }]}>{label}</ScaledText>
+      <Text allowFontScaling={false} style={[styles.pillText, { color: muted ? palette.muted : resolvedColor, fontSize: 13 * factor, lineHeight: 18 * factor }]}>{label}</Text>
     </View>
   );
 }
@@ -115,6 +116,6 @@ const styles = StyleSheet.create({
   emptyDescription: { color: COLORS.muted, fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 7 },
   emptyAction: { minHeight: 44, justifyContent: "center", paddingHorizontal: 18, borderRadius: 22, marginTop: 18 },
   emptyActionText: { fontSize: 14, fontWeight: "800" },
-  pill: { minWidth: 68, minHeight: 30, paddingHorizontal: 14, justifyContent: "center", alignItems: "center", borderRadius: 15, alignSelf: "flex-start", flexShrink: 0, overflow: "visible" },
-  pillText: { fontSize: 13, lineHeight: 18, fontWeight: "800", flexShrink: 0, includeFontPadding: false },
+  pill: { minWidth: 76, minHeight: 32, paddingHorizontal: 16, justifyContent: "center", alignItems: "center", borderRadius: 16, alignSelf: "flex-start", flexGrow: 0, flexShrink: 0 },
+  pillText: { minWidth: 38, fontSize: 13, lineHeight: 18, fontWeight: "800", textAlign: "center", includeFontPadding: false },
 });

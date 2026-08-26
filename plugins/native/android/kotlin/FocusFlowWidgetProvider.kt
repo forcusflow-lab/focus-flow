@@ -14,6 +14,8 @@ import android.text.Spanned
 import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.graphics.Typeface
+import android.os.Build
+import android.util.SizeF
 import android.view.View
 import android.widget.RemoteViews
 import org.json.JSONArray
@@ -48,14 +50,25 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   private fun updateInitialWidget(context: Context, manager: AppWidgetManager, id: Int, fallback: Boolean = false, options: android.os.Bundle? = null) {
     val state = state(context)
     val english = state.optString("language", "ja") == "en"
-    val bucket = widgetBucket(manager, id, options)
+    val currentOptions = options ?: manager.getAppWidgetOptions(id)
+    val exactSizes = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) currentOptions.getParcelableArrayList<SizeF>(AppWidgetManager.OPTION_APPWIDGET_SIZES)?.filter { it.width > 0f && it.height > 0f } else null
+    if (!exactSizes.isNullOrEmpty()) {
+      val mappings = linkedMapOf<SizeF, RemoteViews>()
+      exactSizes.forEach { size -> mappings[size] = createWidgetViews(context, state, id, english, widgetBucket(size.width, size.height), fallback) }
+      manager.updateAppWidget(id, RemoteViews(mappings))
+      return
+    }
+    manager.updateAppWidget(id, createWidgetViews(context, state, id, english, widgetBucket(manager, id, currentOptions), fallback))
+  }
+
+  private fun createWidgetViews(context: Context, state: JSONObject, id: Int, english: Boolean, bucket: WidgetBucket, fallback: Boolean): RemoteViews {
     val views = RemoteViews(context.packageName, R.layout.focus_flow_widget_initial)
     bindTheme(views, state)
     bindHeader(views, state, english)
     bindStaticRows(context, views, state, id, english, bucket)
     if (fallback) views.setTextViewText(R.id.focus_flow_widget_empty, if (english) "Open Focus Flow to refresh your list" else "Focus Flowを開くと項目を更新します")
     views.setOnClickPendingIntent(R.id.focus_flow_widget_root, todayIntent(context, id))
-    manager.updateAppWidget(id, views)
+    return views
   }
 
   // Keep a placed widget valid and offer a route into Today on an unexpected
@@ -80,9 +93,13 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val options = updatedOptions ?: manager.getAppWidgetOptions(id)
     val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 180))
     val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 110))
+    return widgetBucket(width.toFloat(), height.toFloat())
+  }
+
+  private fun widgetBucket(width: Float, height: Float): WidgetBucket {
     return when {
-      width < 190 || height < 155 -> WidgetBucket(1, false, true)
-      height < 270 -> WidgetBucket(2, false, false)
+      width < 190f || height < 150f -> WidgetBucket(1, false, true)
+      height < 250f -> WidgetBucket(2, false, false)
       else -> WidgetBucket(3, false, false)
     }
   }
@@ -203,8 +220,10 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setTextViewText(ids.badge, badge)
     views.setTextColor(ids.badge, primary)
     views.setInt(ids.badge, "setBackgroundResource", if (dark) R.drawable.focus_flow_widget_badge_dark else R.drawable.focus_flow_widget_badge_light)
-    views.setTextViewTextSize(ids.badge, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
-    val meta = item.optString("windowLabel", "")
+    views.setTextViewTextSize(ids.badge, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
+    // A required badge takes priority over secondary timing text. Rendering both
+    // in the same compact row caused the unreadable device result.
+    val meta = if (badge.isNotBlank()) "" else item.optString("windowLabel", "")
     views.setViewVisibility(ids.meta, if (meta.isBlank()) View.GONE else View.VISIBLE)
     views.setTextViewText(ids.meta, meta)
     views.setTextColor(ids.meta, mutedColor)

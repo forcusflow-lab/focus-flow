@@ -6,30 +6,29 @@ import { describe, expect, it } from "vitest";
 const projectFile = (...parts: string[]) => fs.readFileSync(path.join(process.cwd(), ...parts), "utf8");
 
 describe("Focus Flowカード密度", () => {
-  it("Todo・習慣は必須ラベルの有無で操作領域を縮めず、必須ラベルは折返し可能なメタへ収める", () => {
+  it("Todo・習慣・Todayは必須Pillを専用枠へ置き、操作領域を縮めず二文字を保護する", () => {
     const todos = projectFile("app", "(tabs)", "todos.tsx");
     const habits = projectFile("app", "(tabs)", "habits.tsx");
     const ui = projectFile("components", "focus-flow", "ui.tsx");
     const today = projectFile("app", "(tabs)", "index.tsx");
 
     expect(todos).toContain('taskRow: { position: "relative", minHeight: 70');
-    expect(todos).toContain('meta: { minHeight: 19');
+    expect(todos).toContain('requiredPillSlot: { minWidth: 84');
     expect(habits).toContain('habitRow: { position: "relative", minHeight: 98');
-    expect(habits).toContain('meta: { minHeight: 48, flexDirection: "column"');
-    expect(habits).not.toContain("requiredSlot:");
-    expect(ui).toContain("minWidth: 68");
+    expect(habits).toContain('requiredPillSlot: { minWidth: 84');
+    expect(ui).toContain("minWidth: 76");
     expect(ui).toContain("flexShrink: 0");
-    expect(today).toContain('itemCard: { position: "relative", minHeight: 68');
+    expect(today).toContain('requiredPillSlot: { minWidth: 84');
   });
 
-  it("静的Widgetは48dpの最大3行単一リストで、Collectionなしでもカードの重なり・過剰な空白を防ぐ", () => {
+  it("静的Widgetは44dpの最大3行単一リストで、Collectionなしでもカードの重なり・過剰な空白を防ぐ", () => {
     const layout = projectFile("plugins", "native", "android", "res", "layout", "focus_flow_widget_initial.xml");
 
-    expect(layout).toContain('android:layout_height="48dp"');
+    expect(layout).toContain('android:layout_height="44dp"');
     expect(layout).toContain('android:id="@+id/focus_flow_widget_static_row_one_action"');
     expect(layout).toContain('android:id="@+id/focus_flow_widget_static_row_one_check"');
-    expect(layout).toContain('android:layout_width="48dp"');
-    expect(layout).toContain('android:layout_width="24dp"');
+    expect(layout).toContain('android:layout_width="44dp"');
+    expect(layout).toContain('android:layout_width="22dp"');
     expect(layout).toContain('android:id="@+id/focus_flow_widget_static_row_one_content"');
     expect(layout).toContain('android:id="@+id/focus_flow_widget_static_row_three"');
     expect(layout).not.toContain('android:id="@+id/focus_flow_widget_static_row_four"');
