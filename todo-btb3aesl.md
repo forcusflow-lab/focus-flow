@@ -386,3 +386,4 @@
 - [x] Widget設定を再設計し、背景全体と項目カードの透過率を別々の0〜100%スライダーで変更可能にし、タイトルは背景全体の透過設定と連動して可読性と統一感を維持する
 - [ ] v19の必須自動選択、テーマ統一、連続Widget、画面内完了表示切替、Todo完了基準、二層透過設定を仕様・状態遷移・静的契約・Android生成・署名APK・実機受入へ反映する
 - [x] v19の必須自動選択、テーマ統一、連続Widget、画面内完了表示切替、Todo完了基準、二層透過設定について、30 files / 88 passed / 1 skipped、TypeScript、CI Lint、通常版29／本人用19のクリーンAndroid生成を通過させる
+- [x] GitHub Actions run 33082614911でv19本人用署名APKを生成し、artifact digest一致、ZIP整合性、package／versionCode 19、v2署名、既知証明書、専用scheme、Widget Provider／resize、フラットWidget・二層透過・タイマー・完了表示DEX経路、旧Collection経路不在を独立検証する

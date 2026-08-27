@@ -106,7 +106,7 @@ Widgetはカードの角丸、カード間の空白、カードごとの外枠�
 | V19-R06 | Widget設定の二本のスライダーを0%、50%、100%へ動かす | 背景と項目行が別々に10%単位で変化し、見出しは背景と連動、本文・チェック・Pillはどの値でも判読できる。 |
 | V19-R07 | WidgetでTodo／Habitを操作し、サイズ変更・本体再起動後を確認する | 完了・復元・回数・開始／停止、1／2／3行、テーマ・透過率が正しい項目だけに反映され、行や状態が混線しない。 |
 
-自動品質ゲートでは、期限起点の必須状態、Todo専用の完了基準、画面内表示切替、テーマコントラスト、10%単位の二層透過、Widget禁止構造不在、responsive行数、行固有の操作キーを契約テスト化する。2026-08-27時点で、全Vitest **30 files / 88 passed / 1 skipped**、TypeScript、CI Lint、通常版versionCode 29／本人用`com.app.focusflow.personal` versionCode 19のクリーンAndroid生成に成功した。本人用release署名APKの独立検証を経て、V19-R01〜R07を実機で受入する。
+自動品質ゲートでは、期限起点の必須状態、Todo専用の完了基準、画面内表示切替、テーマコントラスト、10%単位の二層透過、Widget禁止構造不在、responsive行数、行固有の操作キーを契約テスト化する。2026-08-27時点で、全Vitest **30 files / 88 passed / 1 skipped**、TypeScript、CI Lint、通常版versionCode 29／本人用`com.app.focusflow.personal` versionCode 19のクリーンAndroid生成に成功した。GitHub Actions run `33082614911`で本人用release署名APKを生成し、artifact digest、ZIP整合性、package／versionCode、v2署名・既知証明書、専用scheme、Provider／リサイズ、フラットWidget・二層透過・タイマー・完了表示のDEX経路、旧Collection経路不在を独立検証した。残る品質ゲートはV19-R01〜R07の実機受入である。
 
 > v19の本人用APKは、全自動検証と署名APKの独立検証を通過しても、V19-R01〜R07の実機受入前には暫定検証版としてのみ扱う。Google Playへのアップロード・公開は実施しない。
 
