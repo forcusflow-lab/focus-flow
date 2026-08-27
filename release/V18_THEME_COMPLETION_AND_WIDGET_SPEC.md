@@ -11,12 +11,12 @@ v17実機では、Todo編集シートの保存操作がAndroidのナビゲーシ
 | 領域 | v18の設計 |
 |---|---|
 | Todo／Habit編集シート | スクロール本文と保存操作を分離する。保存ボタンはシート下部の固定フッターに置き、Androidナビゲーションバー・キーボード上端・Safe Areaより常に上へ配置する。本文末尾にはフッター高を確保する。 |
-| 期限表示 | 共有Todoカードは「今日が期限」を短い`期限: 今日`へ統一し、`numberOfLines={1}`、安全なlineHeight、最小横幅を持つ。期限超過は`期限超過`を維持する。 |
+| 期限表示 | 共有Todoカードは「今日が期限」を短い`今日まで`へ統一し、`numberOfLines={1}`、安全なlineHeight、最小横幅を持つ。期限超過は`期限超過`を維持する。 |
 | 期限当日以前の必須化 | 未完了の期限当日以前Todoは、Today・WidgetだけでなくTodoカードのPill、集中制限、必須進捗において手動必須Todoと同じ有効必須として扱う。期限翌日は通常Todoのままとする。 |
 | 完了時の順序 | 完了／復元しても作成時の安定順序を保持する。`completedAt`を一覧の並べ替え条件に用いない。 |
 | Todo一覧 | 未完了セクションを上、完了セクションを下へ縦に連続表示する。横並びの状態切替は廃止する。 |
 | 非表示の完了項目 | Today・Todo・Widgetで完了項目が非表示の場合、完了件数を含む控えめな「完了済みを表示」入口を出す。一時表示は当該画面だけの閲覧状態であり、保存済み設定を勝手に変えない。Widgetはタップ可能なヘッダー導線でTodayの一時表示を開く。 |
-| Today／Widget表示Switch | TodayとWidgetで、同じカード内・同じ52dp行高・同じ`残す`／`非表示`文言・同じSwitch色を使う。各Switchは他方を変更しない。 |
+| Today／Widget表示Switch | TodayとWidgetで、同じカード内・同じ64dp行高・同じ`完了済みを残す`／`完了済みを非表示`文言・白いSwitch thumbを使う。各Switchは他方を変更しない。 |
 | 全テーマ | `background`、`surface`、`elevated`、`text`、`muted`、`border`、`primary`、`primarySoft`だけを画面・Widgetへ適用する。固定白面、固定濃色、テーマに不適切な文字色を除外する。 |
 | Widget | ヘッダーにはカードと同じ角丸drawableを使う。mini-card内のアクセントレールは4dp・上下4dp・左端0dpとし、rowの角丸とクリップでカード外へはみ出さない。 |
 
@@ -34,12 +34,12 @@ v17実機では、Todo編集シートの保存操作がAndroidのナビゲーシ
 | ID | 実機操作 | 合格条件 |
 |---|---|---|
 | V18-R01 | Todo・Habitの長い編集シートを最下部までスクロールし、ソフトキー表示中にも保存する | 保存CTAがナビゲーションバーやキーボードと重ならず、常にタップ可能。 |
-| V18-R02 | 期限が今日・期限超過・期限翌日のTodoを、標準／大きい文字・light／darkで表示する | `期限: 今日`、期限超過、日付が切れず、期限当日以前の2件だけが必須Pill・集中制限・Today・Widgetで同じ扱い。 |
+| V18-R02 | 期限が今日・期限超過・期限翌日のTodoを、標準／大きい文字・light／darkで表示する | `今日まで`、期限超過、日付が切れず、期限当日以前の2件だけが必須Pill・集中制限・Today・Widgetで同じ扱い。 |
 | V18-R03 | 全テーマでToday、Todo、Habit、設定、編集シート、Widgetを確認する | 文字、選択肢、完了状態、必須Pill、無効状態、境界が背景と判別でき、固定ライト面・不可視文字がない。 |
 | V18-R04 | Widgetをsmall／medium／largeで表示する | ヘッダーとmini-cardがともに角丸で、アクセントレールがカード外へはみ出さず、テーマがカード・見出し・本文・操作へ一貫して反映される。 |
 | V18-R05 | Todo／Habitを完了・復元し、Todoタブを確認する | 順番が不意に入れ替わらず、未完了が上、完了が下の縦セクションになる。 |
 | V18-R06 | Today、Todo、Widgetで完了表示を`非表示`にし、完了済みを一時表示する | 「完了済みを表示」入口から即時に確認でき、保存済みの`非表示`設定や他画面の設定は変わらない。 |
-| V18-R07 | Today／Widgetの表示Switchをそれぞれ切り替える | 行高・文言・Switch配置が揃い、片方の切替が他方の表示設定を変更しない。 |
+| V18-R07 | Today／Widgetの表示Switchをそれぞれ切り替える | 64dp行・状態文言・Switch配置が揃い、片方の切替が他方の表示設定を変更しない。 |
 
 ## 5. 品質ゲート
 
@@ -61,5 +61,6 @@ v17実機では、Todo編集シートの保存操作がAndroidのナビゲーシ
 | ユニット・静的契約 | 29テストファイル、89件合格、1件スキップ。フォーム、期限、有効必須、完了済み一時表示、安定順序、Widget Deep Link、テーマsurface、禁止構造を含む。 |
 | 型・Lint | `pnpm check`とCIモードの`pnpm lint`が成功。 |
 | Androidクリーン生成 | 通常版versionCode 28と本人用`com.app.focusflow.personal`／versionCode 18の双方で成功。12テーマsurface、Provider、完了済み導線、静的RemoteViews禁止構造不在を確認。 |
+| GitHub release署名・独立検証 | GitHub Actions run `33071721730`が成功。artifact digest一致、本人用package／versionCode 18、v2署名・既知証明書、専用scheme、Provider／resize、タイマー・完了済み・テーマ資産、旧Collection経路不在をAPK本体で確認。 |
 
-この時点で残る品質ゲートは、GitHub ActionsのKotlinコンパイル・release署名、署名APK本体の独立検証、およびV18-R01〜R07の実機受入である。
+この時点で残る品質ゲートはV18-R01〜R07の実機受入である。
