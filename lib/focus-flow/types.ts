@@ -60,6 +60,8 @@ export type Habit = {
   dailyProgress?: Record<string, number>;
   /** 日ごとの時間管理開始時刻。キーは YYYY-MM-DD。 */
   timerStartedAtByDate?: Record<string, string>;
+  /** 一時停止した日ごとの累積計測秒。再開時はこの値から計測を続ける。 */
+  timerElapsedSecondsByDate?: Record<string, number>;
   /** 消費型の早期完了商品が使われた日付。 */
   earlyCompletionDates?: string[];
   createdAt: string;

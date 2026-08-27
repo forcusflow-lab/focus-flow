@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { FocusFlowData, GateSchedule, Habit } from "../lib/focus-flow/types";
-import { dayKey, getGateRuleSummaries, getGateSummary, habitStreak, isHabitCompleteOn, isItemRequiredDuringActiveGate, isScheduleActive, isTodoAchieved, nextRecurringDueDate, reorderSubtasks, weeklyHabitProgress, weeklyFocusMinutes } from "../lib/focus-flow/utils";
+import { dayKey, getGateRuleSummaries, getGateSummary, habitStreak, isHabitCompleteOn, isHabitTimeReady, isItemRequiredDuringActiveGate, isScheduleActive, isTodoAchieved, nextRecurringDueDate, reorderSubtasks, weeklyHabitProgress, weeklyFocusMinutes } from "../lib/focus-flow/utils";
 
 const base = new Date(2026, 7, 13, 12, 0, 0);
 
@@ -164,11 +164,12 @@ describe("Focus Flowの日付・習慣計算", () => {
     expect(isTodoAchieved({ ...todo, earlyCompletionAt: "2026-08-13T02:05:00.000Z" })).toBe(true);
   });
 
-  it("時間管理習慣は当日の設定時間が経過するか早期完了時だけ達成扱いにする", () => {
+  it("時間管理習慣は計測時間を進捗として保持し、行頭チェックで予定前でも手動達成できる", () => {
     const habit: Habit = { id: "h-timer", title: "散歩", color: "#246B5A", goalPerWeek: 5, isRequired: true, completedDates: [], progressUnit: "minutes", targetValue: 15, timerStartedAtByDate: { "2026-08-13": "2026-08-13T02:00:00.000Z" }, createdAt: "2026-08-13T00:00:00.000Z" };
     expect(isHabitCompleteOn(habit, "2026-08-13", new Date("2026-08-13T02:10:00.000Z"))).toBe(false);
-    expect(isHabitCompleteOn(habit, "2026-08-13", new Date("2026-08-13T02:15:00.000Z"))).toBe(true);
-    expect(isHabitCompleteOn({ ...habit, earlyCompletionDates: ["2026-08-13"] }, "2026-08-13")).toBe(true);
+    expect(isHabitTimeReady(habit, "2026-08-13", new Date("2026-08-13T02:15:00.000Z"))).toBe(true);
+    expect(isHabitCompleteOn(habit, "2026-08-13", new Date("2026-08-13T02:15:00.000Z"))).toBe(false);
+    expect(isHabitCompleteOn({ ...habit, completedDates: ["2026-08-13"] }, "2026-08-13")).toBe(true);
   });
 
   it("毎日・毎週の反復Todoは完了後に次回の将来日へ進む", () => {

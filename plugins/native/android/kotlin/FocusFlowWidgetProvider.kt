@@ -42,7 +42,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val updated = when (intent.action) {
       ACTION_COMPLETE -> complete(context, intent.getStringExtra(EXTRA_TARGET_ID).orEmpty(), intent.getStringExtra(EXTRA_KIND).orEmpty())
       ACTION_RESTORE -> restore(context, intent.getStringExtra(EXTRA_TARGET_ID).orEmpty(), intent.getStringExtra(EXTRA_KIND).orEmpty())
-      ACTION_INCREMENT, ACTION_DECREMENT, ACTION_TIMER_START -> adjustHabitFromWidget(context, intent.getStringExtra(EXTRA_TARGET_ID).orEmpty(), intent.getStringExtra(EXTRA_KIND).orEmpty(), intent.action.orEmpty())
+      ACTION_INCREMENT, ACTION_DECREMENT, ACTION_TIMER_START, ACTION_TIMER_PAUSE -> adjustHabitFromWidget(context, intent.getStringExtra(EXTRA_TARGET_ID).orEmpty(), intent.getStringExtra(EXTRA_KIND).orEmpty(), intent.action.orEmpty())
       ACTION_OPEN_ITEM -> { openItem(context, intent.getStringExtra(EXTRA_TARGET_ID).orEmpty(), intent.getStringExtra(EXTRA_KIND).orEmpty()); false }
       else -> null
     }
@@ -245,6 +245,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val canToggle = item.optBoolean("canToggle", false)
     val title = item.optString("title")
     val badge = compactBadge(item, english)
+    views.setInt(ids.row, "setBackgroundResource", itemCardDrawable(dark, completed, item.optBoolean("required", false)))
     views.setTextViewText(ids.title, if (completed) struck(title) else title)
     views.setTextColor(ids.title, if (completed) mutedColor else titleColor)
     views.setTextViewTextSize(ids.title, android.util.TypedValue.COMPLEX_UNIT_DIP, 13f * scale)
@@ -254,12 +255,17 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setInt(ids.badge, "setBackgroundResource", if (dark) R.drawable.focus_flow_widget_badge_dark else R.drawable.focus_flow_widget_badge_light)
     views.setTextViewTextSize(ids.badge, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
     val unit = item.optString("progressUnit", "check")
-    // 時間型はロック表示ではなく、開始前・計測中を言葉で示す。
+    val timerRunning = item.optBoolean("timerRunning", false)
+    val timerPaused = item.optBoolean("timerPaused", false)
+    val timerElapsed = item.optInt("timerElapsedSeconds", 0).coerceAtLeast(0)
+    val timerTarget = item.optInt("timerTargetSeconds", 0).coerceAtLeast(0)
+    val timerClock = "${timerElapsed / 60}:${String.format(java.util.Locale.US, "%02d", timerElapsed % 60)} / ${timerTarget / 60}:${String.format(java.util.Locale.US, "%02d", timerTarget % 60)}"
     val meta = when {
-      unit == "minutes" && item.optBoolean("timerRunning", false) -> if (english) "Timing" else "計測中"
-      unit == "minutes" -> if (english) "Time goal" else "時間目標"
-      badge.isNotBlank() -> ""
-      else -> item.optString("windowLabel", "")
+      unit == "minutes" && timerRunning -> if (english) "Timing $timerClock" else "計測中 $timerClock"
+      unit == "minutes" && timerPaused -> if (english) "Paused $timerClock" else "一時停止 $timerClock"
+      unit == "minutes" -> if (english) "Time goal $timerClock" else "時間目標 $timerClock"
+      kind == "habit" -> if (english) "Habit" else "習慣"
+      else -> if (english) "Todo" else "Todo"
     }
     views.setViewVisibility(ids.meta, if (meta.isBlank()) View.GONE else View.VISIBLE)
     views.setTextViewText(ids.meta, meta)
@@ -291,10 +297,11 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       views.setOnClickPendingIntent(ids.increment, actionIntent(context, widgetId, ids.position, ACTION_INCREMENT, itemId, kind))
     } else if (supportsControls) {
       listOf(ids.decrement, ids.progress, ids.increment).forEach { control -> views.setViewVisibility(control, View.GONE) }
-      views.setTextViewText(ids.timer, if (item.optBoolean("timerRunning", false)) if (english) "Timing" else "計測中" else if (english) "Start" else "開始")
-      views.setTextColor(ids.timer, onPrimary)
-      views.setInt(ids.timer, "setBackgroundColor", primary)
-      views.setOnClickPendingIntent(ids.timer, actionIntent(context, widgetId, ids.position, ACTION_TIMER_START, itemId, kind))
+      val timerAction = if (timerRunning) ACTION_TIMER_PAUSE else ACTION_TIMER_START
+      views.setTextViewText(ids.timer, if (timerRunning) if (english) "Pause" else "停止" else if (timerPaused) if (english) "Resume" else "再開" else if (english) "Start" else "開始")
+      views.setTextColor(ids.timer, if (timerRunning) primary else onPrimary)
+      views.setInt(ids.timer, "setBackgroundResource", if (timerRunning) if (dark) R.drawable.focus_flow_widget_timer_pause_dark else R.drawable.focus_flow_widget_timer_pause_light else R.drawable.focus_flow_widget_timer_start)
+      views.setOnClickPendingIntent(ids.timer, actionIntent(context, widgetId, ids.position, timerAction, itemId, kind))
     }
   }
 
@@ -306,6 +313,15 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       hasWindow -> if (english) "TIME" else "時間帯"
       else -> ""
     }
+  }
+
+  private fun itemCardDrawable(dark: Boolean, completed: Boolean, required: Boolean): Int = when {
+    completed && dark -> R.drawable.focus_flow_widget_item_done_dark
+    completed -> R.drawable.focus_flow_widget_item_done_light
+    required && dark -> R.drawable.focus_flow_widget_item_required_dark
+    required -> R.drawable.focus_flow_widget_item_required_light
+    dark -> R.drawable.focus_flow_widget_item_dark
+    else -> R.drawable.focus_flow_widget_item_light
   }
 
   private fun struck(value: String): CharSequence = SpannableString(value).apply { setSpan(StrikethroughSpan(), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE); setSpan(StyleSpan(Typeface.BOLD), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
@@ -356,10 +372,19 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val item = matches.single()
     if (item.optBoolean("completed", false)) return false
     val unit = item.optString("progressUnit", "check")
-    val operation = when (action) { ACTION_INCREMENT -> "increment"; ACTION_DECREMENT -> "decrement"; ACTION_TIMER_START -> "timer_start"; else -> return false }
+    val operation = when (action) { ACTION_INCREMENT -> "increment"; ACTION_DECREMENT -> "decrement"; ACTION_TIMER_START -> "timer_start"; ACTION_TIMER_PAUSE -> "timer_pause"; else -> return false }
     if (operation == "timer_start") {
       if (unit != "minutes" || item.optBoolean("timerRunning", false)) return false
       item.put("timerRunning", true)
+      item.put("timerPaused", false)
+      item.put("timerStartedAtMillis", System.currentTimeMillis())
+    } else if (operation == "timer_pause") {
+      if (unit != "minutes" || !item.optBoolean("timerRunning", false)) return false
+      val startedAt = item.optLong("timerStartedAtMillis", System.currentTimeMillis())
+      val elapsed = item.optInt("timerElapsedSeconds", 0).coerceAtLeast(0) + ((System.currentTimeMillis() - startedAt).coerceAtLeast(0L) / 1_000L).toInt()
+      item.put("timerRunning", false)
+      item.put("timerPaused", true)
+      item.put("timerElapsedSeconds", elapsed)
     } else {
       if (unit != "count") return false
       val target = item.optInt("targetValue", 1).coerceAtLeast(1)
@@ -375,9 +400,10 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       if (becameOpen && item.optBoolean("required", false)) restoreRequiredState(current, item, kind)
     }
     val actions = widgetActions(preferences)
-    if (operation == "timer_start" && (0 until actions.length()).any { index -> actions.optJSONObject(index)?.let { it.optString("id") == targetId && it.optString("kind") == kind && it.optString("operation") == operation } == true }) return false
+    if ((operation == "timer_start" || operation == "timer_pause") && (0 until actions.length()).any { index -> actions.optJSONObject(index)?.let { it.optString("id") == targetId && it.optString("kind") == kind && it.optString("operation") == operation } == true }) return false
     val queuedAction = JSONObject().put("id", targetId).put("kind", kind).put("operation", operation)
     if (operation == "timer_start") queuedAction.put("startedAt", java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date()))
+    if (operation == "timer_pause") queuedAction.put("elapsedSeconds", item.optInt("timerElapsedSeconds", 0).coerceAtLeast(0))
     actions.put(queuedAction)
     preferences.edit().putString(FocusGateModule.GATE_STATE, current.put("widgetItems", items).toString()).putString(FocusGateModule.WIDGET_ACTIONS, actions.toString()).putLong(FocusGateModule.GATE_STATE_UPDATED_AT, System.currentTimeMillis()).apply()
     return true
@@ -434,6 +460,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     const val ACTION_INCREMENT = "focusflow.widget.INCREMENT"
     const val ACTION_DECREMENT = "focusflow.widget.DECREMENT"
     const val ACTION_TIMER_START = "focusflow.widget.TIMER_START"
+    const val ACTION_TIMER_PAUSE = "focusflow.widget.TIMER_PAUSE"
     const val ACTION_OPEN_ITEM = "focusflow.widget.OPEN_ITEM"
     const val ACTION_NOOP = "focusflow.widget.NOOP"
     const val EXTRA_TARGET_ID = "targetId"

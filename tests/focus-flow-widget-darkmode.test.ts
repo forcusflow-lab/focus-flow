@@ -16,11 +16,14 @@ describe("Focus Flow 高密度Widgetとダークモード", () => {
     expect(source).toContain('10f * scale');
     expect(source).toContain('11f * scale');
     expect(source).toContain('val meta = when {');
-    expect(source).toContain('unit == "minutes" && item.optBoolean("timerRunning", false)');
+    expect(source).toContain("val timerRunning = item.optBoolean");
+    expect(source).toContain("val timerPaused = item.optBoolean");
     expect(source).toContain('View.GONE');
     expect(source).toContain('compactBadge');
     expect(source).toContain('required -> if (english) "MUST" else "必須"');
-    expect(layout).toContain('android:layout_height="50dp"');
+    expect(layout).toContain('android:layout_height="54dp"');
+    expect(layout).toContain('android:layout_marginBottom="3dp"');
+    expect(layout).toContain('android:layout_marginStart="6dp"');
     expect(layout).toContain('android:gravity="center_vertical"');
     expect(layout).toContain('android:maxLines="1"');
   });

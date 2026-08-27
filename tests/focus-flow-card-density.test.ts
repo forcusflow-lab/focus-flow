@@ -21,15 +21,17 @@ describe("Focus Flowカード密度", () => {
     expect(today).toContain('requiredPillSlot: { minWidth: 84');
   });
 
-  it("静的Widgetは50dpの最大3行フラットリストで、Collectionなしでもカードの重なり・過剰な空白を防ぐ", () => {
+  it("静的Widgetは個別54dp mini-cardを最大3行表示し、Collectionなしでも項目の境界と余白を保つ", () => {
     const layout = projectFile("plugins", "native", "android", "res", "layout", "focus_flow_widget_initial.xml");
 
-    expect(layout).toContain('android:layout_height="50dp"');
+    expect(layout).toContain('android:layout_height="54dp"');
     expect(layout).toContain('android:id="@+id/focus_flow_widget_static_row_one_action"');
     expect(layout).toContain('android:id="@+id/focus_flow_widget_static_row_one_check"');
-    expect(layout).toContain('android:layout_width="46dp"');
-    expect(layout).toContain('android:layout_width="76dp"');
+    expect(layout).toContain('android:layout_width="44dp"');
+    expect(layout).toContain('android:layout_width="68dp"');
     expect(layout).toContain('android:layout_width="22dp"');
+    expect(layout).toContain('android:layout_marginBottom="3dp"');
+    expect(layout).toContain('@drawable/focus_flow_widget_item_light');
     expect(layout).toContain('android:id="@+id/focus_flow_widget_static_row_one_content"');
     expect(layout).toContain('android:id="@+id/focus_flow_widget_static_row_three"');
     expect(layout).not.toContain('android:id="@+id/focus_flow_widget_static_row_four"');

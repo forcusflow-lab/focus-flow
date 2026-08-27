@@ -35,6 +35,8 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(provider).toContain('paletteColor(palette, "muted"');
     expect(provider).toContain("ACTION_INCREMENT");
     expect(provider).toContain("ACTION_TIMER_START");
+    expect(provider).toContain("ACTION_TIMER_PAUSE");
+    expect(provider).toContain("itemCardDrawable");
     expect(provider).not.toContain("setRemoteAdapter");
     expect(provider).not.toContain("setPendingIntentTemplate");
     expect(provider).not.toContain("FocusFlowWidgetItemsService");
@@ -50,6 +52,8 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(plugin).toContain("focus_flow_widget_initial.xml");
     expect(plugin).toContain("focus_flow_widget_initial_info.xml");
     expect(plugin).toContain("const cardDrawables");
+    expect(plugin).toContain("const widgetItemDrawables");
+    expect(plugin).toContain("focus_flow_widget_timer_pause_light.xml");
     ["light_0", "light_25", "light_50", "light_75", "light_100", "dark_0", "dark_25", "dark_50", "dark_75", "dark_100"].forEach((name) => expect(plugin).toContain(name));
     expect(plugin).toContain("FocusFlowWidgetProvider");
     expect(plugin).toContain('application.service = (application.service || []).filter');
@@ -78,9 +82,10 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_three"');
     expect(initialLayout).not.toContain('android:id="@+id/focus_flow_widget_static_row_four"');
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_one_check"');
-    expect(initialLayout).toContain('android:layout_height="50dp"');
-    expect(initialLayout).toContain('android:layout_width="46dp"');
+    expect(initialLayout).toContain('android:layout_height="54dp"');
+    expect(initialLayout).toContain('android:layout_width="44dp"');
     expect(initialLayout).toContain('android:layout_width="22dp"');
+    expect(initialLayout).toContain('android:background="@drawable/focus_flow_widget_item_light"');
     expect(initialLayout).not.toContain("<View");
     expect(initialLayout).not.toContain("ListView");
     expect(initialLayout).not.toContain("android:layout_weight");

@@ -137,7 +137,7 @@ export function isHabitRequiredForGate(habit: Habit, schedule?: GateSchedule) {
 
 export function isHabitCompleteOn(habit: Habit, value: string, base = new Date()) {
   const unit = habit.progressUnit ?? "check";
-  if (unit === "minutes") return isHabitTimeReady(habit, value, base);
+  if (unit === "minutes") return habit.completedDates.includes(value);
   if (unit !== "check") return (habit.dailyProgress?.[value] ?? 0) >= Math.max(habit.targetValue ?? 1, 1);
   return habit.completedDates.includes(value);
 }
@@ -148,14 +148,19 @@ export function habitTimerEndsAt(habit: Habit, value: string) {
   if (!startedAt) return undefined;
   const startedMs = new Date(startedAt).getTime();
   if (!Number.isFinite(startedMs)) return undefined;
-  return startedMs + Math.max(habit.targetValue ?? 1, 1) * 60_000;
+  const savedSeconds = Math.max(0, Math.floor(habit.timerElapsedSecondsByDate?.[value] ?? 0));
+  return startedMs + Math.max(Math.max(habit.targetValue ?? 1, 1) * 60 - savedSeconds, 0) * 1_000;
 }
 
 export function isHabitTimeReady(habit: Habit, value: string, base = new Date()) {
   if ((habit.progressUnit ?? "check") !== "minutes") return true;
   if (habit.earlyCompletionDates?.includes(value)) return true;
-  const endsAt = habitTimerEndsAt(habit, value);
-  return endsAt !== undefined && endsAt <= base.getTime();
+  const targetSeconds = Math.max(habit.targetValue ?? 1, 1) * 60;
+  const savedSeconds = Math.max(0, Math.floor(habit.timerElapsedSecondsByDate?.[value] ?? 0));
+  const startedAt = habit.timerStartedAtByDate?.[value];
+  const startedMs = startedAt ? new Date(startedAt).getTime() : Number.NaN;
+  const liveSeconds = Number.isFinite(startedMs) ? Math.max(0, Math.floor((base.getTime() - startedMs) / 1_000)) : 0;
+  return savedSeconds + liveSeconds >= targetSeconds;
 }
 
 export function habitTimerRemainingMs(habit: Habit, value: string, base = new Date()) {
@@ -163,7 +168,7 @@ export function habitTimerRemainingMs(habit: Habit, value: string, base = new Da
   return endsAt === undefined ? undefined : Math.max(0, endsAt - base.getTime());
 }
 
-export type HabitTimerProgress = { started: boolean; running: boolean; ready: boolean; elapsedSeconds: number; remainingSeconds: number; targetSeconds: number; label: string };
+export type HabitTimerProgress = { started: boolean; running: boolean; paused: boolean; ready: boolean; elapsedSeconds: number; remainingSeconds: number; targetSeconds: number; label: string };
 
 export function formatTimerClock(totalSeconds: number) {
   const seconds = Math.max(0, Math.floor(totalSeconds));
@@ -175,10 +180,13 @@ export function getHabitTimerProgress(habit: Habit, value: string, base = new Da
   const targetSeconds = Math.max(habit.targetValue ?? 1, 1) * 60;
   const startedAt = habit.timerStartedAtByDate?.[value];
   const startedMs = startedAt ? new Date(startedAt).getTime() : Number.NaN;
-  const started = Number.isFinite(startedMs);
-  const elapsedSeconds = started ? Math.min(targetSeconds, Math.max(0, Math.floor((base.getTime() - startedMs) / 1_000))) : 0;
+  const savedSeconds = Math.max(0, Math.floor(habit.timerElapsedSecondsByDate?.[value] ?? 0));
+  const runningSession = Number.isFinite(startedMs);
+  const elapsedSeconds = Math.min(targetSeconds, savedSeconds + (runningSession ? Math.max(0, Math.floor((base.getTime() - startedMs) / 1_000)) : 0));
   const ready = isHabitTimeReady(habit, value, base);
-  return { started, running: started && !ready, ready, elapsedSeconds, remainingSeconds: Math.max(0, targetSeconds - elapsedSeconds), targetSeconds, label: `${formatTimerClock(elapsedSeconds)} / ${formatTimerClock(targetSeconds)}` };
+  const started = runningSession || savedSeconds > 0;
+  const running = runningSession && !ready;
+  return { started, running, paused: started && !running && !ready, ready, elapsedSeconds, remainingSeconds: Math.max(0, targetSeconds - elapsedSeconds), targetSeconds, label: `${formatTimerClock(elapsedSeconds)} / ${formatTimerClock(targetSeconds)}` };
 }
 
 export function habitProgressLabel(habit: Habit, value = dayKey(), language: ContentLanguage = "ja") {

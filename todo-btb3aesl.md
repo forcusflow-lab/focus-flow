@@ -345,3 +345,9 @@
 - [x] Todoist・TickTick・Microsoft To Do・Habitify等の公式仕様と実際の操作導線を比較し、Todo・習慣・Today・メモ・集中制限・設定・Widget・戻る・Deep Link・空／エラー状態のUX監査台帳と改訂仕様を作成する
 - [ ] 改訂仕様に基づき全機能・全画面を反復レビューし、回帰テスト、ネイティブ生成、署名APK、実機受入までのPDCA記録を残す
 - [x] GitHub Actions run 33036456807で修正済み本人用v14署名APKを生成し、ZIP整合性、package/versionCode、v2署名、既存証明書、専用scheme、Widget Provider、resize broadcast、時間型開始資産、旧Collection経路不在を独立検証する
+- [x] v14実機で再現した時間型Habitの計測停止不能を、開始・一時停止・再開・経過保存の状態機械として実装し、本体・Today・Widgetで同一の状態を表示する
+- [x] 時間型Habitの行頭チェックを予定時間の前でも手動完了／復元できる操作へ改訂し、目標時間は達成度の情報として残しつつ完了可否の制限を解除する
+- [x] Widgetの必須Pillを2段目ではなくタイトル先頭へ移し、Todo／Habitごとに本体と整合するフラットな個別カード・余白・区切りを実装する
+- [x] Widgetの時間型Habitにある浮いた角張った計測表示を、同一カードの本文・補足・丸形開始／停止操作と統一する自然な表示へ再設計する
+- [ ] v15本人用APKで、時間型Habitの一時停止／再開・手動完了／復元・Widget個別カード・必須先頭表示・計測操作・リサイズを実機再受入する
+- [x] v15の時間型Habit状態機械、Widget mini-card、必須先頭、開始／停止操作について、全79回帰テスト、TypeScript、Lint、通常版／本人用クリーンAndroid生成を通過させる
