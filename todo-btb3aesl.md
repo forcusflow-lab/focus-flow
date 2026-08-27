@@ -332,4 +332,5 @@
 - [x] GitHub Actions run 33019053821で本人用v11署名APKを生成し、ZIP整合性、versionCode 11、v2署名、既存証明書、専用scheme、Provider、3行Widget資産、旧Collection経路不在を独立検証する
 - [x] v11実機で再現したHabit／Todayの必須Pillが「必」に切れる不具合を、実端末幅・親コンテナ・Pill内テキストの縮小／クリップ経路まで分離し、`必須`を完全表示する
 - [x] v11実機で再現したWidgetの過大なカード面・薄い可読性・必須Pill欠落を、ランチャーのサイズ別RemoteViews・外側背景・行高さ・文字／Pillコントラストの契約へ分解する
+- [x] Android 12+のサイズ別RemoteViewsと内容高Widget、Todo・Habit・Todayの必須Pill専用枠を含む本人用v12をGitHub Actions run 33024337723で署名生成し、成果物の整合性・package/versionCode・v2署名・scheme・Provider・Widget資産・旧Collection経路不在を独立検証する
 - [ ] 本体とWidgetの修正後、必須Todo・必須Habitを含むライト／ダーク・文字サイズ・小／標準／大Widgetの実機再受入を実施する

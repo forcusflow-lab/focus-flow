@@ -25,6 +25,23 @@ Android公式は、Android 12以降でMIN/MAX値から現在サイズを推定�
 | 通常版クリーン生成 | versionCode 22、Provider・`OPTION_APPWIDGET_SIZES`・44dp行・22dpチェック・42dp badge最小幅を確認 |
 | 本人用クリーン生成 | `com.app.focusflow.personal` / versionCode 12、専用scheme、Provider・サイズ別RemoteViews・旧Collection経路不在を確認 |
 
+## 本人用署名APKの独立検証
+
+| 項目 | 結果 |
+|---|---|
+| GitHub Actions | run `33024337723`、成功 |
+| Artifact | `focus-flow-personal-unlimited-apk`、ID `9628341443` |
+| APK | `app-release.apk`、51,774,373 bytes |
+| SHA-256 | `103ba57629c24255e62e54f77b6f48226c09adc63f097c91622d6f90b35b8861` |
+| ZIP整合性 | 成果物ZIPおよびAPKの`unzip -t`成功 |
+| 識別子 | `com.app.focusflow.personal` / versionCode `12` / versionName `1.0.0` |
+| 署名 | APK Signature Scheme v2、有効。証明書SHA-1は既存値 `0D:A5:A7:0E:14:A2:A4:3A:DB:A8:F8:04:40:81:C5:B2:18:86:B5:BC` と一致 |
+| Manifest | 専用scheme `manusfocusflowpersonal`、FocusFlowWidgetProviderを確認 |
+| Widget資産 | 3行ID、light/darkカード、丸角必須Pill、丸形チェックdrawableをresources.arscで確認 |
+| 旧Collection経路 | `FocusFlowWidgetItemsService`、`setRemoteAdapter`、`BIND_REMOTEVIEWS`がDEXに不在 |
+
+v12は署名・ネイティブ生成まで成功しているが、**実機再受入は未実施**である。利用者が許可した例外の範囲で暫定検証APKとしてのみ共有でき、正式配布またはGoogle Play配布は実機の全ケース合格まで行わない。
+
 ## 実機再受入
 
 署名済み本人用v12 APKを生成・独立検証した後、次を確認する。いずれかが不合格なら正式配布・Google Play配布へ進まない。
