@@ -33,7 +33,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   }
   override fun onDeleted(context: Context, ids: IntArray) {
     val editor = context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE).edit()
-    ids.forEach { id -> editor.remove("$WIDGET_SIZE_PREFIX$id") }
+    ids.forEach { id -> editor.remove("$WIDGET_SIZE_PREFIX$id").remove(completedVisibilityKey(id)) }
     editor.apply()
     super.onDeleted(context, ids)
   }
@@ -43,7 +43,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       ACTION_COMPLETE -> complete(context, intent.getStringExtra(EXTRA_TARGET_ID).orEmpty(), intent.getStringExtra(EXTRA_KIND).orEmpty())
       ACTION_RESTORE -> restore(context, intent.getStringExtra(EXTRA_TARGET_ID).orEmpty(), intent.getStringExtra(EXTRA_KIND).orEmpty())
       ACTION_INCREMENT, ACTION_DECREMENT, ACTION_TIMER_START, ACTION_TIMER_PAUSE -> adjustHabitFromWidget(context, intent.getStringExtra(EXTRA_TARGET_ID).orEmpty(), intent.getStringExtra(EXTRA_KIND).orEmpty(), intent.action.orEmpty())
-      ACTION_TOGGLE_COMPLETED -> toggleCompletedVisibility(context)
+      ACTION_TOGGLE_COMPLETED -> toggleCompletedVisibility(context, intent.getIntExtra(EXTRA_WIDGET_ID, -1))
       ACTION_OPEN_ITEM -> { openItem(context, intent.getStringExtra(EXTRA_TARGET_ID).orEmpty(), intent.getStringExtra(EXTRA_KIND).orEmpty()); false }
       else -> null
     }
@@ -84,10 +84,10 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   private fun createWidgetViews(context: Context, state: JSONObject, id: Int, english: Boolean, bucket: WidgetBucket, fallback: Boolean): RemoteViews {
     val views = RemoteViews(context.packageName, R.layout.focus_flow_widget_initial)
     bindTheme(views, state)
-    bindHeader(context, views, state, id, english)
+    bindHeader(context, views, state, id, english, bucket)
     bindStaticRows(context, views, state, id, english, bucket)
     if (fallback) views.setTextViewText(R.id.focus_flow_widget_empty, if (english) "Open Focus Flow to refresh your list" else "Focus Flowを開くと項目を更新します")
-    val revealCompleted = !widgetCompletedVisible(context) && state.optInt("widgetHiddenCompletedCount", 0) > 0
+    val revealCompleted = !widgetCompletedVisible(context, id) && state.optInt("widgetHiddenCompletedCount", 0) > 0
     views.setOnClickPendingIntent(R.id.focus_flow_widget_root, todayIntent(context, id, revealCompleted))
     views.setOnClickPendingIntent(R.id.focus_flow_widget_header, todayIntent(context, id, revealCompleted))
     return views
@@ -106,18 +106,24 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     return try { JSONObject(saved ?: "{}") } catch (_: Exception) { JSONObject() }
   }
 
-  private fun widgetCompletedVisible(context: Context): Boolean = context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE).getBoolean(WIDGET_SHOW_COMPLETED, false)
+  private fun completedVisibilityKey(id: Int) = "$WIDGET_SHOW_COMPLETED_PREFIX$id"
 
-  private fun visibleWidgetItems(context: Context, all: JSONArray): JSONArray {
-    if (widgetCompletedVisible(context)) return all
+  private fun widgetCompletedVisible(context: Context, id: Int): Boolean {
+    val preferences = context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE)
+    return if (preferences.contains(completedVisibilityKey(id))) preferences.getBoolean(completedVisibilityKey(id), false) else preferences.getBoolean(WIDGET_SHOW_COMPLETED, false)
+  }
+
+  private fun visibleWidgetItems(context: Context, id: Int, all: JSONArray): JSONArray {
+    if (widgetCompletedVisible(context, id)) return all
     return JSONArray().also { visible -> for (index in 0 until all.length()) { all.optJSONObject(index)?.takeIf { !it.optBoolean("completed", false) }?.let(visible::put) } }
   }
 
-  private fun toggleCompletedVisibility(context: Context): Boolean {
+  private fun toggleCompletedVisibility(context: Context, id: Int): Boolean {
+    if (id < 0) return false
     val state = state(context)
     if (state.optInt("widgetHiddenCompletedCount", 0) <= 0) return false
     val preferences = context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE)
-    preferences.edit().putBoolean(WIDGET_SHOW_COMPLETED, !widgetCompletedVisible(context)).apply()
+    preferences.edit().putBoolean(completedVisibilityKey(id), !widgetCompletedVisible(context, id)).apply()
     return true
   }
 
@@ -184,7 +190,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     return if (dark) when (level) { 0 -> R.drawable.focus_flow_widget_card_dark_0; 25 -> R.drawable.focus_flow_widget_card_dark_25; 50 -> R.drawable.focus_flow_widget_card_dark_50; 75 -> R.drawable.focus_flow_widget_card_dark_75; else -> R.drawable.focus_flow_widget_card_dark_100 } else when (level) { 0 -> R.drawable.focus_flow_widget_card_light_0; 25 -> R.drawable.focus_flow_widget_card_light_25; 50 -> R.drawable.focus_flow_widget_card_light_50; 75 -> R.drawable.focus_flow_widget_card_light_75; else -> R.drawable.focus_flow_widget_card_light_100 }
   }
 
-  private fun bindHeader(context: Context, views: RemoteViews, state: JSONObject, widgetId: Int, english: Boolean) {
+  private fun bindHeader(context: Context, views: RemoteViews, state: JSONObject, widgetId: Int, english: Boolean, bucket: WidgetBucket) {
     val palette = state.optJSONObject("widgetPalette")
     val dark = palette?.optBoolean("isDark", false) ?: false
     val title = paletteColor(palette, "text", if (dark) "#F4FBF7" else "#13251F")
@@ -200,12 +206,15 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setTextViewTextSize(R.id.focus_flow_widget_status, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
     views.setTextViewTextSize(R.id.focus_flow_widget_empty, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
     views.setTextViewText(R.id.focus_flow_widget_title, if (english) "TODAY" else "今日の項目")
-    views.setTextViewText(R.id.focus_flow_widget_status, if (!active) if (english) "App limits off" else "集中制限はオフ" else if (pending == 0) if (english) "Must-dos complete" else "必須項目を完了しました" else if (english) "$pending must-do${if (pending == 1) "" else "s"} remaining" else "必須項目 残り${pending}件")
+    val candidates = visibleWidgetItems(context, widgetId, state.optJSONArray("widgetItems") ?: JSONArray()).length()
+    val overflow = (candidates - bucket.maxRows).coerceAtLeast(0)
+    val baseStatus = if (!active) if (english) "App limits off" else "集中制限はオフ" else if (pending == 0) if (english) "Must-dos complete" else "必須項目を完了しました" else if (english) "$pending must-do${if (pending == 1) "" else "s"} remaining" else "必須項目 残り${pending}件"
+    views.setTextViewText(R.id.focus_flow_widget_status, if (overflow > 0) "$baseStatus · ${if (english) "$overflow more" else "ほか${overflow}件"}" else baseStatus)
     val completedCount = state.optInt("widgetHiddenCompletedCount", 0)
-    val showingCompleted = widgetCompletedVisible(context)
+    val showingCompleted = widgetCompletedVisible(context, widgetId)
     views.setViewVisibility(R.id.focus_flow_widget_completed_toggle, if (completedCount > 0) View.VISIBLE else View.GONE)
     if (completedCount > 0) {
-      views.setTextViewText(R.id.focus_flow_widget_completed_toggle, if (showingCompleted) if (english) "Hide done" else "完了を隠す" else if (english) "Show done ($completedCount)" else "完了を表示（$completedCount）")
+      views.setTextViewText(R.id.focus_flow_widget_completed_toggle, if (showingCompleted) if (english) "Open only" else "未完了のみ" else if (english) "Show all ($completedCount)" else "すべて表示（$completedCount）")
       views.setTextColor(R.id.focus_flow_widget_completed_toggle, primary)
       views.setTextViewTextSize(R.id.focus_flow_widget_completed_toggle, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
       views.setOnClickPendingIntent(R.id.focus_flow_widget_completed_toggle, completedToggleIntent(context, widgetId))
@@ -223,7 +232,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
 
   private fun bindStaticRows(context: Context, views: RemoteViews, state: JSONObject, widgetId: Int, english: Boolean, bucket: WidgetBucket) {
     val all = state.optJSONArray("widgetItems") ?: JSONArray()
-    val rows = uniqueStaticItems(visibleWidgetItems(context, all), bucket.maxRows)
+    val rows = uniqueStaticItems(visibleWidgetItems(context, widgetId, all), bucket.maxRows)
     val palette = state.optJSONObject("widgetPalette")
     val dark = palette?.optBoolean("isDark", false) ?: false
     val titleColor = paletteColor(palette, "text", "#13251F")
@@ -233,6 +242,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val elevated = paletteColor(palette, "elevated", "#EDF4F0")
     val onPrimary = paletteColor(palette, "background", "#F7F8F5")
     val surface = paletteColor(palette, "surface", if (dark) "#1C302A" else "#FFFFFF")
+    val theme = state.optString("widgetTheme", "mist")
     val rowOpacity = state.optInt("widgetCardOpacity", 100).coerceIn(0, 100)
     val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
     views.setViewVisibility(R.id.focus_flow_widget_empty, if (rows.isEmpty()) View.VISIBLE else View.GONE)
@@ -243,7 +253,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       val item = rows.getOrNull(index)
       views.setViewVisibility(ids.row, if (item == null) View.GONE else View.VISIBLE)
       if (index < dividers.size) views.setViewVisibility(dividers[index], if (index < rows.size - 1) View.VISIBLE else View.GONE)
-      if (item != null) bindStaticRow(context, views, ids, item, widgetId, english, titleColor, mutedColor, primary, primarySoft, elevated, onPrimary, surface, rowOpacity, scale, bucket.showControls, dark) else clearStaticRow(views, ids)
+      if (item != null) bindStaticRow(context, views, ids, item, widgetId, english, titleColor, mutedColor, primary, primarySoft, elevated, onPrimary, surface, rowOpacity, scale, bucket.showControls, dark, theme) else clearStaticRow(views, ids)
     }
   }
 
@@ -277,7 +287,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setImageViewResource(ids.check, R.drawable.focus_flow_widget_check_empty)
   }
 
-  private fun bindStaticRow(context: Context, views: RemoteViews, ids: StaticRowIds, item: JSONObject, widgetId: Int, english: Boolean, titleColor: Int, mutedColor: Int, primary: Int, primarySoft: Int, elevated: Int, onPrimary: Int, surface: Int, rowOpacity: Int, scale: Float, showControls: Boolean, dark: Boolean) {
+  private fun bindStaticRow(context: Context, views: RemoteViews, ids: StaticRowIds, item: JSONObject, widgetId: Int, english: Boolean, titleColor: Int, mutedColor: Int, primary: Int, primarySoft: Int, elevated: Int, onPrimary: Int, surface: Int, rowOpacity: Int, scale: Float, showControls: Boolean, dark: Boolean, theme: String) {
     val completed = item.optBoolean("completed", false)
     val canToggle = item.optBoolean("canToggle", false)
     val title = item.optString("title")
@@ -293,7 +303,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setViewVisibility(ids.badge, if (badge.isBlank()) View.GONE else View.VISIBLE)
     views.setTextViewText(ids.badge, badge)
     views.setTextColor(ids.badge, primary)
-    views.setInt(ids.badge, "setBackgroundColor", primarySoft)
+    views.setInt(ids.badge, "setBackgroundResource", widgetBadgeDrawable(theme, dark))
     views.setTextViewTextSize(ids.badge, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
     val unit = item.optString("progressUnit", "check")
     val timerRunning = item.optBoolean("timerRunning", false)
@@ -343,7 +353,8 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       val target = item.optInt("targetValue", 1).coerceAtLeast(1)
       views.setTextViewText(ids.progress, "$value/$target")
       views.setTextColor(ids.progress, primary)
-      listOf(ids.decrement, ids.increment).forEach { control -> views.setTextColor(control, primary); views.setInt(control, "setBackgroundColor", Color.TRANSPARENT); views.setTextViewTextSize(control, android.util.TypedValue.COMPLEX_UNIT_DIP, 17f * scale) }
+      val controlSurface = colorWithOpacity(primarySoft, rowOpacity)
+      listOf(ids.decrement, ids.increment).forEach { control -> views.setTextColor(control, primary); views.setInt(control, "setBackgroundColor", controlSurface); views.setTextViewTextSize(control, android.util.TypedValue.COMPLEX_UNIT_DIP, 17f * scale) }
       views.setInt(ids.progress, "setBackgroundColor", Color.TRANSPARENT)
       views.setTextViewTextSize(ids.progress, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
       views.setOnClickPendingIntent(ids.decrement, actionIntent(context, widgetId, ids.position, ACTION_DECREMENT, itemId, kind))
@@ -352,8 +363,8 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       listOf(ids.decrement, ids.progress, ids.increment).forEach { control -> views.setViewVisibility(control, View.GONE) }
       val timerAction = if (timerRunning) ACTION_TIMER_PAUSE else ACTION_TIMER_START
       views.setTextViewText(ids.timer, if (timerRunning) if (english) "Pause" else "停止" else if (timerPaused) if (english) "Resume" else "再開" else if (english) "Start" else "開始")
-      views.setTextColor(ids.timer, if (timerRunning) primary else onPrimary)
-      views.setInt(ids.timer, "setBackgroundResource", if (timerRunning) if (dark) R.drawable.focus_flow_widget_timer_pause_dark else R.drawable.focus_flow_widget_timer_pause_light else R.drawable.focus_flow_widget_timer_start)
+      views.setTextColor(ids.timer, primary)
+      views.setInt(ids.timer, "setBackgroundColor", colorWithOpacity(primarySoft, rowOpacity))
       views.setOnClickPendingIntent(ids.timer, actionIntent(context, widgetId, ids.position, timerAction, itemId, kind))
     }
   }
@@ -366,6 +377,15 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       hasWindow -> if (english) "TIME" else "時間帯"
       else -> ""
     }
+  }
+
+  private fun widgetBadgeDrawable(theme: String, dark: Boolean): Int = when (theme) {
+    "slate" -> if (dark) R.drawable.focus_flow_widget_badge_slate_dark else R.drawable.focus_flow_widget_badge_slate_light
+    "evergreen" -> if (dark) R.drawable.focus_flow_widget_badge_evergreen_dark else R.drawable.focus_flow_widget_badge_evergreen_light
+    "ocean" -> if (dark) R.drawable.focus_flow_widget_badge_ocean_dark else R.drawable.focus_flow_widget_badge_ocean_light
+    "orchid" -> if (dark) R.drawable.focus_flow_widget_badge_orchid_dark else R.drawable.focus_flow_widget_badge_orchid_light
+    "sunrise" -> if (dark) R.drawable.focus_flow_widget_badge_sunrise_dark else R.drawable.focus_flow_widget_badge_sunrise_light
+    else -> if (dark) R.drawable.focus_flow_widget_badge_mist_dark else R.drawable.focus_flow_widget_badge_mist_light
   }
 
   private fun itemCardDrawable(theme: String, dark: Boolean, completed: Boolean, required: Boolean): Int = widgetSurfaceDrawable(theme, dark)
@@ -501,6 +521,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   private fun completedToggleIntent(context: Context, widgetId: Int): PendingIntent = PendingIntent.getBroadcast(context, ("completed-toggle:$widgetId").hashCode(), Intent(context, FocusFlowWidgetProvider::class.java).apply {
     action = ACTION_TOGGLE_COMPLETED
     data = Uri.parse("$DEEP_LINK_SCHEME:///widget/$widgetId/completed-toggle")
+    putExtra(EXTRA_WIDGET_ID, widgetId)
   }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
   private fun noOpIntent(context: Context, widgetId: Int, row: Int, targetId: String, kind: String): PendingIntent = PendingIntent.getBroadcast(context, ("noop:$widgetId:$row:$kind:$targetId").hashCode(), Intent(context, FocusFlowWidgetProvider::class.java).apply { action = ACTION_NOOP; data = Uri.parse("$DEEP_LINK_SCHEME:///widget/$widgetId/$row/noop/$kind/$targetId") }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
   private fun deepLink(context: Context, destination: String, targetId: String? = null, showCompleted: Boolean = false): Intent {
@@ -528,8 +549,10 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     const val ACTION_NOOP = "focusflow.widget.NOOP"
     const val EXTRA_TARGET_ID = "targetId"
     const val EXTRA_KIND = "kind"
+    const val EXTRA_WIDGET_ID = "widgetId"
     const val WIDGET_SIZE_PREFIX = "widgetSizeRows:"
     const val WIDGET_SHOW_COMPLETED = "widgetShowCompleted"
+    const val WIDGET_SHOW_COMPLETED_PREFIX = "widgetShowCompleted:"
     fun refreshAll(context: Context) { val manager = AppWidgetManager.getInstance(context); val provider = FocusFlowWidgetProvider(); manager.getAppWidgetIds(ComponentName(context, FocusFlowWidgetProvider::class.java)).forEach { id -> provider.safeUpdateWidget(context, manager, id) } }
   }
 }

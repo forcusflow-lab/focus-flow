@@ -23,7 +23,9 @@ describe("Focus Flow v20 Widget controls and dark-form quality contract", () => 
     expect(gate).toContain("...completedHabitItems.map");
     expect(provider).toContain("ACTION_TOGGLE_COMPLETED");
     expect(provider).toContain("WIDGET_SHOW_COMPLETED");
-    expect(provider).toContain("visibleWidgetItems(context, all)");
+    expect(provider).toContain("visibleWidgetItems(context, widgetId, all)");
+    expect(provider).toContain("WIDGET_SHOW_COMPLETED_PREFIX");
+    expect(provider).toContain("EXTRA_WIDGET_ID");
     expect(provider).toContain("completedToggleIntent(context, widgetId)");
     expect(layout).toContain("focus_flow_widget_completed_toggle");
     expect(provider).not.toContain("RemoteViewsService()");
@@ -34,8 +36,9 @@ describe("Focus Flow v20 Widget controls and dark-form quality contract", () => 
     const provider = source("plugins", "native", "android", "kotlin", "FocusFlowWidgetProvider.kt");
     expect(provider).toContain('val rowOpacity = state.optInt("widgetCardOpacity", 100)');
     expect(provider).toContain('"setBackgroundColor", colorWithOpacity(if (completed) elevated else surface, rowOpacity)');
-    expect(provider).toContain('views.setInt(ids.badge, "setBackgroundColor", primarySoft)');
-    expect(provider).toContain('views.setInt(control, "setBackgroundColor", Color.TRANSPARENT)');
+    expect(provider).toContain('views.setInt(ids.badge, "setBackgroundResource", widgetBadgeDrawable(theme, dark))');
+    expect(provider).toContain('views.setInt(control, "setBackgroundColor", controlSurface)');
+    expect(provider).toContain('views.setInt(ids.timer, "setBackgroundColor", colorWithOpacity(primarySoft, rowOpacity))');
   });
 
   it("removes fixed light form surfaces from the required-window selector", () => {
