@@ -31,7 +31,7 @@ describe("Focus Flow統合ウィジェットの設定", () => {
     expect(settings).toContain("Background strength");
     expect(settings).toContain("本体のテーマを使用");
     expect(settings).toContain("Follow app theme");
-    expect(settings).toContain('visible ? "残す" : "非表示"');
+    expect(settings).toContain('visible ? "完了済みを残す" : "完了済みを非表示"');
     expect(settings).not.toContain("残して線を引く");
   });
 });

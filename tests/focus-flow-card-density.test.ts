@@ -25,8 +25,8 @@ describe("Focus Flowカード密度", () => {
   it("静的Widgetは呼吸感のあるヘッダーと個別51dp mini-cardを最大3行表示し、Collectionなしでも項目の境界と余白を保つ", () => {
     const layout = projectFile("plugins", "native", "android", "res", "layout", "focus_flow_widget_initial.xml");
 
-    expect(layout).toContain('android:id="@+id/focus_flow_widget_header" android:layout_width="match_parent" android:layout_height="40dp" android:layout_marginStart="7dp" android:layout_marginTop="5dp"');
-    expect(layout).toContain('android:id="@+id/focus_flow_widget_top_spacer" android:layout_width="match_parent" android:layout_height="5dp"');
+    expect(layout).toContain('android:id="@+id/focus_flow_widget_header" android:layout_width="match_parent" android:layout_height="40dp" android:layout_marginStart="7dp" android:layout_marginTop="7dp"');
+    expect(layout).toContain('android:id="@+id/focus_flow_widget_top_spacer" android:layout_width="match_parent" android:layout_height="4dp"');
     expect(layout).toContain('android:layout_height="51dp"');
     expect(layout).toContain('android:id="@+id/focus_flow_widget_static_row_one_action"');
     expect(layout).toContain('android:id="@+id/focus_flow_widget_static_row_one_check"');
@@ -35,8 +35,9 @@ describe("Focus Flowカード密度", () => {
     expect(layout).toContain('android:layout_width="44dp"');
     expect(layout).toContain('android:layout_width="68dp"');
     expect(layout).toContain('android:layout_width="22dp"');
-    expect(layout).toContain('android:layout_height="2dp"');
-    expect(layout).toContain('@drawable/focus_flow_widget_item_light');
+    expect(layout).toContain('android:layout_height="1dp"');
+    expect(layout).toContain('@drawable/focus_flow_widget_surface_mist_light');
+    expect(layout).toContain('android:layout_marginTop="4dp" android:layout_marginBottom="4dp"');
     expect(layout).toContain('android:id="@+id/focus_flow_widget_static_row_one_content"');
     expect(layout).toContain('android:id="@+id/focus_flow_widget_static_row_three"');
     expect(layout).not.toContain('android:id="@+id/focus_flow_widget_static_row_four"');
@@ -56,15 +57,12 @@ describe("Focus Flowカード密度", () => {
   });
 
   it("完了済み項目は行全体を薄くせず、読みやすい文字色・背景・取り消し線で区別する", () => {
-    const todos = projectFile("app", "(tabs)", "todos.tsx");
-    const habits = projectFile("app", "(tabs)", "habits.tsx");
+    const cards = projectFile("components", "focus-flow", "item-cards.tsx");
     const widgetProvider = projectFile("plugins", "native", "android", "kotlin", "FocusFlowWidgetProvider.kt");
 
-    [todos, habits].forEach((source) => {
-      expect(source).toContain('backgroundColor: "#F1F4F2"');
-      expect(source).toContain('color: "#75827C", textDecorationLine: "line-through"');
-      expect(source).not.toMatch(/taskRowDone: \{ opacity|habitRowDone: \{ opacity/);
-    });
+    expect(cards).toContain('backgroundColor: achieved ? palette.elevated : palette.surface');
+    expect(cards).toContain('textDecorationColor: palette.muted');
+    expect(cards).not.toMatch(/taskRowDone: \{ opacity|habitRowDone: \{ opacity/);
     expect(widgetProvider).toContain("if (completed) mutedColor else titleColor");
     expect(widgetProvider).toContain('paletteColor(palette, "muted"');
     expect(widgetProvider).toContain("StyleSpan(Typeface.BOLD)");

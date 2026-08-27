@@ -86,7 +86,9 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     bindHeader(views, state, english)
     bindStaticRows(context, views, state, id, english, bucket)
     if (fallback) views.setTextViewText(R.id.focus_flow_widget_empty, if (english) "Open Focus Flow to refresh your list" else "Focus Flowを開くと項目を更新します")
-    views.setOnClickPendingIntent(R.id.focus_flow_widget_root, todayIntent(context, id))
+    val revealCompleted = state.optString("widgetCompletedDisplay", "dim") == "hide" && state.optInt("widgetHiddenCompletedCount", 0) > 0
+    views.setOnClickPendingIntent(R.id.focus_flow_widget_root, todayIntent(context, id, revealCompleted))
+    views.setOnClickPendingIntent(R.id.focus_flow_widget_header, todayIntent(context, id, revealCompleted))
     return views
   }
 
@@ -141,7 +143,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val palette = state.optJSONObject("widgetPalette")
     val dark = palette?.optBoolean("isDark", false) ?: false
     views.setInt(R.id.focus_flow_widget_card, "setBackgroundResource", widgetCardDrawable(dark, state.optInt("widgetOpacity", 86).coerceIn(0, 100)))
-    views.setInt(R.id.focus_flow_widget_header, "setBackgroundColor", paletteColor(palette, "primarySoft", if (dark) "#23483C" else "#E3F1EC"))
+    views.setInt(R.id.focus_flow_widget_header, "setBackgroundResource", widgetSurfaceDrawable(state.optString("widgetTheme", "mist"), dark))
     // Use pre-rendered alpha backgrounds rather than setAlpha. RemoteViews
     // hosts render only a restricted hierarchy, and text must not fade with
     // the card surface.
@@ -195,6 +197,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val rows = uniqueStaticItems(all, bucket.maxRows)
     val palette = state.optJSONObject("widgetPalette")
     val dark = palette?.optBoolean("isDark", false) ?: false
+    val theme = state.optString("widgetTheme", "mist")
     val titleColor = paletteColor(palette, "text", "#13251F")
     val mutedColor = paletteColor(palette, "muted", "#4E655B")
     val primary = paletteColor(palette, "primary", "#1B6B62")
@@ -210,7 +213,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       val item = rows.getOrNull(index)
       views.setViewVisibility(ids.row, if (item == null) View.GONE else View.VISIBLE)
       if (index < dividers.size) views.setViewVisibility(dividers[index], if (index < rows.size - 1) View.VISIBLE else View.GONE)
-      if (item != null) bindStaticRow(context, views, ids, item, widgetId, english, titleColor, mutedColor, primary, primarySoft, elevated, onPrimary, scale, bucket.showControls, dark) else clearStaticRow(views, ids)
+      if (item != null) bindStaticRow(context, views, ids, item, widgetId, english, titleColor, mutedColor, primary, primarySoft, elevated, onPrimary, scale, bucket.showControls, dark, theme) else clearStaticRow(views, ids)
     }
   }
 
@@ -243,12 +246,12 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setImageViewResource(ids.check, R.drawable.focus_flow_widget_check_empty)
   }
 
-  private fun bindStaticRow(context: Context, views: RemoteViews, ids: StaticRowIds, item: JSONObject, widgetId: Int, english: Boolean, titleColor: Int, mutedColor: Int, primary: Int, primarySoft: Int, elevated: Int, onPrimary: Int, scale: Float, showControls: Boolean, dark: Boolean) {
+  private fun bindStaticRow(context: Context, views: RemoteViews, ids: StaticRowIds, item: JSONObject, widgetId: Int, english: Boolean, titleColor: Int, mutedColor: Int, primary: Int, primarySoft: Int, elevated: Int, onPrimary: Int, scale: Float, showControls: Boolean, dark: Boolean, theme: String) {
     val completed = item.optBoolean("completed", false)
     val canToggle = item.optBoolean("canToggle", false)
     val title = item.optString("title")
     val badge = compactBadge(item, english)
-    views.setInt(ids.row, "setBackgroundResource", itemCardDrawable(dark, completed, item.optBoolean("required", false)))
+    views.setInt(ids.row, "setBackgroundResource", itemCardDrawable(theme, dark, completed, item.optBoolean("required", false)))
     val kind = item.optString("kind")
     val accentFallback = if (kind == "habit") primary else Color.parseColor("#3566B7")
     val accent = try { Color.parseColor(item.optString("accentColor")) } catch (_: Exception) { accentFallback }
@@ -332,13 +335,15 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     }
   }
 
-  private fun itemCardDrawable(dark: Boolean, completed: Boolean, required: Boolean): Int = when {
-    completed && dark -> R.drawable.focus_flow_widget_item_done_dark
-    completed -> R.drawable.focus_flow_widget_item_done_light
-    required && dark -> R.drawable.focus_flow_widget_item_required_dark
-    required -> R.drawable.focus_flow_widget_item_required_light
-    dark -> R.drawable.focus_flow_widget_item_dark
-    else -> R.drawable.focus_flow_widget_item_light
+  private fun itemCardDrawable(theme: String, dark: Boolean, completed: Boolean, required: Boolean): Int = widgetSurfaceDrawable(theme, dark)
+
+  private fun widgetSurfaceDrawable(theme: String, dark: Boolean): Int = when (theme) {
+    "slate" -> if (dark) R.drawable.focus_flow_widget_surface_slate_dark else R.drawable.focus_flow_widget_surface_slate_light
+    "evergreen" -> if (dark) R.drawable.focus_flow_widget_surface_evergreen_dark else R.drawable.focus_flow_widget_surface_evergreen_light
+    "ocean" -> if (dark) R.drawable.focus_flow_widget_surface_ocean_dark else R.drawable.focus_flow_widget_surface_ocean_light
+    "orchid" -> if (dark) R.drawable.focus_flow_widget_surface_orchid_dark else R.drawable.focus_flow_widget_surface_orchid_light
+    "sunrise" -> if (dark) R.drawable.focus_flow_widget_surface_sunrise_dark else R.drawable.focus_flow_widget_surface_sunrise_light
+    else -> if (dark) R.drawable.focus_flow_widget_surface_mist_dark else R.drawable.focus_flow_widget_surface_mist_light
   }
 
   private fun struck(value: String): CharSequence = SpannableString(value).apply { setSpan(StrikethroughSpan(), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE); setSpan(StyleSpan(Typeface.BOLD), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
@@ -447,7 +452,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   }
 
   private fun openItem(context: Context, targetId: String, kind: String) { if (targetId.isBlank() || (kind != "todo" && kind != "habit")) return; context.startActivity(deepLink(context, if (kind == "habit") "habits" else "todos", targetId).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)) }
-  private fun todayIntent(context: Context, id: Int): PendingIntent = PendingIntent.getActivity(context, id, deepLink(context, "today"), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+  private fun todayIntent(context: Context, id: Int, showCompleted: Boolean = false): PendingIntent = PendingIntent.getActivity(context, id, deepLink(context, "today", showCompleted = showCompleted), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
   private fun detailIntent(context: Context, widgetId: Int, row: Int, targetId: String, kind: String): PendingIntent = PendingIntent.getActivity(context, ("detail:$widgetId:$row:$kind:$targetId").hashCode(), deepLink(context, if (kind == "habit") "habits" else "todos", targetId), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
   private fun actionIntent(context: Context, widgetId: Int, row: Int, action: String, targetId: String, kind: String): PendingIntent {
     val identity = "$widgetId:$row:$action:$kind:$targetId"
@@ -459,13 +464,14 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
   }
   private fun noOpIntent(context: Context, widgetId: Int, row: Int, targetId: String, kind: String): PendingIntent = PendingIntent.getBroadcast(context, ("noop:$widgetId:$row:$kind:$targetId").hashCode(), Intent(context, FocusFlowWidgetProvider::class.java).apply { action = ACTION_NOOP; data = Uri.parse("$DEEP_LINK_SCHEME:///widget/$widgetId/$row/noop/$kind/$targetId") }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-  private fun deepLink(context: Context, destination: String, targetId: String? = null): Intent {
+  private fun deepLink(context: Context, destination: String, targetId: String? = null, showCompleted: Boolean = false): Intent {
     val uri = Uri.parse("$DEEP_LINK_SCHEME:///").buildUpon().apply {
       when (destination) {
         "todos" -> appendPath("todos")
         "habits" -> appendPath("habits")
       }
       if (targetId != null) appendQueryParameter("open", targetId)
+      if (showCompleted) appendQueryParameter("completed", "1")
     }.build()
     return Intent(Intent.ACTION_VIEW, uri).setPackage(context.packageName)
   }

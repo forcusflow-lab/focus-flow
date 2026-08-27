@@ -22,7 +22,7 @@ describe("Focus Flow 高密度Widgetとダークモード", () => {
     expect(source).toContain('compactBadge');
     expect(source).toContain('required -> if (english) "MUST" else "必須"');
     expect(layout).toContain('android:layout_height="51dp"');
-    expect(layout).toContain('android:layout_height="2dp"');
+    expect(layout).toContain('android:layout_height="1dp"');
     expect(layout).toContain('android:layout_marginStart="6dp"');
     expect(layout).toContain('android:gravity="center_vertical"');
     expect(layout).toContain('android:maxLines="1"');
