@@ -84,7 +84,7 @@ Android 12+ではsmall／medium／largeのresponsive RemoteViews mapを保持し
 | V20-R06 | Memoの追加・編集・Todo化・削除、キーボード表示中の保存を行う | 全操作がテーマに連動し、保存CTAがタブバー・ナビゲーションバー・キーボードと重ならない。 |
 | V20-R07 | Widgetをsmall／medium／largeへリサイズし、全操作後に本体を開く | 1／2／3行と行別操作・透過・完了表示が保持され、違う行へ状態が混線しない。 |
 
-2026-08-27時点で、Slider座標のwindow座標化、Widget行の個別透過・ヘッダー完了表示toggle、テーマPill・フラット計数操作、Todo／Habit／時間帯／Memoフォームのpalette化、Memo固定保存CTAを実装した。全Vitest **32 files / 96 passed / 1 skipped**、TypeScript、CI Lint、通常版／本人用のクリーンAndroid生成が成功している。ローカルGradleの直接Kotlin compileは、実装エラーではなくsandboxのAndroid SDK未設定により完了できなかったため、本人用GitHub Actions署名ビルドでNative Kotlinを検証する。
+2026-08-27時点で、Slider座標のwindow座標化、Widget行の個別透過・ヘッダー完了表示toggle、テーマPill・フラット計数操作、Todo／Habit／時間帯／Memoフォームのpalette化、Memo固定保存CTAを実装した。全Vitest **32 files / 96 passed / 1 skipped**、TypeScript、CI Lint、通常版／本人用のクリーンAndroid生成が成功している。ローカルGradleの直接Kotlin compileは、実装エラーではなくsandboxのAndroid SDK未設定により完了できなかったが、GitHub Actions run `33110049736`で同一ソースの本人用release署名APKを成功生成し、artifact digest、APK整合性、package／versionCode、v2署名、既知証明書、Widget透過・完了表示・テーマ操作のDEX経路を独立検証した。残る品質ゲートはV20-R01〜R07の実機受入である。
 
 > v20は、全自動検証、クリーンAndroid生成、本人用署名APKの独立検証、V20-R01〜R07の実機受入が揃うまでは、Google Play配布候補にしない。
 

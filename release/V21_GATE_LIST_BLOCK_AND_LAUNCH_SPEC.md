@@ -62,7 +62,7 @@ Android 12以降、OS Splashはアプリアイコンと単色window background�
 
 2026-08-27時点で、`AppPicker`、`SelectedApps`、時間帯別`RoutineAppPicker`を64dpの共通`AppSelectionRow`へ統合し、48dpのチェック操作、名称とpackage名の二行、選択・上限・制限中状態を揃えた。`FocusGateService`とフォールバックの`FocusGateActivity`は、同期済み`widgetPalette`からテーマを復元し、Todayを開く主操作と通常モードだけの補助設定導線を実装した。起動画面では透明ロゴを使い、OS Splashの小さい無背景マークからテーマ連動フルスクリーン導入へ接続した。
 
-`focus-flow-v21-gate-list-and-launch.test.ts`を追加し、全Vitest **32 files / 96 passed / 1 skipped**、TypeScript、CI Lint、通常版／本人用のクリーンAndroid生成を確認した。Focus GateのKotlinを含む最終Native compileと署名はGitHub Actionsで実施する。V21-R01〜R05は実機受入前である。
+`focus-flow-v21-gate-list-and-launch.test.ts`を追加し、全Vitest **32 files / 96 passed / 1 skipped**、TypeScript、CI Lint、通常版／本人用のクリーンAndroid生成を確認した。GitHub Actions run `33110049736`でFocus GateのKotlinを含む本人用release署名APKを成功生成し、artifact digest、APK整合性、package／versionCode、v2署名、既知証明書、Focus Gate・Widget Provider・個人用schemeを独立検証した。V21-R01〜R05は実機受入前である。
 
 ## References
 

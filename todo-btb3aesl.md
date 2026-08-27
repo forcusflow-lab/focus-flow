@@ -400,3 +400,4 @@
 - [ ] 制限対象一覧・ブロック画面・起動画面のUI／テーマ／安全領域を、全テーマ・light／dark・空／読み込み／エラー・戻る・Deep Linkで回帰検証し、本人用署名APKと統合実機受入へ反映する
 - [x] v20のWidget透過・Slider精度・完了済み表示・テーマPill／操作・全フォーム可読性・メモCTAについて、32 files / 96 passed / 1 skipped、TypeScript、CI Lint、通常版／本人用クリーンAndroid生成を通過させる
 - [x] v21の制限対象一覧・ブロック画面・起動画面について、32 files / 96 passed / 1 skipped、TypeScript、CI Lint、通常版／本人用クリーンAndroid生成を通過させる
+- [x] GitHub Actions run 33110049736でv20／v21を含む本人用署名APKを生成し、artifact digest一致、ZIP整合性、package／versionCode 20、v2署名、既知証明書、専用scheme、Focus Gate、Widget Provider／resize、透過・完了表示・テーマ・時間型DEX経路、旧Collection経路不在を独立検証する
