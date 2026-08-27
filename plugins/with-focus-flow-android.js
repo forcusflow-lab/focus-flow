@@ -58,7 +58,7 @@ function withFocusFlowAndroid(config) {
     // updates begin. Keeping it separate from the Collection Widget avoids a
     // launcher-level add failure if a device has not yet bound the remote service.
     const widgets = [["FocusFlowWidgetProvider", "Focus Flow · Today", "focus_flow_widget_initial_info"]];
-    widgets.forEach(([name, label, resource]) => addComponent(application, "receiver", { $: { "android:name": `${nativePackage}.${name}`, "android:exported": "true", "android:label": label }, "intent-filter": [{ action: [{ $: { "android:name": "android.appwidget.action.APPWIDGET_UPDATE" } }] }], "meta-data": [{ $: { "android:name": "android.appwidget.provider", "android:resource": `@xml/${resource}` } }] }));
+    widgets.forEach(([name, label, resource]) => addComponent(application, "receiver", { $: { "android:name": `${nativePackage}.${name}`, "android:exported": "true", "android:label": label }, "intent-filter": [{ action: [{ $: { "android:name": "android.appwidget.action.APPWIDGET_UPDATE" } }, { $: { "android:name": "android.appwidget.action.APPWIDGET_UPDATE_OPTIONS" } }] }], "meta-data": [{ $: { "android:name": "android.appwidget.provider", "android:resource": `@xml/${resource}` } }] }));
     return config;
   });
   return withDangerousMod(config, ["android", async (config) => {
@@ -80,4 +80,4 @@ function withFocusFlowAndroid(config) {
     return config;
   }]);
 }
-module.exports = createRunOncePlugin(withFocusFlowAndroid, PLUGIN_NAME, "1.0.14");
+module.exports = createRunOncePlugin(withFocusFlowAndroid, PLUGIN_NAME, "1.0.15");

@@ -26,7 +26,17 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   // layout isolation. This provider now uses only a static RemoteViews tree so
   // widget placement and later state synchronization share the same safe path.
   override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) { ids.forEach { safeUpdateWidget(context, manager, it) } }
-  override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: android.os.Bundle) { safeUpdateWidget(context, manager, id, options) }
+  override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: android.os.Bundle) {
+    super.onAppWidgetOptionsChanged(context, manager, id, options)
+    rememberWidgetBucket(context, id, options)
+    safeUpdateWidget(context, manager, id, options)
+  }
+  override fun onDeleted(context: Context, ids: IntArray) {
+    val editor = context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE).edit()
+    ids.forEach { id -> editor.remove("$WIDGET_SIZE_PREFIX$id") }
+    editor.apply()
+    super.onDeleted(context, ids)
+  }
 
   override fun onReceive(context: Context, intent: Intent) {
     val updated = when (intent.action) {
@@ -50,15 +60,24 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   private fun updateInitialWidget(context: Context, manager: AppWidgetManager, id: Int, fallback: Boolean = false, options: android.os.Bundle? = null) {
     val state = state(context)
     val english = state.optString("language", "ja") == "en"
-    val currentOptions = options ?: manager.getAppWidgetOptions(id)
-    val exactSizes = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) currentOptions.getParcelableArrayList<SizeF>(AppWidgetManager.OPTION_APPWIDGET_SIZES)?.filter { it.width > 0f && it.height > 0f } else null
-    if (!exactSizes.isNullOrEmpty()) {
-      val mappings = linkedMapOf<SizeF, RemoteViews>()
-      exactSizes.forEach { size -> mappings[size] = createWidgetViews(context, state, id, english, widgetBucket(size.width, size.height), fallback) }
-      manager.updateAppWidget(id, RemoteViews(mappings))
+    // Android 12+ selects a responsive RemoteViews map directly as the host
+    // changes cells. This is more robust than exact-size lists: launchers are
+    // allowed to omit OPTION_APPWIDGET_SIZES, and normal app syncs must not
+    // replace a resize-specific view with their default option Bundle.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+      manager.updateAppWidget(id, responsiveWidgetViews(context, state, id, english, fallback))
       return
     }
-    manager.updateAppWidget(id, createWidgetViews(context, state, id, english, widgetBucket(manager, id, currentOptions), fallback))
+    manager.updateAppWidget(id, createWidgetViews(context, state, id, english, widgetBucket(context, manager, id, options), fallback))
+  }
+
+  private fun responsiveWidgetViews(context: Context, state: JSONObject, id: Int, english: Boolean, fallback: Boolean): RemoteViews {
+    val mappings = linkedMapOf(
+      SizeF(130f, 102f) to createWidgetViews(context, state, id, english, WidgetBucket(1, false, true), fallback),
+      SizeF(130f, 155f) to createWidgetViews(context, state, id, english, WidgetBucket(2, false, false), fallback),
+      SizeF(130f, 250f) to createWidgetViews(context, state, id, english, WidgetBucket(3, false, false), fallback),
+    )
+    return RemoteViews(mappings)
   }
 
   private fun createWidgetViews(context: Context, state: JSONObject, id: Int, english: Boolean, bucket: WidgetBucket, fallback: Boolean): RemoteViews {
@@ -86,14 +105,28 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
 
   private data class WidgetBucket(val maxRows: Int, val showControls: Boolean, val compactHeader: Boolean)
 
-  private fun widgetBucket(manager: AppWidgetManager, id: Int, updatedOptions: android.os.Bundle? = null): WidgetBucket {
-    // The resize callback must use its new Bundle. MAX dimensions are the
-    // supported range, not the current size, and selecting them first made
-    // every launcher size render as the same large widget.
+  private fun widgetBucket(context: Context, manager: AppWidgetManager, id: Int, updatedOptions: android.os.Bundle? = null): WidgetBucket {
+    if (updatedOptions == null) rememberedWidgetBucket(context, id)?.let { return it }
+    // Pre-Android 12 hosts offer only min/max bounds. Persist the callback
+    // bucket so refreshAll after app-state synchronization never discards the
+    // size that the launcher has just reported.
     val options = updatedOptions ?: manager.getAppWidgetOptions(id)
     val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 180))
     val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 110))
     return widgetBucket(width.toFloat(), height.toFloat())
+  }
+
+  private fun rememberWidgetBucket(context: Context, id: Int, options: android.os.Bundle) {
+    val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 180))
+    val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 110))
+    context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE).edit().putInt("$WIDGET_SIZE_PREFIX$id", widgetBucket(width.toFloat(), height.toFloat()).maxRows).apply()
+  }
+
+  private fun rememberedWidgetBucket(context: Context, id: Int): WidgetBucket? = when (context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE).getInt("$WIDGET_SIZE_PREFIX$id", 0)) {
+    1 -> WidgetBucket(1, false, true)
+    2 -> WidgetBucket(2, false, false)
+    3 -> WidgetBucket(3, false, false)
+    else -> null
   }
 
   private fun widgetBucket(width: Float, height: Float): WidgetBucket {
@@ -398,6 +431,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     const val ACTION_OPEN_ITEM = "focusflow.widget.OPEN_ITEM"
     const val EXTRA_TARGET_ID = "targetId"
     const val EXTRA_KIND = "kind"
+    const val WIDGET_SIZE_PREFIX = "widgetSizeRows:"
     fun refreshAll(context: Context) { val manager = AppWidgetManager.getInstance(context); val provider = FocusFlowWidgetProvider(); manager.getAppWidgetIds(ComponentName(context, FocusFlowWidgetProvider::class.java)).forEach { id -> provider.safeUpdateWidget(context, manager, id) } }
   }
 }
