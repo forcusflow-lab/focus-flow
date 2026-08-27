@@ -4,7 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("Focus Flow統合ウィジェットの設定", () => {
-  it("完了表示と本体透過の選択をローカル設定からAndroidのウィジェット状態へ同期する", () => {
+  it("TodayとWidgetの完了表示を独立したワンタップSwitchでローカル設定からWidget状態へ同期する", () => {
     const types = fs.readFileSync(path.join(process.cwd(), "lib", "focus-flow", "types.ts"), "utf8");
     const bridge = fs.readFileSync(path.join(process.cwd(), "lib", "focus-flow", "android-gate.ts"), "utf8");
     const settings = fs.readFileSync(path.join(process.cwd(), "app", "(tabs)", "settings.tsx"), "utf8");
@@ -21,13 +21,17 @@ describe("Focus Flow統合ウィジェットの設定", () => {
     expect(bridge).toContain('completed: true');
     expect(settings).toContain("onTodayCompletedDisplay");
     expect(settings).toContain("onWidgetCompletedDisplay");
+    expect(settings).toContain("function CompletedItemsToggle");
+    expect(settings).toContain('accessibilityLabel={english ? `${title}: ${status}`');
+    expect(settings).toContain('onValueChange={(next) => onChange(next ? "dim" : "hide")}');
+    expect(settings).toContain('value={displaySettings.todayCompletedDisplay ?? "hide"}');
+    expect(settings).toContain('value={displaySettings.widgetCompletedDisplay ?? "dim"}');
     expect(settings).toContain("onOpacity");
     expect(settings).toContain("Home screen widget");
     expect(settings).toContain("Background strength");
     expect(settings).toContain("本体のテーマを使用");
     expect(settings).toContain("Follow app theme");
-    expect(settings).toContain('label: t("残す", "Keep")');
-    expect(settings).toContain('label: t("非表示", "Hide")');
+    expect(settings).toContain('visible ? "残す" : "非表示"');
     expect(settings).not.toContain("残して線を引く");
   });
 });
