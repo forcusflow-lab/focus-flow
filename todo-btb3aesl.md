@@ -339,3 +339,8 @@
 - [ ] v13実機受入では、未完了項目を3件用意してWidgetを最小／標準／大の高さへ縦リサイズし、1/2/3行・カード外形追従・アプリ同期／完了後のサイズ維持を連続確認する
 - [x] v13でAndroid 12+の3段階responsive RemoteViews、pre-Android 12のwidgetId別サイズ保存、resize broadcast登録、ホスト高追従カードを実装し、全自動回帰・通常／本人用クリーンAndroid生成を通過させる
 - [x] GitHub Actions run 33029093634で本人用v13署名APKを生成し、ZIP整合性、versionCode 13、v2署名、既存証明書、専用scheme、resize broadcast、Provider、responsive/保存経路、Widget資産、旧Collection経路不在を独立検証する
+- [x] v13実機で再現した時間型Habitの`0/30分`に対する±表示・時間計測開始不能を、count型とのUI分岐、開始／経過状態、早期完了制約まで再設計し、本体・Today・Widgetで一貫させる
+- [x] v13実機で再現したHabitチェックが詳細画面へ遷移する不具合を、チェック領域とカード本文／詳細領域のイベント競合から修正し、Todo・Habit・Todayの全完了操作を状態変更だけへ統一する
+- [x] v13実機で確認したWidget時間型Habitのロックアイコン・補足欠落・本体と不一致な情報階層を、Todoist等のフラットな一覧カード基準で再設計する
+- [x] Todoist・TickTick・Microsoft To Do・Habitify等の公式仕様と実際の操作導線を比較し、Todo・習慣・Today・メモ・集中制限・設定・Widget・戻る・Deep Link・空／エラー状態のUX監査台帳と改訂仕様を作成する
+- [ ] 改訂仕様に基づき全機能・全画面を反復レビューし、回帰テスト、ネイティブ生成、署名APK、実機受入までのPDCA記録を残す

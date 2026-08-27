@@ -163,11 +163,30 @@ export function habitTimerRemainingMs(habit: Habit, value: string, base = new Da
   return endsAt === undefined ? undefined : Math.max(0, endsAt - base.getTime());
 }
 
+export type HabitTimerProgress = { started: boolean; running: boolean; ready: boolean; elapsedSeconds: number; remainingSeconds: number; targetSeconds: number; label: string };
+
+export function formatTimerClock(totalSeconds: number) {
+  const seconds = Math.max(0, Math.floor(totalSeconds));
+  return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+/** 開始時刻から導出するため、画面再表示・アプリ復帰後も時間を失わない。 */
+export function getHabitTimerProgress(habit: Habit, value: string, base = new Date()): HabitTimerProgress {
+  const targetSeconds = Math.max(habit.targetValue ?? 1, 1) * 60;
+  const startedAt = habit.timerStartedAtByDate?.[value];
+  const startedMs = startedAt ? new Date(startedAt).getTime() : Number.NaN;
+  const started = Number.isFinite(startedMs);
+  const elapsedSeconds = started ? Math.min(targetSeconds, Math.max(0, Math.floor((base.getTime() - startedMs) / 1_000))) : 0;
+  const ready = isHabitTimeReady(habit, value, base);
+  return { started, running: started && !ready, ready, elapsedSeconds, remainingSeconds: Math.max(0, targetSeconds - elapsedSeconds), targetSeconds, label: `${formatTimerClock(elapsedSeconds)} / ${formatTimerClock(targetSeconds)}` };
+}
+
 export function habitProgressLabel(habit: Habit, value = dayKey(), language: ContentLanguage = "ja") {
   const unit = habit.progressUnit ?? "check";
   if (unit === "check") return null;
+  if (unit === "minutes") return getHabitTimerProgress(habit, value).label;
   const target = Math.max(habit.targetValue ?? 1, 1);
-  const suffix = unit === "minutes" ? language === "en" ? " min" : "分" : language === "en" ? " times" : "回";
+  const suffix = language === "en" ? " times" : "回";
   return `${Math.min(habit.dailyProgress?.[value] ?? 0, target)}/${target}${suffix}`;
 }
 

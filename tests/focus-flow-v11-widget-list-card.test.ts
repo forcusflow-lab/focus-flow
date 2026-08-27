@@ -23,14 +23,16 @@ describe("v13 Widget単一リストカードの実機原因回帰契約", () => 
   it("レイアウトは外側を透明に保ち、ホスト高へ追従する一枚カードを最大3行まで描画する", () => {
     const layout = source("plugins", "native", "android", "res", "layout", "focus_flow_widget_initial.xml");
     expect(layout).toContain('android:padding="6dp"');
-    expect(layout).toContain('android:layout_height="match_parent" android:layout_gravity="top" android:background="@drawable/focus_flow_widget_card_light_100"');
-    expect(layout).toContain('android:layout_height="38dp"');
-    expect(layout).toContain('android:layout_height="44dp"');
+    expect(layout).toContain('android:id="@+id/focus_flow_widget_card" android:layout_width="match_parent" android:layout_height="match_parent"');
+    expect(layout).toContain('android:layout_height="42dp"');
+    expect(layout).toContain('android:layout_height="50dp"');
     expect(layout).toContain('android:layout_width="22dp" android:layout_height="22dp"');
     expect(layout).toContain('android:minWidth="42dp"');
     expect(layout).toContain("focus_flow_widget_static_row_one");
     expect(layout).toContain("focus_flow_widget_static_row_two");
     expect(layout).toContain("focus_flow_widget_static_row_three");
+    expect(layout).toContain("focus_flow_widget_static_row_one_timer");
+    expect(layout).toContain('android:layout_width="76dp"');
     expect(layout).not.toContain("static_row_four");
     expect(layout).not.toMatch(/<View[\s>]/);
     expect(layout).not.toContain("layout_weight");

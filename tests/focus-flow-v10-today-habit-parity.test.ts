@@ -12,13 +12,14 @@ describe("v10 Today・習慣タブのカード仕様統一", () => {
 
     [today, habits].forEach((screen) => {
       expect(screen).toContain("weeklyHabitProgress");
-      expect(screen).toContain("habitProgressLabel");
+      expect(screen).toContain("HabitProgressControl");
       expect(screen).toContain('label={t("必須", "Must-do")}');
       expect(screen).toContain("isHabitCompleteOn");
       expect(screen).toContain("onProgress");
+      expect(screen).toContain("onStartTimer");
+      expect(screen).toContain("startHabitTimer");
     });
     expect(today).toContain("todayWeekRow");
-    expect(today).toContain("todayProgressControl");
     expect(today).toContain("todayHabitTitleDone");
     expect(today).toContain("adjustHabitProgress");
     expect(today).toContain("onToggle={(date) => handleHabitToggle(item.habit.id, date)}");

@@ -26,9 +26,11 @@ describe("Focus Flowの項目遷移と完了取り消し", () => {
     expect(todos).toContain("event.stopPropagation(); onToggle();");
     expect(todos).toContain("style={styles.checkTouchTarget}");
     expect(habits).toContain("todayCheckTouchTarget: { width: 44, height: 44");
-    expect(habits).toContain("event.stopPropagation(); onToggle();");
+    expect(habits).toContain("onPressIn={(event) => event.stopPropagation()}");
+    expect(habits).toContain("onPress={() => onToggle()}");
     expect(habits).toContain("style={styles.todayCheckTouchTarget}");
     expect(today).toContain("itemCheckTouchTarget: { width: 44, height: 44");
-    expect(today).toContain("event.stopPropagation(); onToggle();");
+    expect(today).toContain("onPressIn={(event) => event.stopPropagation()}");
+    expect(today).toContain("onPress={() => onToggle()}");
   });
 });

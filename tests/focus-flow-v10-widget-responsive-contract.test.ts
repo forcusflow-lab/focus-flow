@@ -24,8 +24,8 @@ describe("v13 Widgetのサイズ・単一リストカード・必須表示契約
     expect(provider).toContain("SizeF(130f, 250f)");
     expect(provider).not.toContain("SizeF(270f, 102f)");
     expect(provider).toContain("WidgetBucket(1, false, true)");
-    expect(provider).toContain("WidgetBucket(2, false, false)");
-    expect(provider).toContain("WidgetBucket(3, false, false)");
+    expect(provider).toContain("WidgetBucket(2, true, false)");
+    expect(provider).toContain("WidgetBucket(3, true, false)");
     expect(provider).toContain("for (index in 0..2)");
     expect(layout).toContain('android:id="@+id/focus_flow_widget_card" android:layout_width="match_parent" android:layout_height="match_parent"');
     expect(layout).toContain("focus_flow_widget_static_row_three");
@@ -59,8 +59,8 @@ describe("v13 Widgetのサイズ・単一リストカード・必須表示契約
     const state = source("lib", "focus-flow", "provider.tsx");
 
     expect(bridge).toContain('progressUnit: habit.progressUnit ?? "check"');
-    expect(bridge).toContain("timerRunning: Boolean(habit.timerStartedAtByDate?.[today])");
-    expect(provider).toContain("WidgetBucket(3, false, false)");
+    expect(bridge).toContain("timerElapsedSeconds: timer.elapsedSeconds");
+    expect(provider).toContain("WidgetBucket(3, true, false)");
     expect(provider).toContain("val supportsControls = showControls");
     expect(provider).toContain('unit == "count"');
     expect(provider).toContain('unit == "minutes"');

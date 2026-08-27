@@ -74,8 +74,8 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   private fun responsiveWidgetViews(context: Context, state: JSONObject, id: Int, english: Boolean, fallback: Boolean): RemoteViews {
     val mappings = linkedMapOf(
       SizeF(130f, 102f) to createWidgetViews(context, state, id, english, WidgetBucket(1, false, true), fallback),
-      SizeF(130f, 155f) to createWidgetViews(context, state, id, english, WidgetBucket(2, false, false), fallback),
-      SizeF(130f, 250f) to createWidgetViews(context, state, id, english, WidgetBucket(3, false, false), fallback),
+      SizeF(130f, 155f) to createWidgetViews(context, state, id, english, WidgetBucket(2, true, false), fallback),
+      SizeF(130f, 250f) to createWidgetViews(context, state, id, english, WidgetBucket(3, true, false), fallback),
     )
     return RemoteViews(mappings)
   }
@@ -124,16 +124,16 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
 
   private fun rememberedWidgetBucket(context: Context, id: Int): WidgetBucket? = when (context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE).getInt("$WIDGET_SIZE_PREFIX$id", 0)) {
     1 -> WidgetBucket(1, false, true)
-    2 -> WidgetBucket(2, false, false)
-    3 -> WidgetBucket(3, false, false)
+    2 -> WidgetBucket(2, true, false)
+    3 -> WidgetBucket(3, true, false)
     else -> null
   }
 
   private fun widgetBucket(width: Float, height: Float): WidgetBucket {
     return when {
       width < 190f || height < 150f -> WidgetBucket(1, false, true)
-      height < 250f -> WidgetBucket(2, false, false)
-      else -> WidgetBucket(3, false, false)
+      height < 250f -> WidgetBucket(2, true, false)
+      else -> WidgetBucket(3, true, false)
     }
   }
 
@@ -243,7 +243,6 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   private fun bindStaticRow(context: Context, views: RemoteViews, ids: StaticRowIds, item: JSONObject, widgetId: Int, english: Boolean, titleColor: Int, mutedColor: Int, primary: Int, primarySoft: Int, elevated: Int, onPrimary: Int, scale: Float, showControls: Boolean, dark: Boolean) {
     val completed = item.optBoolean("completed", false)
     val canToggle = item.optBoolean("canToggle", false)
-    val timedLocked = item.optBoolean("timedLocked", false)
     val title = item.optString("title")
     val badge = compactBadge(item, english)
     views.setTextViewText(ids.title, if (completed) struck(title) else title)
@@ -254,9 +253,13 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setTextColor(ids.badge, primary)
     views.setInt(ids.badge, "setBackgroundResource", if (dark) R.drawable.focus_flow_widget_badge_dark else R.drawable.focus_flow_widget_badge_light)
     views.setTextViewTextSize(ids.badge, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
-    // A required badge takes priority over secondary timing text. Rendering both
-    // in the same compact row caused the unreadable device result.
-    val meta = if (badge.isNotBlank()) "" else item.optString("windowLabel", "")
+    val unit = item.optString("progressUnit", "check")
+    // 時間型はロック表示ではなく、開始前・計測中を言葉で示す。
+    val meta = when {
+      unit == "minutes" && item.optBoolean("timerRunning", false) -> if (english) "Timing" else "計測中"
+      unit == "minutes" -> if (english) "Time goal" else "時間目標"
+      badge.isNotBlank() -> ""
+      else -> item.optString("windowLabel", "")
     views.setViewVisibility(ids.meta, if (meta.isBlank()) View.GONE else View.VISIBLE)
     views.setTextViewText(ids.meta, meta)
     views.setTextColor(ids.meta, mutedColor)
@@ -266,14 +269,13 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       views.setImageViewResource(ids.check, R.drawable.focus_flow_widget_check_mark)
     } else {
       views.setInt(ids.check, "setBackgroundResource", R.drawable.focus_flow_widget_check_circle)
-      views.setImageViewResource(ids.check, if (timedLocked) R.drawable.focus_flow_widget_check_locked else R.drawable.focus_flow_widget_check_empty)
+      views.setImageViewResource(ids.check, R.drawable.focus_flow_widget_check_empty)
     }
     val itemId = item.optString("id")
     val kind = item.optString("kind")
     views.setOnClickPendingIntent(ids.content, detailIntent(context, widgetId, ids.position, itemId, kind))
     val action = if (completed) ACTION_RESTORE else ACTION_COMPLETE
-    views.setOnClickPendingIntent(ids.action, if (canToggle) actionIntent(context, widgetId, ids.position, action, itemId, kind) else todayIntent(context, widgetId + 20 + ids.position))
-    val unit = item.optString("progressUnit", "check")
+    views.setOnClickPendingIntent(ids.action, if (canToggle) actionIntent(context, widgetId, ids.position, action, itemId, kind) else noOpIntent(context, widgetId, ids.position, itemId, kind))
     val supportsControls = showControls && kind == "habit" && !completed && (unit == "count" || unit == "minutes")
     views.setViewVisibility(ids.controls, if (supportsControls) View.VISIBLE else View.GONE)
     views.setViewVisibility(ids.timer, if (supportsControls && unit == "minutes") View.VISIBLE else View.GONE)
@@ -288,7 +290,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       views.setOnClickPendingIntent(ids.increment, actionIntent(context, widgetId, ids.position, ACTION_INCREMENT, itemId, kind))
     } else if (supportsControls) {
       listOf(ids.decrement, ids.progress, ids.increment).forEach { control -> views.setViewVisibility(control, View.GONE) }
-      views.setTextViewText(ids.timer, if (item.optBoolean("timerRunning", false)) if (english) "Running" else "計測中" else if (english) "Start" else "開始")
+      views.setTextViewText(ids.timer, if (item.optBoolean("timerRunning", false)) if (english) "Timing" else "計測中" else if (english) "Start" else "開始")
       views.setTextColor(ids.timer, onPrimary)
       views.setInt(ids.timer, "setBackgroundColor", primary)
       views.setOnClickPendingIntent(ids.timer, actionIntent(context, widgetId, ids.position, ACTION_TIMER_START, itemId, kind))
@@ -373,7 +375,9 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     }
     val actions = widgetActions(preferences)
     if (operation == "timer_start" && (0 until actions.length()).any { index -> actions.optJSONObject(index)?.let { it.optString("id") == targetId && it.optString("kind") == kind && it.optString("operation") == operation } == true }) return false
-    actions.put(JSONObject().put("id", targetId).put("kind", kind).put("operation", operation))
+    val queuedAction = JSONObject().put("id", targetId).put("kind", kind).put("operation", operation)
+    if (operation == "timer_start") queuedAction.put("startedAt", java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date()))
+    actions.put(queuedAction)
     preferences.edit().putString(FocusGateModule.GATE_STATE, current.put("widgetItems", items).toString()).putString(FocusGateModule.WIDGET_ACTIONS, actions.toString()).putLong(FocusGateModule.GATE_STATE_UPDATED_AT, System.currentTimeMillis()).apply()
     return true
   }
@@ -410,6 +414,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       putExtra(EXTRA_KIND, kind)
     }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
   }
+  private fun noOpIntent(context: Context, widgetId: Int, row: Int, targetId: String, kind: String): PendingIntent = PendingIntent.getBroadcast(context, ("noop:$widgetId:$row:$kind:$targetId").hashCode(), Intent(context, FocusFlowWidgetProvider::class.java).apply { action = ACTION_NOOP; data = Uri.parse("$DEEP_LINK_SCHEME:///widget/$widgetId/$row/noop/$kind/$targetId") }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
   private fun deepLink(context: Context, destination: String, targetId: String? = null): Intent {
     val uri = Uri.parse("$DEEP_LINK_SCHEME:///").buildUpon().apply {
       when (destination) {
@@ -429,6 +434,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     const val ACTION_DECREMENT = "focusflow.widget.DECREMENT"
     const val ACTION_TIMER_START = "focusflow.widget.TIMER_START"
     const val ACTION_OPEN_ITEM = "focusflow.widget.OPEN_ITEM"
+    const val ACTION_NOOP = "focusflow.widget.NOOP"
     const val EXTRA_TARGET_ID = "targetId"
     const val EXTRA_KIND = "kind"
     const val WIDGET_SIZE_PREFIX = "widgetSizeRows:"

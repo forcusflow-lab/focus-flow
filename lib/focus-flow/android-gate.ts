@@ -1,5 +1,5 @@
 import { Appearance, NativeModules, Platform } from "react-native";
-import { dayKey, getGateRuleSummaries, getGateSummary, getTodoSubtasks, habitTimerEndsAt, isHabitCompleteOn, isHabitTimeReady, isTimedTodo, isTodoAchieved, isTodoTimeReady, todoTimerEndsAt } from "./utils";
+import { dayKey, getGateRuleSummaries, getGateSummary, getHabitTimerProgress, getTodoSubtasks, habitTimerEndsAt, isHabitCompleteOn, isHabitTimeReady, isTimedTodo, isTodoAchieved, isTodoTimeReady, todoTimerEndsAt } from "./utils";
 import type { FocusFlowData } from "./types";
 import { getAppLanguage } from "./i18n";
 import { getAppPalette } from "./app-themes";
@@ -7,11 +7,12 @@ import { uniqueWidgetItems } from "./widget-items";
 
 type LaunchableApp = { packageName: string; label: string };
 export type WidgetOperation = "complete" | "restore" | "increment" | "decrement" | "timer_start";
+export type WidgetAction = { id: string; kind: "todo" | "habit"; operation: WidgetOperation; startedAt?: string };
 export type GateDiagnostics = { accessibilityEnabled: boolean; batteryOptimizationIgnored: boolean | null; backgroundRestricted: boolean; apiLevel: number; manufacturer: string; model: string; lastGateStateUpdatedAt: number; lastGateEventAt: number; lastGateEventPackage: string; lastBlockedAt: number; lastBlockedPackage: string; gateStateActive: boolean; configuredRuleCount: number; configuredBlockedPackageCount: number };
 
 type FocusGateNativeModule = {
   saveGateState: (serialized: string) => Promise<void>;
-  consumeWidgetActions: () => Promise<Array<{ id: string; kind: "todo" | "habit"; operation: WidgetOperation }>>;
+  consumeWidgetActions: () => Promise<WidgetAction[]>;
   getAccessibilityStatus: () => Promise<boolean>;
   openAccessibilitySettings: () => Promise<void>;
   openAppDetailsSettings: () => Promise<void>;
@@ -56,9 +57,9 @@ export async function syncAndroidGate(data: FocusFlowData) {
   const windowLabelFor = (item: { requiredScheduleIds?: string[] }) => data.gateConfig.schedules.filter((schedule) => item.requiredScheduleIds?.includes(schedule.id)).map((schedule) => `${schedule.label} ${schedule.startTime}–${schedule.endTime}`).join(" · ");
   const widgetItems = uniqueWidgetItems([
     ...orderedPendingTodos.map((todo) => ({ id: todo.id, title: todo.title, kind: "todo", required: true, windowLabel: windowLabelFor(todo), timedLocked: timedLockedTodoIds.includes(todo.id), completed: false, canToggle: !timedLockedTodoIds.includes(todo.id) && todo.repeatRule === "none", progressUnit: todo.progressUnit ?? "check", progressValue: todo.progressValue ?? 0, targetValue: todo.targetValue ?? 1 })),
-    ...pendingHabitItems.map((habit) => ({ id: habit.id, title: habit.title, kind: "habit", required: true, windowLabel: windowLabelFor(habit), timedLocked: timedLockedHabitIds.includes(habit.id), completed: false, canToggle: !timedLockedHabitIds.includes(habit.id), progressUnit: habit.progressUnit ?? "check", progressValue: habit.dailyProgress?.[today] ?? 0, targetValue: habit.targetValue ?? 1, timerRunning: Boolean(habit.timerStartedAtByDate?.[today]) })),
+    ...pendingHabitItems.map((habit) => { const timer = getHabitTimerProgress(habit, today); return { id: habit.id, title: habit.title, kind: "habit", required: true, windowLabel: windowLabelFor(habit), timedLocked: timedLockedHabitIds.includes(habit.id), completed: false, canToggle: !timedLockedHabitIds.includes(habit.id), progressUnit: habit.progressUnit ?? "check", progressValue: habit.dailyProgress?.[today] ?? 0, targetValue: habit.targetValue ?? 1, timerRunning: timer.running, timerElapsedSeconds: timer.elapsedSeconds, timerTargetSeconds: timer.targetSeconds }; }),
     ...regularTodos.sort((left, right) => priorityRank[left.priority] - priorityRank[right.priority]).map((todo) => ({ id: todo.id, title: todo.title, kind: "todo", required: false, windowLabel: windowLabelFor(todo), timedLocked: isTimedTodo(todo) && !isTodoTimeReady(todo), completed: false, canToggle: !(isTimedTodo(todo) && !isTodoTimeReady(todo)) && todo.repeatRule === "none", progressUnit: todo.progressUnit ?? "check", progressValue: todo.progressValue ?? 0, targetValue: todo.targetValue ?? 1 })),
-    ...regularHabits.map((habit) => ({ id: habit.id, title: habit.title, kind: "habit", required: false, windowLabel: windowLabelFor(habit), timedLocked: (habit.progressUnit ?? "check") === "minutes" && !isHabitTimeReady(habit, today), completed: false, canToggle: !((habit.progressUnit ?? "check") === "minutes" && !isHabitTimeReady(habit, today)), progressUnit: habit.progressUnit ?? "check", progressValue: habit.dailyProgress?.[today] ?? 0, targetValue: habit.targetValue ?? 1, timerRunning: Boolean(habit.timerStartedAtByDate?.[today]) })),
+    ...regularHabits.map((habit) => { const timer = getHabitTimerProgress(habit, today); return { id: habit.id, title: habit.title, kind: "habit", required: false, windowLabel: windowLabelFor(habit), timedLocked: (habit.progressUnit ?? "check") === "minutes" && !isHabitTimeReady(habit, today), completed: false, canToggle: !((habit.progressUnit ?? "check") === "minutes" && !isHabitTimeReady(habit, today)), progressUnit: habit.progressUnit ?? "check", progressValue: habit.dailyProgress?.[today] ?? 0, targetValue: habit.targetValue ?? 1, timerRunning: timer.running, timerElapsedSeconds: timer.elapsedSeconds, timerTargetSeconds: timer.targetSeconds }; }),
     ...(widgetCompletedDisplay === "dim" ? [
       ...completedTodoItems.map((todo) => ({ id: todo.id, title: todo.title, kind: "todo", required: requiredTodoIds.has(todo.id), windowLabel: windowLabelFor(todo), timedLocked: false, completed: true, canToggle: todo.repeatRule === "none", progressUnit: todo.progressUnit ?? "check", progressValue: todo.targetValue ?? 1, targetValue: todo.targetValue ?? 1 })),
       ...completedHabitItems.map((habit) => ({ id: habit.id, title: habit.title, kind: "habit", required: requiredHabitIds.has(habit.id), windowLabel: windowLabelFor(habit), timedLocked: false, completed: true, canToggle: true, progressUnit: habit.progressUnit ?? "check", progressValue: habit.dailyProgress?.[today] ?? habit.targetValue ?? 1, targetValue: habit.targetValue ?? 1, timerRunning: false })),
@@ -74,5 +75,5 @@ export async function openAccessibilitySettings() { await nativeModule()?.openAc
 export async function openAppDetailsSettings() { await nativeModule()?.openAppDetailsSettings(); }
 export async function getGateDiagnostics() { return await nativeModule()?.getGateDiagnostics(); }
 export async function getLaunchableApps() { return (await nativeModule()?.getLaunchableApps()) ?? [] as LaunchableApp[]; }
-export async function consumeWidgetActions() { return (await nativeModule()?.consumeWidgetActions()) ?? [] as Array<{ id: string; kind: "todo" | "habit"; operation: WidgetOperation }>; }
+export async function consumeWidgetActions() { return (await nativeModule()?.consumeWidgetActions()) ?? [] as WidgetAction[]; }
 export type { LaunchableApp };

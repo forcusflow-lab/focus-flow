@@ -78,8 +78,8 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_three"');
     expect(initialLayout).not.toContain('android:id="@+id/focus_flow_widget_static_row_four"');
     expect(initialLayout).toContain('android:id="@+id/focus_flow_widget_static_row_one_check"');
-    expect(initialLayout).toContain('android:layout_height="44dp"');
-    expect(initialLayout).toContain('android:layout_width="44dp"');
+    expect(initialLayout).toContain('android:layout_height="50dp"');
+    expect(initialLayout).toContain('android:layout_width="46dp"');
     expect(initialLayout).toContain('android:layout_width="22dp"');
     expect(initialLayout).not.toContain("<View");
     expect(initialLayout).not.toContain("ListView");
