@@ -16,7 +16,7 @@ describe("Focus Flowの起動体験", () => {
     expect(layout).toContain("FocusFlowLaunchShell");
     expect(layout).toContain("今日を、ひとつずつ。");
     expect(layout).toContain("duration: 300");
-    expect(config).toContain("imageWidth: 118");
-    expect(config).toContain('backgroundColor: "#163E35"');
+    expect(config).toContain("imageWidth: 72");
+    expect(config).toContain('backgroundColor: "#0F2623"');
   });
 });

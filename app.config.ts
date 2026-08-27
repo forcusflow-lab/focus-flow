@@ -66,7 +66,7 @@ const config: ExpoConfig = {
     package: env.androidPackage,
     // Google Playでは同一パッケージ内でバージョンコードを重複登録できない。
     // 本人専用APKは別パッケージなので、通常版の内部テスト版と競合しない。
-    versionCode: isPersonalUnlimitedBuild ? 19 : 29,
+    versionCode: isPersonalUnlimitedBuild ? 20 : 30,
     permissions: ["POST_NOTIFICATIONS"],
     blockedPermissions: ["android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE"],
     intentFilters: [
@@ -94,12 +94,12 @@ const config: ExpoConfig = {
     [
       "expo-splash-screen",
       {
-        image: "./assets/images/splash-icon.png",
-        imageWidth: 118,
+        image: "./assets/images/focus-flow-launch-mark.png",
+        imageWidth: 72,
         resizeMode: "contain",
-        backgroundColor: "#163E35",
+        backgroundColor: "#0F2623",
         dark: {
-          backgroundColor: "#163E35",
+          backgroundColor: "#0F2623",
         },
       },
     ],

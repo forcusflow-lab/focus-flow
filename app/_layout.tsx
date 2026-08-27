@@ -6,7 +6,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
-import { Animated, Easing, Platform, StyleSheet, Text, View, useColorScheme } from "react-native";
+import { Animated, Easing, Image, Platform, StyleSheet, Text, View, useColorScheme } from "react-native";
 import "@/lib/_core/nativewind-pressable";
 import { ThemeProvider, useThemeContext } from "@/lib/theme-provider";
 import {
@@ -60,7 +60,7 @@ function FocusFlowLaunchShell() {
       <Stack.Screen name="oauth/callback" />
     </Stack>
     <StatusBar style={visible ? (palette.isDark ? "light" : "dark") : "auto"} />
-    {visible ? <Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[launchStyles.overlay, { opacity, backgroundColor: palette.background }]}><View style={[launchStyles.haloOne, { backgroundColor: palette.elevated }]} /><View style={[launchStyles.haloTwo, { borderColor: palette.primary }]} /><View style={launchStyles.content}><View style={launchStyles.mark}><View style={[launchStyles.markArc, { borderColor: palette.primary }]} /><View style={[launchStyles.markCore, { backgroundColor: palette.primarySoft, shadowColor: palette.primary }]} /></View><Text style={[launchStyles.wordmark, { color: palette.text }]}>Focus Flow</Text><Text style={[launchStyles.tagline, { color: palette.muted }]}>今日を、ひとつずつ。</Text><View style={[launchStyles.rule, { backgroundColor: palette.primary }]} /></View><Text style={[launchStyles.footer, { color: palette.muted }]}>PLAN · FOCUS · FINISH</Text></Animated.View> : null}
+    {visible ? <Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[launchStyles.overlay, { opacity, backgroundColor: palette.background }]}><View style={[launchStyles.haloOne, { backgroundColor: palette.elevated }]} /><View style={[launchStyles.haloTwo, { borderColor: palette.primary }]} /><View style={launchStyles.content}><View style={[launchStyles.mark, { backgroundColor: palette.primarySoft }]}><Image source={require("@/assets/images/focus-flow-launch-mark.png")} resizeMode="contain" style={[launchStyles.markImage, { tintColor: palette.primary }]} /></View><Text style={[launchStyles.wordmark, { color: palette.text }]}>Focus Flow</Text><Text style={[launchStyles.tagline, { color: palette.muted }]}>今日を、ひとつずつ。</Text><View style={[launchStyles.rule, { backgroundColor: palette.primary }]} /></View><Text style={[launchStyles.footer, { color: palette.muted }]}>PLAN · FOCUS · FINISH</Text></Animated.View> : null}
   </View>;
 }
 
@@ -169,9 +169,8 @@ const launchStyles = StyleSheet.create({
   haloOne: { position: "absolute", width: 460, height: 460, borderRadius: 230, opacity: 0.48, top: -150, right: -160 },
   haloTwo: { position: "absolute", width: 360, height: 360, borderRadius: 180, borderWidth: 1, opacity: 0.32, bottom: -155, left: -125 },
   content: { alignItems: "center", transform: [{ translateY: -14 }] },
-  mark: { width: 82, height: 82, alignItems: "center", justifyContent: "center", marginBottom: 20 },
-  markArc: { position: "absolute", width: 70, height: 70, borderRadius: 35, borderWidth: 2, borderTopColor: "transparent", transform: [{ rotate: "-34deg" }] },
-  markCore: { width: 30, height: 30, borderRadius: 15, shadowOpacity: 0.35, shadowRadius: 18, elevation: 2 },
+  mark: { width: 82, height: 82, alignItems: "center", justifyContent: "center", borderRadius: 28, marginBottom: 20 },
+  markImage: { width: 59, height: 59, opacity: 0.94 },
   wordmark: { fontSize: 31, lineHeight: 39, fontWeight: "700", letterSpacing: -0.8 },
   tagline: { fontSize: 14, lineHeight: 21, fontWeight: "600", letterSpacing: 1.4, marginTop: 8 },
   rule: { width: 34, height: 2, borderRadius: 1, marginTop: 24 },

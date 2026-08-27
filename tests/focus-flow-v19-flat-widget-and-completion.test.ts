@@ -51,7 +51,7 @@ describe("Focus Flow v19 flat Widget and completion quality contract", () => {
     const settings = projectFile("app", "(tabs)", "settings.tsx");
     expect(gate).toContain('widgetBackgroundOpacity');
     expect(gate).toContain('widgetCardOpacity');
-    expect(gate).toContain('const widgetCompletedDisplay = "hide"');
+    expect(gate).toContain('const widgetCompletedDisplay = "local"');
     expect(provider).toContain('colorWithOpacity');
     expect(provider).toContain('setBackgroundColor');
     expect(provider).not.toContain('itemCardDrawable(theme, dark');
@@ -65,9 +65,9 @@ describe("Focus Flow v19 flat Widget and completion quality contract", () => {
     expect(settings).toContain('Math.round(value / 10) * 10');
   });
 
-  it("keeps the normal and personal Android version codes separated for the v19 build", () => {
+  it("keeps the normal and personal Android version codes separated for the current build", () => {
     const config = projectFile("app.config.ts");
-    expect(config).toContain('versionCode: isPersonalUnlimitedBuild ? 19 : 29');
+    expect(config).toContain('versionCode: isPersonalUnlimitedBuild ? 20 : 30');
     expect(config).toContain('"com.app.focusflow.personal"');
     expect(config).toContain('"manusfocusflowpersonal"');
   });

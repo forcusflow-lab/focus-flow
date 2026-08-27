@@ -1,6 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useEffect, useState } from "react";
 import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { COLORS, EmptyState, IconButton, LoadingScreen, safeHaptic, ScreenHeading, useFocusPalette } from "@/components/focus-flow/ui";
 import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
@@ -46,7 +47,7 @@ export default function NotesScreen() {
       showsVerticalScrollIndicator={false}
       ListHeaderComponent={<ScreenHeading eyebrow={t("あとで整理する", "Capture for later")} title={t("メモ", "Notes")} action={<IconButton icon="add" label={t("メモを追加", "Add note")} onPress={() => openForm()} variant="filled" />} />}
       ListEmptyComponent={<EmptyState icon="sticky-note-2" title={t("気になったことをすぐ残す", "Save an idea right away")} description={t("まだTodoにしない情報、考え、調べたいことを自由にメモできます。", "Keep thoughts, research ideas, and anything you do not want to turn into a task yet.")} actionLabel={t("メモを追加", "Add note")} onAction={() => openForm()} />}
-      renderItem={({ item }) => <View style={[styles.memoCard, { backgroundColor: palette.surface, borderColor: palette.border }]}><TouchableOpacity onPress={() => openForm(item)} activeOpacity={0.76} style={styles.memoCopy}><Text style={styles.memoTitle} numberOfLines={1}>{displayTitle(item)}</Text>{item.body && item.title.trim() ? <Text style={styles.memoBody} numberOfLines={3}>{item.body}</Text> : null}<Text style={[styles.memoDate, { color: palette.muted }]}>{new Date(item.updatedAt).toLocaleDateString(language === "en" ? "en-US" : "ja-JP", { month: language === "en" ? "short" : "numeric", day: "numeric" })} {t("更新", "updated")}</Text></TouchableOpacity><View style={styles.actions}><TouchableOpacity accessibilityLabel={t("Todoとして追加", "Add as task")} onPress={() => convert(item)} style={[styles.action, { backgroundColor: palette.primarySoft }]}><MaterialIcons name="playlist-add" size={18} color={COLORS.blue} /><Text style={styles.actionLabel}>{t("Todo", "Task")}</Text></TouchableOpacity><TouchableOpacity accessibilityLabel={t("メモを削除", "Delete note")} onPress={() => remove(item)} style={styles.deleteAction}><MaterialIcons name="delete-outline" size={21} color={palette.muted} /></TouchableOpacity></View></View>}
+      renderItem={({ item }) => <View style={[styles.memoCard, { backgroundColor: palette.surface, borderColor: palette.border }]}><TouchableOpacity onPress={() => openForm(item)} activeOpacity={0.76} style={styles.memoCopy}><Text style={[styles.memoTitle, { color: palette.text }]} numberOfLines={1}>{displayTitle(item)}</Text>{item.body && item.title.trim() ? <Text style={[styles.memoBody, { color: palette.muted }]} numberOfLines={3}>{item.body}</Text> : null}<Text style={[styles.memoDate, { color: palette.muted }]}>{new Date(item.updatedAt).toLocaleDateString(language === "en" ? "en-US" : "ja-JP", { month: language === "en" ? "short" : "numeric", day: "numeric" })} {t("更新", "updated")}</Text></TouchableOpacity><View style={styles.actions}><TouchableOpacity accessibilityLabel={t("Todoとして追加", "Add as task")} onPress={() => convert(item)} style={[styles.action, { backgroundColor: palette.primarySoft }]}><MaterialIcons name="playlist-add" size={18} color={palette.primary} /><Text style={[styles.actionLabel, { color: palette.primary }]}>{t("Todo", "Task")}</Text></TouchableOpacity><TouchableOpacity accessibilityLabel={t("メモを削除", "Delete note")} onPress={() => remove(item)} style={[styles.deleteAction, { backgroundColor: palette.elevated }]}><MaterialIcons name="delete-outline" size={21} color={palette.muted} /></TouchableOpacity></View></View>}
     />
     <MemoForm visible={formOpen} memo={editing} onClose={closeForm} onSave={(input) => {
       const result = editing ? updateMemo(editing.id, input) : addMemo(input);
@@ -59,6 +60,7 @@ export default function NotesScreen() {
 function MemoForm({ visible, memo, onClose, onSave }: { visible: boolean; memo?: Memo; onClose: () => void; onSave: (input: { title?: string; body: string }) => { ok: boolean } }) {
   const { displaySettings } = useFocusFlow();
   const palette = useFocusPalette();
+  const insets = useSafeAreaInsets();
   const language = getAppLanguage(displaySettings);
   const t = (ja: string, en: string) => localized(language, ja, en);
   const [title, setTitle] = useState("");
@@ -78,15 +80,15 @@ function MemoForm({ visible, memo, onClose, onSave }: { visible: boolean; memo?:
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboardAvoider}>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={[styles.sheet, { backgroundColor: palette.background }]} onPress={() => undefined}>
-          <View style={[styles.handle, { backgroundColor: palette.border }]} />
-          <View style={styles.formHeader}><Text style={styles.formTitle}>{memo ? t("メモを編集", "Edit note") : t("メモを追加", "Add note")}</Text><TouchableOpacity accessibilityLabel={t("閉じる", "Close")} onPress={onClose} style={[styles.close, { backgroundColor: palette.elevated }]}><MaterialIcons name="close" size={20} color={palette.muted} /></TouchableOpacity></View>
-          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.formBody}>
-            <Text style={styles.fieldLabel}>{t("タイトル", "Title")}</Text>
+          <View style={[styles.handle, { backgroundColor: palette.primarySoft }]} />
+          <View style={styles.formHeader}><Text style={[styles.formTitle, { color: palette.text }]}>{memo ? t("メモを編集", "Edit note") : t("メモを追加", "Add note")}</Text><TouchableOpacity accessibilityLabel={t("閉じる", "Close")} onPress={onClose} style={[styles.close, { backgroundColor: palette.elevated }]}><MaterialIcons name="close" size={20} color={palette.muted} /></TouchableOpacity></View>
+          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={[styles.formBody, { paddingBottom: 16 }]}>
+            <Text style={[styles.fieldLabel, { color: palette.text }]}>{t("タイトル", "Title")}</Text>
             <TextInput value={title} onChangeText={setTitle} placeholder={t("タイトル（任意）", "Title (optional)")} placeholderTextColor={palette.muted} style={[styles.titleInput, { backgroundColor: palette.surface, borderColor: palette.border, color: palette.text }]} autoFocus={!memo} returnKeyType="next" />
-            <Text style={styles.fieldLabel}>{t("メモ", "Note")}</Text>
+            <Text style={[styles.fieldLabel, { color: palette.text }]}>{t("メモ", "Note")}</Text>
             <TextInput value={body} onChangeText={setBody} placeholder={t("思いつき、調べたいこと、あとで決めること…", "An idea, something to research, or a decision for later…")} placeholderTextColor={palette.muted} style={[styles.bodyInput, { backgroundColor: palette.surface, borderColor: palette.border, color: palette.text }]} multiline textAlignVertical="top" />
-            <TouchableOpacity onPress={save} disabled={!title.trim() && !body.trim()} style={[styles.save, !title.trim() && !body.trim() && styles.saveDisabled]}><Text style={styles.saveText}>{memo ? t("変更を保存", "Save changes") : t("メモを保存", "Save note")}</Text></TouchableOpacity>
           </ScrollView>
+          <View style={[styles.saveFooter, { backgroundColor: palette.background, borderTopColor: palette.border, paddingBottom: Math.max(insets.bottom, 12) }]}><TouchableOpacity onPress={save} disabled={!title.trim() && !body.trim()} style={[styles.save, { backgroundColor: palette.primary }, !title.trim() && !body.trim() && { backgroundColor: palette.elevated }]}><Text style={[styles.saveText, { color: !title.trim() && !body.trim() ? palette.muted : palette.isDark ? palette.background : COLORS.white }]}>{memo ? t("変更を保存", "Save changes") : t("メモを保存", "Save note")}</Text></TouchableOpacity></View>
         </Pressable>
       </Pressable>
     </KeyboardAvoidingView>
@@ -115,7 +117,7 @@ const styles = StyleSheet.create({
   fieldLabel: { color: COLORS.text, fontSize: 13, fontWeight: "800", marginBottom: 7 },
   titleInput: { minHeight: 50, borderRadius: 13, borderWidth: 1, borderColor: "#D7E1F0", backgroundColor: "rgba(255,255,255,0.92)", color: COLORS.text, fontSize: 16, paddingHorizontal: 13, marginBottom: 14 },
   bodyInput: { minHeight: 154, borderRadius: 13, borderWidth: 1, borderColor: "#D7E1F0", backgroundColor: "rgba(255,255,255,0.92)", color: COLORS.text, fontSize: 15, lineHeight: 22, padding: 13 },
-  save: { minHeight: 51, alignItems: "center", justifyContent: "center", borderRadius: 16, backgroundColor: COLORS.forest, marginTop: 16 },
-  saveDisabled: { backgroundColor: "#AAB8C9" },
+  saveFooter: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 12, marginHorizontal: -20, paddingHorizontal: 20 },
+  save: { minHeight: 51, alignItems: "center", justifyContent: "center", borderRadius: 16 },
   saveText: { color: COLORS.white, fontSize: 16, fontWeight: "800" },
 });

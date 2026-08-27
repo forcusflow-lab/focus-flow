@@ -5,6 +5,7 @@ import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.graphics.PixelFormat
 import android.net.Uri
 import android.os.Handler
@@ -107,55 +108,75 @@ class FocusGateService : AccessibilityService() {
     hideGateOverlay()
 
     val english = state.language == "en"
+    val palette = state.palette
     val layout = LinearLayout(this).apply {
       orientation = LinearLayout.VERTICAL
       gravity = Gravity.CENTER
-      setPadding(48, 48, 48, 48)
-      setBackgroundColor(Color.rgb(20, 49, 41))
+      setPadding(dp(24), dp(24), dp(24), dp(24))
+      setBackgroundColor(palette.background)
       isClickable = true
       isFocusable = false
     }
-    layout.addView(TextView(this).apply {
+    val panel = LinearLayout(this).apply {
+      orientation = LinearLayout.VERTICAL
+      setPadding(dp(24), dp(24), dp(24), dp(22))
+      background = roundedBackground(palette.elevated, 28)
+    }
+    panel.addView(View(this).apply { background = roundedBackground(palette.primary, 3) }, LinearLayout.LayoutParams(dp(36), dp(4)).apply { bottomMargin = dp(22) })
+    panel.addView(TextView(this).apply {
       text = "Focus Flow"
-      textSize = 30f
-      setTextColor(Color.WHITE)
-      gravity = Gravity.CENTER
-      setPadding(0, 0, 0, 16)
+      textSize = 14f
+      setTextColor(palette.primary)
+      gravity = Gravity.START
+      setTypeface(typeface, android.graphics.Typeface.BOLD)
+      letterSpacing = 0.06f
+      setPadding(0, 0, 0, dp(10))
     })
-    layout.addView(TextView(this).apply {
+    panel.addView(TextView(this).apply {
       text = rule.message
-      textSize = 18f
-      setTextColor(Color.rgb(220, 238, 229))
-      gravity = Gravity.CENTER
-      setPadding(0, 0, 0, 24)
+      textSize = 23f
+      setTextColor(palette.text)
+      gravity = Gravity.START
+      setTypeface(typeface, android.graphics.Typeface.BOLD)
+      setPadding(0, 0, 0, dp(10))
     })
-    layout.addView(Button(this).apply {
-      text = if (english) "Review items in Focus Flow" else "Focus Flowで項目を確認する"
+    panel.addView(TextView(this).apply {
+      text = if (english) {
+        if (state.strictMode) "Strict mode keeps this app limited until the required items are complete." else "Complete the required items in Focus Flow to continue."
+      } else {
+        if (state.strictMode) "厳格モード中です。必須項目を完了するまで、このアプリは利用できません。" else "Focus Flowで必須項目を完了すると、このアプリを使えるようになります。"
+      }
+      textSize = 14f
+      setTextColor(palette.muted)
+      gravity = Gravity.START
+      setPadding(0, 0, 0, dp(22))
+    })
+    panel.addView(Button(this).apply {
+      text = if (english) "View today's items" else "今日の項目を確認する"
+      textSize = 15f
+      setTextColor(palette.onPrimary)
+      background = roundedBackground(palette.primary, 18)
+      minHeight = dp(52)
+      setPadding(dp(16), 0, dp(16), 0)
       setOnClickListener {
         hideGateOverlay()
         startActivity(focusFlowTodayIntent())
       }
-    })
-    layout.addView(TextView(this).apply {
-      text = if (english) {
-        if (state.strictMode) "Strict mode is on. Complete your required items in Focus Flow to unlock restricted apps." else "This screen stays active while required items remain. Complete your items in Focus Flow to unlock restricted apps."
-      } else {
-        if (state.strictMode) "厳格モードを適用中です。Focus Flowで必須項目を完了すると制限アプリを利用できます。" else "必須項目が残っている間はこの画面が維持されます。Focus Flowで項目を完了すると制限アプリを利用できます。"
-      }
+    }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(52)))
+    if (!state.strictMode) panel.addView(Button(this).apply {
+      text = if (english) "Open app settings" else "アプリ情報を開く"
       textSize = 13f
-      setTextColor(Color.rgb(190, 220, 209))
-      gravity = Gravity.CENTER
-      setPadding(0, 20, 0, 8)
-    })
-    if (!state.strictMode) layout.addView(Button(this).apply {
-      text = if (english) "Open Focus Flow app settings" else "Focus Flowのアプリ情報を開く"
+      setTextColor(palette.primary)
+      background = roundedBackground(palette.primarySoft, 16)
+      minHeight = dp(48)
       setOnClickListener {
         hideGateOverlay()
         startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${applicationContext.packageName}")).apply {
           addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         })
       }
-    })
+    }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(48)).apply { topMargin = dp(10) })
+    layout.addView(panel, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
 
     try {
       windowManager().addView(layout, WindowManager.LayoutParams(
@@ -238,17 +259,19 @@ class FocusGateService : AccessibilityService() {
   }
 
   private fun windowManager() = getSystemService(WINDOW_SERVICE) as WindowManager
+  private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
+  private fun roundedBackground(color: Int, radiusDp: Int) = GradientDrawable().apply { setColor(color); cornerRadius = dp(radiusDp).toFloat() }
   private fun preferences() = getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE)
   private fun readState(): GateState? = try {
     val saved = preferences().getString(FocusGateModule.GATE_STATE, null) ?: return null
     val json = JSONObject(saved)
-    GateState(json.optBoolean("active"), json.optBoolean("strictMode"), json.optJSONArray("rules"), json.optString("language", "ja"))
+    GateState(json.optBoolean("active"), json.optBoolean("strictMode"), json.optJSONArray("rules"), json.optString("language", "ja"), GatePalette.from(json.optJSONObject("widgetPalette")))
   } catch (_: Exception) {
     null
   }
 }
 
-private data class GateState(val active: Boolean, val strictMode: Boolean, val rules: org.json.JSONArray?, val language: String) {
+private data class GateState(val active: Boolean, val strictMode: Boolean, val rules: org.json.JSONArray?, val language: String, val palette: GatePalette) {
   fun ruleBlocking(packageName: String): GateRule? {
     if (!active || rules == null) return null
     for (index in 0 until rules.length()) {
@@ -256,6 +279,21 @@ private data class GateState(val active: Boolean, val strictMode: Boolean, val r
       if (rule.effectivePendingCount > 0 && rule.isWithinSchedule() && packageName in rule.blockedPackages) return rule
     }
     return null
+  }
+}
+
+private data class GatePalette(val background: Int, val elevated: Int, val primarySoft: Int, val primary: Int, val text: Int, val muted: Int, val onPrimary: Int) {
+  companion object {
+    private fun color(raw: String?, fallback: String): Int = try { Color.parseColor(raw?.takeIf { it.startsWith("#") } ?: fallback) } catch (_: Exception) { Color.parseColor(fallback) }
+    fun from(value: JSONObject?): GatePalette = GatePalette(
+      background = color(value?.optString("background"), "#10201F"),
+      elevated = color(value?.optString("elevated"), "#17302E"),
+      primarySoft = color(value?.optString("primarySoft"), "#214B45"),
+      primary = color(value?.optString("primary"), "#79C7AE"),
+      text = color(value?.optString("text"), "#F1F7F4"),
+      muted = color(value?.optString("muted"), "#B8CEC7"),
+      onPrimary = color(value?.optString("background"), "#10201F"),
+    )
   }
 }
 
