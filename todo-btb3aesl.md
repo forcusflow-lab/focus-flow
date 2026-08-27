@@ -365,3 +365,4 @@
 - [ ] v17でTodayとWidgetの完了済み項目表示を、設定画面から各々ワンタップで残す／非表示へ切り替えられるトグルに変更し、永続化・Widget同期・実機反映を受入する
 - [ ] v17本人用署名APKを生成・独立検証し、Today／Widget別トグルの実機検証用に共有する
 - [x] v17のToday／Widget別完了済み表示Switchを実装し、82件回帰・TypeScript・Lint・本人用クリーンAndroid生成を通過させる
+- [x] GitHub Actions run 33064334804でv17本人用署名APKを生成し、ZIP整合性、package／versionCode、v2署名、既知証明書、専用scheme、Widget Provider／リサイズ、時間型操作、旧Collection経路不在を独立検証する
