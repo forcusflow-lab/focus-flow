@@ -105,7 +105,7 @@ Widgetは背景面、ヘッダー、mini-card群の3層を維持し、各mini-ca
 | 型・Lint | `pnpm check`、`pnpm lint`成功。 |
 | Androidクリーン生成 | 通常版（versionCode 26）と本人用（`com.app.focusflow.personal`／versionCode 16）で成功。Provider、Chronometer、アクセントレール、51dp行、禁止構造不在を確認。 |
 
-この時点で残る品質ゲートは、GitHub ActionsによるKotlinコンパイルを含む署名APKと、V16-R01〜R06の端末受入である。
+GitHub Actions run 33061080251でKotlinコンパイル・release署名・artifact保存まで成功し、APK本体の独立検証も完了した。詳細は`release/V16_PERSONAL_SIGNED_BUILD_RECORD.md`を参照する。この時点で残る品質ゲートは、V16-R01〜R06の端末受入である。
 
 ## References
 

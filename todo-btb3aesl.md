@@ -361,3 +361,4 @@
 - [ ] v16で完了済み項目の保持／非表示を本体TodayとWidgetで個別設定できるようにし、各表示設定と完了／復元を実機受入する
 - [ ] v16でTodayのTodo／Habitカードを各一覧タブの同一カード情報・操作・完了表示へ統一し、表示差異を回帰テストで防止する
 - [x] v16の共通カード、Today有効必須抽出、Today／Widget完了済み表示の独立設定、Widget Chronometer・アクセントレール・余白密度を実装し、82件回帰・TypeScript・Lint・通常／本人用クリーンAndroid生成を通過させる
+- [x] GitHub Actions run 33061080251でv16本人用署名APKを生成し、ZIP整合性、package／versionCode、v2署名、既知証明書、専用scheme、Widget Provider／リサイズ、Chronometer／アクセント資産、時間型停止文字列、旧Collection経路不在を独立検証する
