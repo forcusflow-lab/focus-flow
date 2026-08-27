@@ -344,3 +344,4 @@
 - [x] v13実機で確認したWidget時間型Habitのロックアイコン・補足欠落・本体と不一致な情報階層を、Todoist等のフラットな一覧カード基準で再設計する
 - [x] Todoist・TickTick・Microsoft To Do・Habitify等の公式仕様と実際の操作導線を比較し、Todo・習慣・Today・メモ・集中制限・設定・Widget・戻る・Deep Link・空／エラー状態のUX監査台帳と改訂仕様を作成する
 - [ ] 改訂仕様に基づき全機能・全画面を反復レビューし、回帰テスト、ネイティブ生成、署名APK、実機受入までのPDCA記録を残す
+- [x] GitHub Actions run 33036456807で修正済み本人用v14署名APKを生成し、ZIP整合性、package/versionCode、v2署名、既存証明書、専用scheme、Widget Provider、resize broadcast、時間型開始資産、旧Collection経路不在を独立検証する

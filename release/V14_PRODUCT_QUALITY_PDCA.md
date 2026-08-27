@@ -97,6 +97,24 @@ GitHub Actions run `33034961876` は、`FocusFlowWidgetProvider.kt` の時間型
 | Expo認証テスト | コード不具合ではなく`api.expo.dev`接続タイムアウトで失敗。GitHubの署名ワークフローはExpoトークンを使用しない。 |
 | 次のゲート | 修正ソースをチェックポイント・GitHub mainへ同期後、本人用v14署名APKを再生成して独立検証する。 |
 
+## 再署名ビルドと独立検証
+
+修正済みソースをGitHub mainへ同期後、GitHub Actions run `33036456807` は成功した。最初の失敗run `33034961876` と同じversionCodeでも、失敗runは成果物を生成しておらず、再署名runのみを検証対象としている。
+
+| 項目 | 結果 |
+|---|---|
+| Artifact | `focus-flow-personal-unlimited-apk`、ID `9632634441`、有効期限 2026-09-10 |
+| APK | `app-release.apk`、51,779,621 bytes |
+| SHA-256 | `5a7e71b9c4abcdf40d9175f984e9c2ecabc3822f51cbc47aad949dd2d89612f9` |
+| ZIP整合性 | 成果物ZIPおよびAPKの`unzip -t`成功 |
+| 識別子 | `com.app.focusflow.personal` / versionCode `14` / versionName `1.0.0` |
+| 署名 | APK Signature Scheme v2、有効。証明書SHA-1 `0D:A5:A7:0E:14:A2:A4:3A:DB:A8:F8:04:40:81:C5:B2:18:86:B5:BC` と一致 |
+| Manifest | 専用scheme `manusfocusflowpersonal`、FocusFlowWidgetProvider、`APPWIDGET_UPDATE_OPTIONS`を確認 |
+| Widget資産 | 3静的行、必須Pill、丸形完了操作、時間型開始ビューをresources.arscで確認 |
+| 旧Collection経路 | `FocusFlowWidgetItemsService`、`setRemoteAdapter`、`BIND_REMOTEVIEWS`がDEXに不在 |
+
+このAPKは、利用者が以前に許可した例外の範囲で**暫定実機検証専用**としてのみ共有する。V14-R01〜R05の実機受入が完了するまで、正式配布またはGoogle Play配布を行わない。
+
 ## v14 実機受入条件
 
 | ID | 操作 | 合格条件 |
