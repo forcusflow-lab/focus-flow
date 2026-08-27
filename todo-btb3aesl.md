@@ -374,6 +374,6 @@
 - [ ] v18で期限当日以前のTodoを手動必須Todoと同じ必須Pill・集中制限・Today・Widget扱いへ統一し、期限翌日は通常扱いを維持する
 - [ ] v18でTodoタブの未完了／完了を縦方向の連続セクション（完了は下）へ変更し、一覧の完了済み即時表示導線を追加する
 - [ ] v18でToday／Widgetの完了済み表示Switchを同一行高・同一状態文言・整列へ再設計し、非表示時は完了済みをワンタップで一時表示する導線を追加する
-- [ ] v18本人用署名APKを生成・独立検証し、フォーム安全領域・全テーマ・Widget・必須・完了表示の実機再受入用に共有する
+- [x] v18本人用署名APKを生成・独立検証し、フォーム安全領域・全テーマ・Widget・必須・完了表示の実機再受入用に共有する
 - [x] v18のフォーム固定CTA、期限短文化・有効必須統一、Todo縦セクション、完了済み一時表示、Switch整列、Widgetテーマsurface・レール・安定順序を実装し、89件回帰・TypeScript・Lint・通常／本人用クリーンAndroid生成を通過させる
 - [x] GitHub Actions run 33071721730でv18本人用署名APKを生成し、artifact digest一致、ZIP整合性、package／versionCode 18、v2署名、既知証明書、専用scheme、Widget Provider／resize、タイマー・完了済み・12テーマsurface資産、旧Collection経路不在を独立検証する
