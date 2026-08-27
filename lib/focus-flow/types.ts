@@ -11,8 +11,9 @@ export type AppearancePreference = "system" | "light" | "dark";
 export type WidgetTextSize = "compact" | "standard" | "large";
 export type WidgetTransparency = "solid" | "soft" | "clear";
 export type WidgetCompletedDisplay = "hide" | "dim";
+export type TodayCompletedDisplay = "hide" | "dim";
 export type AppFontId = "system" | "reading" | "notebook" | "focus";
-export type SavedThemeSet = { id: string; name: string; appTheme: AppThemeId; appearance: AppearancePreference; fontFamily?: AppFontId; widgetThemes: Partial<Record<WidgetThemeKind, WidgetThemeSelection>>; widgetTextSizes: Partial<Record<WidgetThemeKind, WidgetTextSize>>; widgetOpacity?: number; widgetCompletedDisplay?: WidgetCompletedDisplay };
+export type SavedThemeSet = { id: string; name: string; appTheme: AppThemeId; appearance: AppearancePreference; fontFamily?: AppFontId; widgetThemes: Partial<Record<WidgetThemeKind, WidgetThemeSelection>>; widgetTextSizes: Partial<Record<WidgetThemeKind, WidgetTextSize>>; widgetOpacity?: number; widgetCompletedDisplay?: WidgetCompletedDisplay; todayCompletedDisplay?: TodayCompletedDisplay };
 
 export type TodoSubtask = {
   id: string;
@@ -123,6 +124,8 @@ export type DisplaySettings = {
   widgetOpacity?: number;
   widgetTransparency?: WidgetTransparency;
   widgetCompletedDisplay?: WidgetCompletedDisplay;
+  /** Today画面で当日対象として完了済み項目を残すかをWidgetとは別に選ぶ。 */
+  todayCompletedDisplay?: TodayCompletedDisplay;
   savedThemeSets?: SavedThemeSet[];
   plusEntitlement?: boolean;
 };
@@ -143,6 +146,7 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   widgetOpacity: 86,
   widgetTransparency: "soft",
   widgetCompletedDisplay: "dim",
+  todayCompletedDisplay: "hide",
   savedThemeSets: [],
   plusEntitlement: false,
 };

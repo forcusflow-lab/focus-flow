@@ -21,8 +21,8 @@ describe("Focus Flow 高密度Widgetとダークモード", () => {
     expect(source).toContain('View.GONE');
     expect(source).toContain('compactBadge');
     expect(source).toContain('required -> if (english) "MUST" else "必須"');
-    expect(layout).toContain('android:layout_height="54dp"');
-    expect(layout).toContain('android:layout_marginBottom="3dp"');
+    expect(layout).toContain('android:layout_height="51dp"');
+    expect(layout).toContain('android:layout_height="2dp"');
     expect(layout).toContain('android:layout_marginStart="6dp"');
     expect(layout).toContain('android:gravity="center_vertical"');
     expect(layout).toContain('android:maxLines="1"');
@@ -43,8 +43,8 @@ describe("Focus Flow 高密度Widgetとダークモード", () => {
     });
     expect(provider).not.toContain('R.id.focus_flow_widget_card_background');
     expect(provider).not.toContain('setFloat(');
-    expect(provider).toContain('Color.parseColor("#C8D9D1")');
-    expect(provider).toContain('Color.parseColor("#526B61")');
+    expect(provider).toContain('Color.TRANSPARENT');
+    expect(provider).toContain('setChronometer(ids.chronometer');
   });
 
   it("外観設定をアプリ全体のテーマへ橋渡しし、共通テキストが意味色を動的パレットへ解決する", () => {

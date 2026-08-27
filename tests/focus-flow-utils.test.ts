@@ -121,7 +121,7 @@ describe("Focus Flowの日付・習慣計算", () => {
     expect(getGateSummary(data, base)).toMatchObject({ pendingTodos: 1, pendingHabits: 0, pendingCount: 1 });
   });
 
-  it("期限当日の未完了Todoだけを自動で必須にし、期限翌日・期限超過・完了済みを混同しない", () => {
+  it("期限当日以前の未完了Todoを自動で必須にし、期限翌日・完了済みを混同しない", () => {
     const data: FocusFlowData = {
       todos: [
         { id: "t-today", title: "今日が期限", priority: "high", dueDate: "2026-08-13", isRequired: false, completed: false, createdAt: "2026-08-10T00:00:00.000Z" },
@@ -133,7 +133,7 @@ describe("Focus Flowの日付・習慣計算", () => {
       gateConfig: { enabled: true, blockedPackages: ["com.example.video"], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, schedules: [] },
       displaySettings: { fontScale: "standard", theme: "mist", cardOpacity: "solid" },
     };
-    expect(getGateSummary(data, base)).toMatchObject({ pendingTodos: 1, pendingHabits: 0, pendingCount: 1 });
+    expect(getGateSummary(data, base)).toMatchObject({ pendingTodos: 2, pendingHabits: 0, pendingCount: 2 });
     data.gateConfig.autoRequireDueToday = false;
     expect(getGateSummary(data, base)).toMatchObject({ pendingTodos: 0, pendingHabits: 0, pendingCount: 0 });
   });

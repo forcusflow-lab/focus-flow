@@ -126,9 +126,14 @@ export function isTodoRequiredForGate(todo: Todo, autoRequireDueToday: boolean, 
   const today = dayKey(base);
   const repeatRule = todo.repeatRule ?? "none";
   const repeatingInstanceIsDue = repeatRule === "none" || !todo.dueDate || todo.dueDate <= today;
-  const dueTodayIsAlwaysRequired = autoRequireDueToday && getTodoDueStatus(todo, base) === "today";
-  if (dueTodayIsAlwaysRequired) return schedule === undefined;
+  const dueTodayOrEarlierIsAlwaysRequired = autoRequireDueToday && Boolean(todo.dueDate && todo.dueDate <= today) && !isTodoAchieved(todo, base);
+  if (dueTodayOrEarlierIsAlwaysRequired) return schedule === undefined;
   return Boolean(repeatingInstanceIsDue && isItemRequiredForGate(todo, schedule));
+}
+
+/** TodayとWidgetでは、手動必須または期限が当日以前のTodoを常に必須として扱う。完了済みかは呼び出し側の表示設定で判定する。 */
+export function isTodoEffectiveRequired(todo: Pick<Todo, "isRequired" | "dueDate">, base = new Date()) {
+  return Boolean(todo.isRequired || (todo.dueDate && todo.dueDate <= dayKey(base)));
 }
 
 export function isHabitRequiredForGate(habit: Habit, schedule?: GateSchedule) {

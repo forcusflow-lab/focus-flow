@@ -10,6 +10,7 @@ describe("Focus Flow統合ウィジェットの設定", () => {
     const settings = fs.readFileSync(path.join(process.cwd(), "app", "(tabs)", "settings.tsx"), "utf8");
 
     expect(types).toContain('export type WidgetCompletedDisplay = "hide" | "dim"');
+    expect(types).toContain('export type TodayCompletedDisplay = "hide" | "dim"');
     expect(types).toContain('widgetCompletedDisplay: "dim"');
     expect(types).toContain("widgetOpacity: 86");
     expect(bridge).toContain('const widgetCompletedDisplay = data.displaySettings.widgetCompletedDisplay ?? "dim"');
@@ -18,7 +19,8 @@ describe("Focus Flow統合ウィジェットの設定", () => {
     expect(bridge).toContain('widgetPalette, widgetTheme: data.displaySettings.appTheme ?? "mist", widgetTextScale: data.displaySettings.fontScale, widgetOpacity, widgetCompletedDisplay');
     expect(bridge).toContain('widgetTextScale: data.displaySettings.fontScale');
     expect(bridge).toContain('completed: true');
-    expect(settings).toContain("onCompletedDisplay");
+    expect(settings).toContain("onTodayCompletedDisplay");
+    expect(settings).toContain("onWidgetCompletedDisplay");
     expect(settings).toContain("onOpacity");
     expect(settings).toContain("Home screen widget");
     expect(settings).toContain("Background strength");

@@ -49,9 +49,10 @@ describe("v15 時間型Habitの計測・手動完了・Widget契約", () => {
     expect(provider).toContain('"timer_pause"');
     expect(provider).toContain("timerPaused");
     expect(provider).toContain("timerElapsedSeconds");
-    expect(provider).toContain("計測中 $timerClock");
+    expect(provider).toContain('if (english) "Timing" else "計測中"');
     expect(provider).toContain("一時停止 $timerClock");
     expect(provider).toContain("item.put(\"timerStartedAtMillis\"");
+    expect(provider).toContain("setChronometer(ids.chronometer");
     expect(gate).toContain('action.takeIf { it.has("elapsedSeconds") }');
     expect(bridge).toContain('"timer_pause"');
     expect(bridge).toContain("timerPaused: timer.paused");

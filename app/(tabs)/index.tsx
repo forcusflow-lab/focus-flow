@@ -1,10 +1,12 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+/* eslint-disable @typescript-eslint/no-unused-vars -- v16共通カード移行の比較・後方参照として旧カードを一時保持する。 */
 import { useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { Alert, FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { HabitForm } from "@/components/focus-flow/habit-form";
 import { HabitProgressControl } from "@/components/focus-flow/habit-progress-control";
+import { HabitItemCard, TodoItemCard } from "@/components/focus-flow/item-cards";
 import { TaskForm } from "@/components/focus-flow/task-form";
 import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
 import { COLORS, IconButton, LoadingScreen, Pill, safeHaptic, useFocusPalette } from "@/components/focus-flow/ui";
@@ -12,7 +14,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { isEnglish } from "@/lib/focus-flow/i18n";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
 import type { Habit, Todo } from "@/lib/focus-flow/types";
-import { dayKey, dayKeyOffset, formatJapaneseDate, getGateRuleSummaries, getGateSummary, getRequiredWindowMode, getTodoDueStatus, habitStreak, isHabitCompleteOn, shortWeekday, weeklyHabitProgress } from "@/lib/focus-flow/utils";
+import { dayKey, dayKeyOffset, formatJapaneseDate, getGateRuleSummaries, getGateSummary, getTodoDueStatus, getTodoSubtasks, habitStreak, isHabitCompleteOn, isTodoAchieved, isTodoEffectiveRequired, shortWeekday, weeklyHabitProgress } from "@/lib/focus-flow/utils";
 
 type HomeListItem =
   | { type: "heading"; id: string; title: string; detail: string; required: boolean }
@@ -21,7 +23,7 @@ type HomeListItem =
 
 export default function TodayScreen() {
   const router = useRouter();
-  const { todos, habits, memos, focusSessions, gateConfig, displaySettings, isReady, toggleTodo, toggleHabit, startHabitTimer, pauseHabitTimer, adjustHabitProgress, addTodo, updateTodo, updateHabit } = useFocusFlow();
+  const { todos, habits, memos, focusSessions, gateConfig, displaySettings, isReady, toggleTodo, adjustTodoProgress, toggleSubtask, toggleHabit, startHabitTimer, pauseHabitTimer, adjustHabitProgress, addTodo, updateTodo, updateHabit } = useFocusFlow();
   const palette = useFocusPalette();
   const [taskFormOpen, setTaskFormOpen] = useState(false);
   const [newTaskDefaultRequired, setNewTaskDefaultRequired] = useState(false);
@@ -32,46 +34,37 @@ export default function TodayScreen() {
   const t = useCallback((ja: string, en: string) => english ? en : ja, [english]);
   const gateSummary = useMemo(() => getGateSummary({ todos, habits, memos, focusSessions, gateConfig, displaySettings }, new Date(), english ? "en" : "ja"), [todos, habits, memos, focusSessions, gateConfig, displaySettings, english]);
   const activeRules = useMemo(() => getGateRuleSummaries({ todos, habits, memos, focusSessions, gateConfig, displaySettings }, new Date(), english ? "en" : "ja").filter((rule) => rule.isActive), [todos, habits, memos, focusSessions, gateConfig, displaySettings, english]);
-  const requiredTodoIds = new Set(activeRules.flatMap((rule) => rule.requiredTodoIds));
-  const requiredHabitIds = new Set(activeRules.flatMap((rule) => rule.requiredHabitIds));
-  const requiredTodos = todos.filter((todo) => requiredTodoIds.has(todo.id) && !todo.completed);
-  const requiredHabits = habits.filter((habit) => requiredHabitIds.has(habit.id) && !isHabitCompleteOn(habit, today));
-  const waitingTodoIds = new Set(todos.filter((todo) => getRequiredWindowMode(todo) === "scheduled" && !requiredTodoIds.has(todo.id) && !todo.completed).map((todo) => todo.id));
-  const waitingHabitIds = new Set(habits.filter((habit) => getRequiredWindowMode(habit) === "scheduled" && !requiredHabitIds.has(habit.id) && !isHabitCompleteOn(habit, today)).map((habit) => habit.id));
-  const waitingTodos = todos.filter((todo) => waitingTodoIds.has(todo.id));
-  const waitingHabits = habits.filter((habit) => waitingHabitIds.has(habit.id));
-  const regularTodos = todos.filter((todo) => !requiredTodoIds.has(todo.id) && !waitingTodoIds.has(todo.id) && !todo.completed);
-  const regularHabits = habits.filter((habit) => !requiredHabitIds.has(habit.id) && !waitingHabitIds.has(habit.id) && !isHabitCompleteOn(habit, today));
+  const effectiveTodos = useMemo(() => todos.filter((todo) => isTodoEffectiveRequired(todo)), [todos]);
+  const effectiveHabits = useMemo(() => habits.filter((habit) => habit.isRequired), [habits]);
+  const todayCompletedDisplay = displaySettings.todayCompletedDisplay ?? "hide";
+  const openTodos = effectiveTodos.filter((todo) => !isTodoAchieved(todo));
+  const openHabits = effectiveHabits.filter((habit) => !isHabitCompleteOn(habit, today));
+  const completedTodos = useMemo(() => todayCompletedDisplay === "dim" ? effectiveTodos.filter((todo) => isTodoAchieved(todo)) : [], [effectiveTodos, todayCompletedDisplay]);
+  const completedHabits = useMemo(() => todayCompletedDisplay === "dim" ? effectiveHabits.filter((habit) => isHabitCompleteOn(habit, today)) : [], [effectiveHabits, today, todayCompletedDisplay]);
   const activeScheduledRule = activeRules.find((rule) => Boolean(rule.schedule));
   const timeActive = Boolean(activeScheduledRule) || activeRules.some((rule) => rule.id === "always");
-  const totalRequired = activeRules.flatMap((rule) => [...rule.requiredTodoIds, ...rule.requiredHabitIds]).length;
-  const pendingRequired = requiredTodos.length + requiredHabits.length;
+  const totalRequired = effectiveTodos.length + effectiveHabits.length;
+  const pendingRequired = openTodos.length + openHabits.length;
   const doneRequired = Math.max(totalRequired - pendingRequired, 0);
   const progress = totalRequired ? Math.round((doneRequired / totalRequired) * 100) : 0;
   const gateLocked = gateConfig.enabled && timeActive && gateSummary.pendingCount > 0;
   const greeting = t("今日の予定", "Today");
   const gateTitle = !gateConfig.enabled ? t("集中制限はオフです", "App limits are off") : !timeActive ? t("次の実行時間帯まで制限は休止中です", "App limits are paused until the next time window") : gateLocked ? t("選択したアプリを制限中です", "Selected apps are limited") : t("今の解除条件を完了しました", "Current unlock conditions are complete");
   const gateDescription = !gateConfig.enabled ? t("設定からオンにすると、選択アプリを必須項目の完了まで制限できます。", "Turn on App limits in Settings to limit selected apps until must-dos are complete.") : !timeActive ? t("「この後」にある項目は、選んだ時間帯になると必須になります。", "Items in Up next become required when their selected time begins.") : gateLocked ? t("残りの必須項目を完了すると、選択したアプリを使えるようになります。", "Complete the remaining must-dos to use your selected apps.") : t("この時間帯の解除条件は完了しています。", "The unlock conditions for this time window are complete.");
-  const getWindowLabel = useCallback((item: Todo | Habit) => gateConfig.schedules.filter((schedule) => item.requiredScheduleIds?.includes(schedule.id)).map((schedule) => `${schedule.label} ${schedule.startTime}–${schedule.endTime}`).join(" · "), [gateConfig.schedules]);
   const listItems = useMemo<HomeListItem[]>(() => {
     const result: HomeListItem[] = [];
-    const required = [
-      ...requiredTodos.map((todo) => ({ type: "todo" as const, id: `required-todo-${todo.id}`, todo, required: true })),
-      ...requiredHabits.map((habit) => ({ type: "habit" as const, id: `required-habit-${habit.id}`, habit, required: true })),
+    const open = [
+      ...openTodos.map((todo) => ({ type: "todo" as const, id: `today-todo-${todo.id}`, todo, required: true })),
+      ...openHabits.map((habit) => ({ type: "habit" as const, id: `today-habit-${habit.id}`, habit, required: true })),
     ];
-    const waiting = [
-      ...waitingTodos.map((todo) => ({ type: "todo" as const, id: `waiting-todo-${todo.id}`, todo, required: false, windowLabel: getWindowLabel(todo) })),
-      ...waitingHabits.map((habit) => ({ type: "habit" as const, id: `waiting-habit-${habit.id}`, habit, required: false, windowLabel: getWindowLabel(habit) })),
+    const completed = [
+      ...completedTodos.map((todo) => ({ type: "todo" as const, id: `today-done-todo-${todo.id}`, todo, required: true })),
+      ...completedHabits.map((habit) => ({ type: "habit" as const, id: `today-done-habit-${habit.id}`, habit, required: true })),
     ];
-    const regular = [
-      ...regularTodos.map((todo) => ({ type: "todo" as const, id: `regular-todo-${todo.id}`, todo, required: false })),
-      ...regularHabits.map((habit) => ({ type: "habit" as const, id: `regular-habit-${habit.id}`, habit, required: false })),
-    ];
-    if (required.length) result.push({ type: "heading", id: "required-heading", title: t("今やる", "Do now"), detail: t("この時間帯の解除条件です", "These unlock your selected apps now"), required: true }, ...required);
-    if (waiting.length) result.push({ type: "heading", id: "waiting-heading", title: t("この後", "Up next"), detail: t("選んだ時間帯になると必須になります", "These become must-dos at their selected time"), required: false }, ...waiting);
-    if (regular.length) result.push({ type: "heading", id: "today-heading", title: t("今日のリスト", "Today’s list"), detail: t("必要に応じて完了にできます", "Mark items done when you’re ready"), required: false }, ...regular);
+    if (open.length) result.push({ type: "heading", id: "today-heading", title: t("今日の対象", "Today’s focus"), detail: t("必須と期限が今日以前の項目です", "Must-dos and tasks due today or earlier"), required: true }, ...open);
+    if (completed.length) result.push({ type: "heading", id: "completed-heading", title: t("完了済み", "Completed"), detail: t("表示設定で残しています", "Kept by your display setting"), required: false }, ...completed);
     return result;
-  }, [getWindowLabel, regularHabits, regularTodos, requiredHabits, requiredTodos, t, waitingHabits, waitingTodos]);
+  }, [completedHabits, completedTodos, openHabits, openTodos, t]);
 
   const openTaskForm = (defaultRequired = false) => { setNewTaskDefaultRequired(defaultRequired); setTaskFormOpen(true); };
   const explainTimedResult = (reason: string | undefined, destination: "/(tabs)/todos" | "/(tabs)/habits") => {
@@ -95,7 +88,7 @@ export default function TodayScreen() {
         {totalRequired ? <View style={[styles.progressCard, { backgroundColor: palette.primary }]}><View style={styles.progressCopy}><Text style={styles.progressLabel}>{t("必須の進み具合", "MUST-DO PROGRESS")}</Text><Text style={styles.progressTitle}>{t(`残り ${pendingRequired}件`, `${pendingRequired} remaining`)}</Text><Text style={styles.progressDetail}>{t(`${doneRequired}/${totalRequired}件を完了`, `${doneRequired}/${totalRequired} complete`)}</Text></View><Text style={styles.progressPercent}>{progress}%</Text><View style={[styles.progressTrack, { backgroundColor: palette.isDark ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.32)" }]}><View style={[styles.progressFill, { width: `${progress}%` }]} /></View></View> : null}
       </>}
       ListEmptyComponent={todos.length || habits.length ? <View style={[styles.emptyPanel, { backgroundColor: palette.elevated }]}><MaterialIcons name="done-all" size={22} color={palette.primary} /><View><Text style={styles.emptyTitle}>{t("今日の未完了項目はありません", "No open items for today")}</Text><Text style={styles.emptyText}>{t("新しいTodoを追加するか、明日の項目を整えましょう。", "Add a new task or plan your next action.")}</Text></View></View> : null}
-      renderItem={({ item }) => item.type === "heading" ? <View style={[styles.sectionHeader, item.required && styles.requiredSectionHeader, item.required ? { backgroundColor: palette.primarySoft, borderColor: palette.border } : undefined]}><Text style={[styles.sectionTitle, item.required && styles.requiredSectionTitle]}>{item.title}</Text><Text style={[styles.sectionHint, item.required && styles.requiredSectionHint]}>{item.detail}</Text></View> : item.type === "todo" ? <HomeTodoCard todo={item.todo} required={item.required} windowLabel={item.windowLabel} english={english} onToggle={() => handleTodoToggle(item.todo.id)} onOpen={() => setOpenedTodo(item.todo)} /> : <HomeHabitCard habit={item.habit} required={item.required} windowLabel={item.windowLabel} english={english} onToggle={(date) => handleHabitToggle(item.habit.id, date)} onStartTimer={() => { const result = startHabitTimer(item.habit.id); if (result.ok) safeHaptic("light"); explainTimedResult(result.reason, "/(tabs)/habits"); }} onPauseTimer={() => { const result = pauseHabitTimer(item.habit.id); if (result.ok) safeHaptic("light"); explainTimedResult(result.reason, "/(tabs)/habits"); }} onProgress={(delta) => { const result = adjustHabitProgress(item.habit.id, delta); if (result.ok && delta > 0) safeHaptic("light"); explainTimedResult(result.reason, "/(tabs)/habits"); }} onOpen={() => setOpenedHabit(item.habit)} />}
+      renderItem={({ item }) => item.type === "heading" ? <View style={[styles.sectionHeader, item.required && styles.requiredSectionHeader, item.required ? { backgroundColor: palette.primarySoft, borderColor: palette.border } : undefined]}><Text style={[styles.sectionTitle, item.required && styles.requiredSectionTitle]}>{item.title}</Text><Text style={[styles.sectionHint, item.required && styles.requiredSectionHint]}>{item.detail}</Text></View> : item.type === "todo" ? <TodoItemCard todo={item.todo} showRequired={item.required} language={english ? "en" : "ja"} t={t} onToggle={() => handleTodoToggle(item.todo.id)} onOpen={() => setOpenedTodo(item.todo)} onProgress={(delta) => { const result = adjustTodoProgress(item.todo.id, delta); if (result.ok && delta > 0) safeHaptic("light"); explainTimedResult(result.reason, "/(tabs)/todos"); }} onSubtask={(subtaskId) => { const subtask = getTodoSubtasks(item.todo).find((candidate) => candidate.id === subtaskId); const result = toggleSubtask(item.todo.id, subtaskId); if (result.ok) safeHaptic(subtask?.completed ? "light" : "success"); explainTimedResult(result.reason, "/(tabs)/todos"); }} /> : <HabitItemCard habit={item.habit} showRequired={item.required} language={english ? "en" : "ja"} t={t} onToggle={(date) => handleHabitToggle(item.habit.id, date)} onStartTimer={() => { const result = startHabitTimer(item.habit.id); if (result.ok) safeHaptic("light"); explainTimedResult(result.reason, "/(tabs)/habits"); }} onPauseTimer={() => { const result = pauseHabitTimer(item.habit.id); if (result.ok) safeHaptic("light"); explainTimedResult(result.reason, "/(tabs)/habits"); }} onProgress={(delta) => { const result = adjustHabitProgress(item.habit.id, delta); if (result.ok && delta > 0) safeHaptic("light"); explainTimedResult(result.reason, "/(tabs)/habits"); }} onOpen={() => setOpenedHabit(item.habit)} />}
     />
     <TaskForm visible={taskFormOpen} defaultRequired={newTaskDefaultRequired} onClose={() => { setTaskFormOpen(false); setNewTaskDefaultRequired(false); }} onSave={addTodo} />
     <TaskForm visible={Boolean(openedTodo)} todo={openedTodo} onClose={() => setOpenedTodo(undefined)} onSave={(input) => openedTodo ? updateTodo(openedTodo.id, input) : { ok: false }} />

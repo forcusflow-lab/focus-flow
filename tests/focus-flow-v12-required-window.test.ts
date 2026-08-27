@@ -33,16 +33,17 @@ describe("v12 時間帯必須・起動・Today UX", () => {
     expect(selector).toContain("設定済みの時間帯だけ必須にする");
   });
 
-  it("Todayは現在必要な項目と開始待ちの項目を分け、ウィジェットにも時間帯を渡す", () => {
+  it("Todayは必須または期限当日以前の項目に絞り、Widgetには時間帯と有効必須状態を渡す", () => {
     const today = source("app", "(tabs)", "index.tsx");
     const androidGate = source("lib", "focus-flow", "android-gate.ts");
     const widgetProvider = source("plugins", "native", "android", "kotlin", "FocusFlowWidgetProvider.kt");
-    expect(today).toContain('title: t("今やる", "Do now")');
-    expect(today).toContain('title: t("この後", "Up next")');
-    expect(today).toContain("waitingTodoIds");
+    expect(today).toContain('title: t("今日の対象", "Today’s focus")');
+    expect(today).toContain("isTodoEffectiveRequired");
+    expect(today).toContain("todayCompletedDisplay");
     expect(androidGate).toContain("windowLabelFor");
     expect(widgetProvider).toContain('optString("windowLabel", "")');
     expect(widgetProvider).toContain("compactBadge");
+    expect(widgetProvider).toContain('item.optBoolean("gateRequired", false)');
     expect(widgetProvider).toContain('required -> if (english) "MUST" else "必須"');
     expect(widgetProvider).toContain('hasWindow -> if (english) "TIME" else "時間帯"');
   });

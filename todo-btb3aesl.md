@@ -354,3 +354,10 @@
 - [x] GitHub Actions v15署名ビルドで検出されたWidget Providerの未解決`kind`参照を修正し、Kotlinコンパイルを再検証する
 - [x] GitHub Actions run 33048834376でv15本人用署名APKを生成し、ZIP整合性、package／versionCode、v2署名、既知証明書、専用scheme、Widget Provider／リサイズ／静的layout、mini-card資産、時間型停止文字列、旧Collection経路不在を独立検証する
 - [x] v15本人用APKのチャット添付ダウンロード失敗を再現・記録し、同一SHA-256を保つ端末互換の代替配布経路を検証する
+- [ ] v16でWidgetヘッダーとmini-cardの余白・高さ・カード間隔を再設計し、タイトルと本文の視覚的な釣り合いをsmall／medium／largeで実機受入する
+- [ ] v16でWidget時間型Habitの開始・停止・再開後に経過秒を継続再描画するネイティブ更新経路を実装し、本体との同期を実機受入する
+- [ ] v16でWidget mini-cardの左端へTodo／Habitおよび本体のカテゴリ色に連動するアクセントレールを実装し、light／darkで実機受入する
+- [ ] v16でToday対象を必須または期限が当日以前のTodo／Habitに限定し、期限超過項目は自動的に必須として扱う状態・表示・Widget同期を実装する
+- [ ] v16で完了済み項目の保持／非表示を本体TodayとWidgetで個別設定できるようにし、各表示設定と完了／復元を実機受入する
+- [ ] v16でTodayのTodo／Habitカードを各一覧タブの同一カード情報・操作・完了表示へ統一し、表示差異を回帰テストで防止する
+- [x] v16の共通カード、Today有効必須抽出、Today／Widget完了済み表示の独立設定、Widget Chronometer・アクセントレール・余白密度を実装し、82件回帰・TypeScript・Lint・通常／本人用クリーンAndroid生成を通過させる
