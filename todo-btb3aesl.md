@@ -353,3 +353,4 @@
 - [x] v15の時間型Habit状態機械、Widget mini-card、必須先頭、開始／停止操作について、全79回帰テスト、TypeScript、Lint、通常版／本人用クリーンAndroid生成を通過させる
 - [x] GitHub Actions v15署名ビルドで検出されたWidget Providerの未解決`kind`参照を修正し、Kotlinコンパイルを再検証する
 - [x] GitHub Actions run 33048834376でv15本人用署名APKを生成し、ZIP整合性、package／versionCode、v2署名、既知証明書、専用scheme、Widget Provider／リサイズ／静的layout、mini-card資産、時間型停止文字列、旧Collection経路不在を独立検証する
+- [x] v15本人用APKのチャット添付ダウンロード失敗を再現・記録し、同一SHA-256を保つ端末互換の代替配布経路を検証する
