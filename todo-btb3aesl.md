@@ -334,7 +334,7 @@
 - [x] v11実機で再現したWidgetの過大なカード面・薄い可読性・必須Pill欠落を、ランチャーのサイズ別RemoteViews・外側背景・行高さ・文字／Pillコントラストの契約へ分解する
 - [x] Android 12+のサイズ別RemoteViewsと内容高Widget、Todo・Habit・Todayの必須Pill専用枠を含む本人用v12をGitHub Actions run 33024337723で署名生成し、成果物の整合性・package/versionCode・v2署名・scheme・Provider・Widget資産・旧Collection経路不在を独立検証する
 - [ ] 本体とWidgetの修正後、必須Todo・必須Habitを含むライト／ダーク・文字サイズ・小／標準／大Widgetの実機再受入を実施する
-- [ ] v12実機で再現したWidgetリサイズ非追従を、`OPTION_APPWIDGET_SIZES`のホスト選択ではなく、`onAppWidgetOptionsChanged`で受けた実サイズの保存・各widgetIdの再描画・API別fallbackへ再設計し、小／標準／大で確実に1/2/3行へ変化させる
+- [x] v12実機で再現したWidgetリサイズ非追従を、`OPTION_APPWIDGET_SIZES`のホスト選択ではなく、`onAppWidgetOptionsChanged`で受けた実サイズの保存・各widgetIdの再描画・API別fallbackへ再設計し、小／標準／大で確実に1/2/3行へ変化させる（v13実機報告：拡大縮小は正しく機能）
 - [ ] v13本人用APKで、v12実機画像で改善確認できたTodo・Habit・Todayの`必須`完全表示を回帰させず、Widgetのみのサイズ追従不合格を再受入する
 - [ ] v13実機受入では、未完了項目を3件用意してWidgetを最小／標準／大の高さへ縦リサイズし、1/2/3行・カード外形追従・アプリ同期／完了後のサイズ維持を連続確認する
 - [x] v13でAndroid 12+の3段階responsive RemoteViews、pre-Android 12のwidgetId別サイズ保存、resize broadcast登録、ホスト高追従カードを実装し、全自動回帰・通常／本人用クリーンAndroid生成を通過させる
