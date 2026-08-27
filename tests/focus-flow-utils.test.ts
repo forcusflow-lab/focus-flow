@@ -121,7 +121,7 @@ describe("Focus Flowの日付・習慣計算", () => {
     expect(getGateSummary(data, base)).toMatchObject({ pendingTodos: 1, pendingHabits: 0, pendingCount: 1 });
   });
 
-  it("期限当日以前の未完了Todoを自動で必須にし、期限翌日・完了済みを混同しない", () => {
+  it("期限当日以前の未完了Todoを常に自動必須にし、期限翌日・完了済みを混同しない", () => {
     const data: FocusFlowData = {
       todos: [
         { id: "t-today", title: "今日が期限", priority: "high", dueDate: "2026-08-13", isRequired: false, completed: false, createdAt: "2026-08-10T00:00:00.000Z" },
@@ -135,15 +135,16 @@ describe("Focus Flowの日付・習慣計算", () => {
     };
     expect(getGateSummary(data, base)).toMatchObject({ pendingTodos: 2, pendingHabits: 0, pendingCount: 2 });
     data.gateConfig.autoRequireDueToday = false;
-    expect(getGateSummary(data, base)).toMatchObject({ pendingTodos: 0, pendingHabits: 0, pendingCount: 0 });
+    expect(getGateSummary(data, base)).toMatchObject({ pendingTodos: 2, pendingHabits: 0, pendingCount: 2 });
   });
 
-  it("必須Todoは時間目標とサブタスクの両方を満たすまで制限を解除しない", () => {
+  it("Todoはレガシーの時間目標・サブタスクではなく、一回の完了チェックで制限を解除する", () => {
     const todo = { id: "t-progress", title: "報告書", priority: "high" as const, isRequired: true, completed: false, progressUnit: "minutes" as const, targetValue: 20, progressValue: 20, repeatRule: "none" as const, subtasks: [{ id: "s-1", title: "下書き", completed: false }], createdAt: "2026-08-13T00:00:00.000Z", timerStartedAt: "2026-08-13T01:00:00.000Z" };
     const data: FocusFlowData = { todos: [todo], habits: [], memos: [], focusSessions: [], gateConfig: { enabled: true, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, schedules: [] }, displaySettings: { fontScale: "standard", theme: "mist", cardOpacity: "solid" } };
     expect(isTodoAchieved(todo)).toBe(false);
     expect(getGateSummary(data, base).pendingCount).toBe(1);
     todo.subtasks[0].completed = true;
+    expect(isTodoAchieved(todo)).toBe(false);
     todo.completed = true;
     expect(isTodoAchieved(todo)).toBe(true);
     expect(getGateSummary(data, base).pendingCount).toBe(0);
@@ -157,11 +158,11 @@ describe("Focus Flowの日付・習慣計算", () => {
     expect(getGateSummary(data, base).pendingCount).toBe(0);
   });
 
-  it("時間管理Todoは設定時間の経過前には完了扱いにしない", () => {
+  it("Todoは時間設定の有無に関わらず完了チェックだけで完了扱いにする", () => {
     const todo = { id: "t-timer", title: "読書", priority: "medium" as const, isRequired: true, completed: true, progressUnit: "minutes" as const, targetValue: 20, timerStartedAt: "2026-08-13T02:00:00.000Z", createdAt: "2026-08-13T00:00:00.000Z" };
-    expect(isTodoAchieved(todo, new Date("2026-08-13T02:10:00.000Z"))).toBe(false);
+    expect(isTodoAchieved(todo, new Date("2026-08-13T02:10:00.000Z"))).toBe(true);
     expect(isTodoAchieved(todo, new Date("2026-08-13T02:20:00.000Z"))).toBe(true);
-    expect(isTodoAchieved({ ...todo, earlyCompletionAt: "2026-08-13T02:05:00.000Z" })).toBe(true);
+    expect(isTodoAchieved({ ...todo, completed: false, earlyCompletionAt: "2026-08-13T02:05:00.000Z" })).toBe(false);
   });
 
   it("時間管理習慣は計測時間を進捗として保持し、行頭チェックで予定前でも手動達成できる", () => {

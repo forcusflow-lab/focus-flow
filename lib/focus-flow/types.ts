@@ -13,7 +13,7 @@ export type WidgetTransparency = "solid" | "soft" | "clear";
 export type WidgetCompletedDisplay = "hide" | "dim";
 export type TodayCompletedDisplay = "hide" | "dim";
 export type AppFontId = "system" | "reading" | "notebook" | "focus";
-export type SavedThemeSet = { id: string; name: string; appTheme: AppThemeId; appearance: AppearancePreference; fontFamily?: AppFontId; widgetThemes: Partial<Record<WidgetThemeKind, WidgetThemeSelection>>; widgetTextSizes: Partial<Record<WidgetThemeKind, WidgetTextSize>>; widgetOpacity?: number; widgetCompletedDisplay?: WidgetCompletedDisplay; todayCompletedDisplay?: TodayCompletedDisplay };
+export type SavedThemeSet = { id: string; name: string; appTheme: AppThemeId; appearance: AppearancePreference; fontFamily?: AppFontId; widgetThemes: Partial<Record<WidgetThemeKind, WidgetThemeSelection>>; widgetTextSizes: Partial<Record<WidgetThemeKind, WidgetTextSize>>; widgetOpacity?: number; widgetBackgroundOpacity?: number; widgetCardOpacity?: number; widgetCompletedDisplay?: WidgetCompletedDisplay; todayCompletedDisplay?: TodayCompletedDisplay };
 
 export type TodoSubtask = {
   id: string;
@@ -120,8 +120,12 @@ export type DisplaySettings = {
   dailyReminderTime?: string;
   widgetThemes?: Partial<Record<WidgetThemeKind, WidgetThemeSelection>>;
   widgetTextSizes?: Partial<Record<WidgetThemeKind, WidgetTextSize>>;
-  /** ホーム画面ウィジェット本体の背景不透明度。0は背景を消し、100は完全に表示する。 */
+  /** v18以前のWidget背景不透明度。v19以降はwidgetBackgroundOpacityへ移行する。 */
   widgetOpacity?: number;
+  /** ホーム画面Widgetの背景・見出し面の不透明度。0は背景を消し、100は完全に表示する。 */
+  widgetBackgroundOpacity?: number;
+  /** ホーム画面WidgetのTodo／Habit行の面の不透明度。0は行面を消し、100は完全に表示する。 */
+  widgetCardOpacity?: number;
   widgetTransparency?: WidgetTransparency;
   widgetCompletedDisplay?: WidgetCompletedDisplay;
   /** Today画面で当日対象として完了済み項目を残すかをWidgetとは別に選ぶ。 */
@@ -144,6 +148,8 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   dailyReminderTime: "19:00",
   widgetTextSizes: {},
   widgetOpacity: 86,
+  widgetBackgroundOpacity: 86,
+  widgetCardOpacity: 100,
   widgetTransparency: "soft",
   widgetCompletedDisplay: "dim",
   todayCompletedDisplay: "hide",

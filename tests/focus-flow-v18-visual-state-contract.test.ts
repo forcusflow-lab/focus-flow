@@ -26,43 +26,40 @@ describe("Focus Flow v18 visual-state quality contract", () => {
     expect(gate).toContain('isTodoEffectiveRequired(todo)');
   });
 
-  it("keeps completed items in stable order and provides a temporary reveal path without changing saved display settings", () => {
+  it("keeps completed items in stable order and provides a screen-local reveal path", () => {
     const todos = projectFile("app", "(tabs)", "todos.tsx");
     const today = projectFile("app", "(tabs)", "index.tsx");
     const gate = projectFile("lib", "focus-flow", "android-gate.ts");
     const provider = projectFile("plugins", "native", "android", "kotlin", "FocusFlowWidgetProvider.kt");
-    expect(todos).toContain('setShowHiddenCompleted(true)');
+    expect(todos).toContain('setShowCompleted((value) => !value)');
     expect(todos).toContain('const openTodos');
     expect(todos).toContain('const doneTodos');
     expect(todos).not.toContain('setUndo');
     expect(today).toContain('params.completed');
-    expect(today).toContain('setShowHiddenCompleted(true)');
+    expect(today).toContain('setShowCompleted(true)');
     expect(gate).toContain('stableOrder');
     expect(gate).toContain('widgetHiddenCompletedCount');
     expect(provider).toContain('showCompleted = showCompleted');
     expect(provider).toContain('appendQueryParameter("completed", "1")');
   });
 
-  it("binds Widget headers and mini-cards to every app theme, with rounded rails clipped inside the card", () => {
+  it("binds the Widget header and rows to theme colors without unsupported collection views", () => {
     const provider = projectFile("plugins", "native", "android", "kotlin", "FocusFlowWidgetProvider.kt");
     const plugin = projectFile("plugins", "with-focus-flow-android.js");
     const layout = projectFile("plugins", "native", "android", "res", "layout", "focus_flow_widget_initial.xml");
-    expect(provider).toContain('widgetSurfaceDrawable(state.optString("widgetTheme", "mist"), dark)');
-    expect(provider).toContain('itemCardDrawable(theme, dark');
-    expect(provider).toContain('"sunrise" ->');
+    expect(provider).toContain('colorWithOpacity');
+    expect(provider).toContain('setBackgroundColor');
     expect(plugin).toContain('widgetThemeSurfaces');
-    expect(layout).toContain('android:layout_marginTop="4dp" android:layout_marginBottom="4dp"');
-    expect(layout).toContain('@drawable/focus_flow_widget_surface_mist_light');
+    expect(layout).toContain('android:layout_height="52dp"');
+    expect(layout).toContain('android:layout_height="48dp"');
     expect(layout).not.toContain('android:layout_weight');
     expect(layout).not.toContain('<ListView');
   });
 
-  it("uses aligned, explicit completed-display Switch copy for both independently persisted display targets", () => {
+  it("moves completed-item visibility controls out of Settings and into direct list actions", () => {
     const settings = projectFile("app", "(tabs)", "settings.tsx");
-    expect(settings).toContain('visible ? "完了済みを残す" : "完了済みを非表示"');
-    expect(settings).toContain('Today画面');
-    expect(settings).toContain('Widgetの完了済み');
-    expect(settings).toContain('completedToggleRow: { minHeight: 64');
-    expect(settings).toContain('thumbColor={COLORS.white}');
+    expect(settings).not.toContain('CompletedItemsToggle');
+    expect(settings).toContain('function OpacitySlider');
+    expect(settings).toContain('widgetBackgroundOpacity');
   });
 });

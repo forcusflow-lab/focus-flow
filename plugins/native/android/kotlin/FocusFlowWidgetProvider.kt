@@ -142,17 +142,20 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   private fun bindTheme(views: RemoteViews, state: JSONObject) {
     val palette = state.optJSONObject("widgetPalette")
     val dark = palette?.optBoolean("isDark", false) ?: false
-    views.setInt(R.id.focus_flow_widget_card, "setBackgroundResource", widgetCardDrawable(dark, state.optInt("widgetOpacity", 86).coerceIn(0, 100)))
-    views.setInt(R.id.focus_flow_widget_header, "setBackgroundResource", widgetSurfaceDrawable(state.optString("widgetTheme", "mist"), dark))
-    // Use pre-rendered alpha backgrounds rather than setAlpha. RemoteViews
-    // hosts render only a restricted hierarchy, and text must not fade with
-    // the card surface.
-    // The 2dp row separators are negative space: keeping them transparent lets
-    // the widget surface show through and avoids visually heavy divider bands.
-    listOf(R.id.focus_flow_widget_static_divider_one, R.id.focus_flow_widget_static_divider_two).forEach { dividerId -> views.setTextViewText(dividerId, ""); views.setInt(dividerId, "setBackgroundColor", Color.TRANSPARENT) }
+    val background = paletteColor(palette, "background", if (dark) "#14231F" else "#F7F8F5")
+    val elevated = paletteColor(palette, "elevated", if (dark) "#263E36" else "#EDF4F0")
+    val border = paletteColor(palette, "border", if (dark) "#3B554B" else "#D7E2DD")
+    val opacity = state.optInt("widgetBackgroundOpacity", state.optInt("widgetOpacity", 86)).coerceIn(0, 100)
+    // Widgetは角丸カードを重ねず、テーマ背景・高めの見出し・連続行だけで
+    // 情報を整理する。RemoteViewsでも安全なsetBackgroundColorのみを使う。
+    views.setInt(R.id.focus_flow_widget_card, "setBackgroundColor", colorWithOpacity(background, opacity))
+    views.setInt(R.id.focus_flow_widget_header, "setBackgroundColor", colorWithOpacity(elevated, opacity))
+    listOf(R.id.focus_flow_widget_static_divider_one, R.id.focus_flow_widget_static_divider_two).forEach { dividerId -> views.setTextViewText(dividerId, ""); views.setInt(dividerId, "setBackgroundColor", colorWithOpacity(border, opacity)) }
   }
 
   private fun paletteColor(palette: JSONObject?, key: String, fallback: String): Int = try { Color.parseColor(palette?.optString(key, fallback) ?: fallback) } catch (_: Exception) { Color.parseColor(fallback) }
+
+  private fun colorWithOpacity(color: Int, opacity: Int): Int = Color.argb((opacity.coerceIn(0, 100) * 255 / 100), Color.red(color), Color.green(color), Color.blue(color))
 
   private fun widgetCardDrawable(dark: Boolean, opacity: Int): Int {
     val level = when {
@@ -197,13 +200,14 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val rows = uniqueStaticItems(all, bucket.maxRows)
     val palette = state.optJSONObject("widgetPalette")
     val dark = palette?.optBoolean("isDark", false) ?: false
-    val theme = state.optString("widgetTheme", "mist")
     val titleColor = paletteColor(palette, "text", "#13251F")
     val mutedColor = paletteColor(palette, "muted", "#4E655B")
     val primary = paletteColor(palette, "primary", "#1B6B62")
     val primarySoft = paletteColor(palette, "primarySoft", "#E3F1EC")
     val elevated = paletteColor(palette, "elevated", "#EDF4F0")
     val onPrimary = paletteColor(palette, "background", "#F7F8F5")
+    val surface = paletteColor(palette, "surface", if (dark) "#1C302A" else "#FFFFFF")
+    val rowOpacity = state.optInt("widgetCardOpacity", 100).coerceIn(0, 100)
     val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
     views.setViewVisibility(R.id.focus_flow_widget_empty, if (rows.isEmpty()) View.VISIBLE else View.GONE)
     if (rows.isEmpty()) views.setTextViewText(R.id.focus_flow_widget_empty, if (english) "Open Focus Flow to add today’s items" else "今日の項目はありません")
@@ -213,7 +217,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       val item = rows.getOrNull(index)
       views.setViewVisibility(ids.row, if (item == null) View.GONE else View.VISIBLE)
       if (index < dividers.size) views.setViewVisibility(dividers[index], if (index < rows.size - 1) View.VISIBLE else View.GONE)
-      if (item != null) bindStaticRow(context, views, ids, item, widgetId, english, titleColor, mutedColor, primary, primarySoft, elevated, onPrimary, scale, bucket.showControls, dark, theme) else clearStaticRow(views, ids)
+      if (item != null) bindStaticRow(context, views, ids, item, widgetId, english, titleColor, mutedColor, primary, primarySoft, elevated, onPrimary, surface, rowOpacity, scale, bucket.showControls, dark) else clearStaticRow(views, ids)
     }
   }
 
@@ -242,16 +246,17 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setViewVisibility(ids.timer, View.GONE)
     views.setViewVisibility(ids.chronometer, View.GONE)
     views.setInt(ids.rail, "setBackgroundColor", Color.TRANSPARENT)
+    views.setInt(ids.row, "setBackgroundColor", Color.TRANSPARENT)
     views.setInt(ids.check, "setBackgroundResource", R.drawable.focus_flow_widget_checkbox)
     views.setImageViewResource(ids.check, R.drawable.focus_flow_widget_check_empty)
   }
 
-  private fun bindStaticRow(context: Context, views: RemoteViews, ids: StaticRowIds, item: JSONObject, widgetId: Int, english: Boolean, titleColor: Int, mutedColor: Int, primary: Int, primarySoft: Int, elevated: Int, onPrimary: Int, scale: Float, showControls: Boolean, dark: Boolean, theme: String) {
+  private fun bindStaticRow(context: Context, views: RemoteViews, ids: StaticRowIds, item: JSONObject, widgetId: Int, english: Boolean, titleColor: Int, mutedColor: Int, primary: Int, primarySoft: Int, elevated: Int, onPrimary: Int, surface: Int, rowOpacity: Int, scale: Float, showControls: Boolean, dark: Boolean) {
     val completed = item.optBoolean("completed", false)
     val canToggle = item.optBoolean("canToggle", false)
     val title = item.optString("title")
     val badge = compactBadge(item, english)
-    views.setInt(ids.row, "setBackgroundResource", itemCardDrawable(theme, dark, completed, item.optBoolean("required", false)))
+    views.setInt(ids.row, "setBackgroundColor", colorWithOpacity(if (completed) elevated else surface, rowOpacity))
     val kind = item.optString("kind")
     val accentFallback = if (kind == "habit") primary else Color.parseColor("#3566B7")
     val accent = try { Color.parseColor(item.optString("accentColor")) } catch (_: Exception) { accentFallback }

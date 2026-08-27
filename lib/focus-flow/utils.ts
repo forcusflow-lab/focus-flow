@@ -76,11 +76,10 @@ export function todoTimerRemainingMs(todo: Todo, base = new Date()) {
 }
 
 export function isTodoAchieved(todo: Todo, base = new Date()) {
-  const unit = todo.progressUnit ?? "check";
-  const progressMet = unit === "check" || unit === "minutes" ? isTodoTimeReady(todo, base) : getTodoProgress(todo) >= getTodoTarget(todo);
-  const subtasks = getTodoSubtasks(todo);
-  const subtasksMet = subtasks.length === 0 || subtasks.every((subtask) => subtask.completed);
-  return (todo.completed || (unit === "minutes" && isTodoTimeReady(todo, base))) && progressMet && subtasksMet;
+  void base;
+  // Todoは一度の完了チェックだけで状態を変える。回数・時間・繰り返し・
+  // サブタスクはHabit側の継続記録に限定し、旧Todoデータの属性は参照しない。
+  return Boolean(todo.completed);
 }
 
 export function todoProgressLabel(todo: Todo, language: ContentLanguage = "ja") {
@@ -126,7 +125,10 @@ export function isTodoRequiredForGate(todo: Todo, autoRequireDueToday: boolean, 
   const today = dayKey(base);
   const repeatRule = todo.repeatRule ?? "none";
   const repeatingInstanceIsDue = repeatRule === "none" || !todo.dueDate || todo.dueDate <= today;
-  const dueTodayOrEarlierIsAlwaysRequired = autoRequireDueToday && Boolean(todo.dueDate && todo.dueDate <= today) && !isTodoAchieved(todo, base);
+  // v19では期限当日以前の未完了Todoを、手動必須と同じ解除条件として常に扱う。
+  // legacy設定autoRequireDueTodayは後方互換のため受け取るが、必須性を弱めない。
+  void autoRequireDueToday;
+  const dueTodayOrEarlierIsAlwaysRequired = Boolean(todo.dueDate && todo.dueDate <= today) && !isTodoAchieved(todo, base);
   if (dueTodayOrEarlierIsAlwaysRequired) return schedule === undefined;
   return Boolean(repeatingInstanceIsDue && isItemRequiredForGate(todo, schedule));
 }
