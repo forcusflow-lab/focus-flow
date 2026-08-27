@@ -351,3 +351,4 @@
 - [x] Widgetの時間型Habitにある浮いた角張った計測表示を、同一カードの本文・補足・丸形開始／停止操作と統一する自然な表示へ再設計する
 - [ ] v15本人用APKで、時間型Habitの一時停止／再開・手動完了／復元・Widget個別カード・必須先頭表示・計測操作・リサイズを実機再受入する
 - [x] v15の時間型Habit状態機械、Widget mini-card、必須先頭、開始／停止操作について、全79回帰テスト、TypeScript、Lint、通常版／本人用クリーンAndroid生成を通過させる
+- [x] GitHub Actions v15署名ビルドで検出されたWidget Providerの未解決`kind`参照を修正し、Kotlinコンパイルを再検証する

@@ -254,6 +254,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setTextColor(ids.badge, primary)
     views.setInt(ids.badge, "setBackgroundResource", if (dark) R.drawable.focus_flow_widget_badge_dark else R.drawable.focus_flow_widget_badge_light)
     views.setTextViewTextSize(ids.badge, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
+    val kind = item.optString("kind")
     val unit = item.optString("progressUnit", "check")
     val timerRunning = item.optBoolean("timerRunning", false)
     val timerPaused = item.optBoolean("timerPaused", false)
@@ -279,7 +280,6 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       views.setImageViewResource(ids.check, R.drawable.focus_flow_widget_check_empty)
     }
     val itemId = item.optString("id")
-    val kind = item.optString("kind")
     views.setOnClickPendingIntent(ids.content, detailIntent(context, widgetId, ids.position, itemId, kind))
     val action = if (completed) ACTION_RESTORE else ACTION_COMPLETE
     views.setOnClickPendingIntent(ids.action, if (canToggle) actionIntent(context, widgetId, ids.position, action, itemId, kind) else noOpIntent(context, widgetId, ids.position, itemId, kind))

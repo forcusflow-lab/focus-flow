@@ -66,6 +66,14 @@ Widgetは一つのTodayコンテナに、**区別可能な薄いmini-card行**�
 
 本人用の署名APKはGitHub ActionsでKotlinコンパイル・署名後に独立検証する。ローカルのGradle本ビルドは、サンドボックス資源の安定性を理由に品質根拠として用いない。
 
+### 署名ビルド再実行記録
+
+| 実行 | 結果 | 対応 |
+|---|---|---|
+| GitHub Actions run 33046847439（初回） | `FocusFlowWidgetProvider.kt:267` で`kind`を宣言前に参照してKotlinコンパイルが失敗。APKは未生成。 | `kind`の取得をメタ文言分岐より前へ移動した。全79回帰、TypeScript、Lint、本人用クリーンAndroid生成を再実行済み。 |
+
+この初回runを成果物の根拠には用いない。修正版をmainへ同期した後、成功した新しい署名runだけをAPK独立検証の対象とする。
+
 ## References
 
 [1]: https://intercom.help/habitify-app/en/articles/6113622-how-to-use-countdown-timer "Habitify: How to Use Countdown Timer"
