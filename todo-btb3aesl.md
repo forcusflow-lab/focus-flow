@@ -338,3 +338,4 @@
 - [ ] v13本人用APKで、v12実機画像で改善確認できたTodo・Habit・Todayの`必須`完全表示を回帰させず、Widgetのみのサイズ追従不合格を再受入する
 - [ ] v13実機受入では、未完了項目を3件用意してWidgetを最小／標準／大の高さへ縦リサイズし、1/2/3行・カード外形追従・アプリ同期／完了後のサイズ維持を連続確認する
 - [x] v13でAndroid 12+の3段階responsive RemoteViews、pre-Android 12のwidgetId別サイズ保存、resize broadcast登録、ホスト高追従カードを実装し、全自動回帰・通常／本人用クリーンAndroid生成を通過させる
+- [x] GitHub Actions run 33029093634で本人用v13署名APKを生成し、ZIP整合性、versionCode 13、v2署名、既存証明書、専用scheme、resize broadcast、Provider、responsive/保存経路、Widget資産、旧Collection経路不在を独立検証する
