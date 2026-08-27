@@ -86,6 +86,17 @@ Widgetは単一のフラットなTodayカードとして扱い、カード内に
 | 本人用クリーンAndroid生成 | `com.app.focusflow.personal`、`versionCode 14`、専用scheme、Widget Provider、開始ボタンID、`ACTION_NOOP`、旧Collection経路不在を確認した。 |
 | 署名APK | 未生成。GitHub Actionsでの本人用v14署名ビルドと独立検証後にのみ暫定実機検証APKを共有する。 |
 
+## 署名ビルドの是正記録
+
+GitHub Actions run `33034961876` は、`FocusFlowWidgetProvider.kt` の時間型メタ`when`式を閉じる波括弧が欠けていたため、Kotlinコンパイルで失敗した。成果物を生成していないため、この失敗版を配布候補にしていない。失敗は新規の署名ビルドで検出したため、静的XML・TypeScript検証の合格をネイティブコンパイル合格とは扱わないという品質ゲートが機能した。
+
+| 是正後の確認 | 結果 |
+|---|---|
+| Kotlinソース | `when`式の構文を修正し、本人用クリーン生成物へ正しいProviderソースがコピーされることを確認した。 |
+| ローカル回帰 | Expo API接続タイムアウトの外部認証テストを除き、25 files / 78 passed / 1 skipped、TypeScript、Lintが成功した。 |
+| Expo認証テスト | コード不具合ではなく`api.expo.dev`接続タイムアウトで失敗。GitHubの署名ワークフローはExpoトークンを使用しない。 |
+| 次のゲート | 修正ソースをチェックポイント・GitHub mainへ同期後、本人用v14署名APKを再生成して独立検証する。 |
+
 ## v14 実機受入条件
 
 | ID | 操作 | 合格条件 |

@@ -260,6 +260,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       unit == "minutes" -> if (english) "Time goal" else "時間目標"
       badge.isNotBlank() -> ""
       else -> item.optString("windowLabel", "")
+    }
     views.setViewVisibility(ids.meta, if (meta.isBlank()) View.GONE else View.VISIBLE)
     views.setTextViewText(ids.meta, meta)
     views.setTextColor(ids.meta, mutedColor)
