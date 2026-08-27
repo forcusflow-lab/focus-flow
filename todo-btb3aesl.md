@@ -290,6 +290,7 @@
 - [x] v22のWidget別完了表示、候補overflow、テーマ別楕円Pill、行透過に連動する開始・回数操作を実装し、33 files / 100 passed / 1 skippedと通常・本人用クリーンAndroid生成で検証した
 - [x] v22の制限アプリ一覧を先頭文字タイル・72dp情報行・検索・選択済み先頭・FlatList仮想化へ改修し、TypeScriptと静的契約で検証した
 - [x] v22の同一Native state更新抑制、実行中minutes Habitに限定した秒更新、一覧仮想化を性能契約テストへ反映した
+- [x] GitHub Actions run 33120015031で本人用v22署名APKを生成し、artifact digest・ZIP整合性・package/versionCode 21・v2署名・既知証明書・scheme・Widget Provider/資産・旧Collection経路不在を独立検証した
 - [x] 参考デザインと公式Material／Android Widget資料を根拠に、高密度一覧カード、20dp視覚チェック、inset divider、ライト／ダークテーマ契約、反復品質ゲートをv18仕様へ記録する
 - [x] 現行Widgetの全高濃色面・補足切れ・区切り不足・palette background流用と、共通UI／主要画面の固定ライト色を設計レビューし、外側透明・内側連続一覧カードと画面別テーマ監査を採用する
 - [x] v18のWidgetレイアウト、テーマ、共通UI、主要画面、Android生成、実機受入を対象とする反復テスト計画と出荷判定を確定する
