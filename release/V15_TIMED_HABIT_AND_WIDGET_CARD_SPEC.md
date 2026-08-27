@@ -64,13 +64,14 @@ Widgetは一つのTodayコンテナに、**区別可能な薄いmini-card行**�
 | 通常版クリーンAndroid生成 | versionCode 25。Widget Provider、開始／停止操作、mini-card drawable、旧Collection経路不在を確認。 |
 | 本人用クリーンAndroid生成 | `com.app.focusflow.personal`、versionCode 15、専用scheme。停止時経過秒ブリッジ、Provider、全9つのmini-card／タイマーdrawable、禁止構造不在を確認。 |
 
-本人用の署名APKはGitHub ActionsでKotlinコンパイル・署名後に独立検証する。ローカルのGradle本ビルドは、サンドボックス資源の安定性を理由に品質根拠として用いない。
+本人用の署名APKはGitHub ActionsでKotlinコンパイル・署名後に独立検証した。ローカルのGradle本ビルドは、サンドボックス資源の安定性を理由に品質根拠として用いない。
 
 ### 署名ビルド再実行記録
 
 | 実行 | 結果 | 対応 |
 |---|---|---|
 | GitHub Actions run 33046847439（初回） | `FocusFlowWidgetProvider.kt:267` で`kind`を宣言前に参照してKotlinコンパイルが失敗。APKは未生成。 | `kind`の取得をメタ文言分岐より前へ移動した。全79回帰、TypeScript、Lint、本人用クリーンAndroid生成を再実行済み。 |
+| GitHub Actions run 33048834376（修正版） | Kotlinコンパイル、release署名、artifact保存が成功。APKを独立検証済み。 | 詳細は`release/V15_PERSONAL_SIGNED_BUILD_RECORD.md`を参照。 |
 
 この初回runを成果物の根拠には用いない。修正版をmainへ同期した後、成功した新しい署名runだけをAPK独立検証の対象とする。
 
