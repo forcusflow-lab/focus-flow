@@ -30,6 +30,7 @@ class FocusGateService : AccessibilityService() {
   private var gateOverlayPackage: String? = null
   private var lastReliableForegroundPackage: String? = null
   private val foregroundRecheckDelays = longArrayOf(80L, 240L, 520L, 900L)
+  private var gateCtaSuppressUntil = 0L
 
   override fun onServiceConnected() {
     lastPackage = ""
@@ -63,6 +64,10 @@ class FocusGateService : AccessibilityService() {
   }
 
   private fun evaluateForeground(eventPackage: String?) {
+    if (System.currentTimeMillis() < gateCtaSuppressUntil) {
+      hideGateOverlay()
+      return
+    }
     val state = readState()
     if (state == null || !state.active) {
       hideGateOverlay()
@@ -179,6 +184,7 @@ class FocusGateService : AccessibilityService() {
         foregroundRecheck?.let(foregroundRecheckHandler::removeCallbacks)
         foregroundRecheck = null
         lastReliableForegroundPackage = applicationContext.packageName
+        gateCtaSuppressUntil = System.currentTimeMillis() + 3_000L
         hideGateOverlay()
         startActivity(focusFlowTodayIntent())
       }

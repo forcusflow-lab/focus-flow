@@ -21,6 +21,8 @@ describe("Focus Flow v24 安定性・操作面・設定UI", () => {
     expect(service).toContain("isTransientForegroundPackage(activeCandidate)");
     expect(service).toContain("activeCandidate == eventCandidate");
     expect(service).toContain("lastReliableForegroundPackage");
+    expect(service).toContain("gateCtaSuppressUntil");
+    expect(service).toContain("System.currentTimeMillis() + 3_000L");
     expect(service).toContain("packageName.startsWith(\"com.android.systemui\")");
   });
 
