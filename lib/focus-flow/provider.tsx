@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { AppState, Platform } from "react-native";
+import { AppState, InteractionManager, Platform } from "react-native";
 import Constants from "expo-constants";
 
 import { consumeWidgetActions, syncAndroidGate, type WidgetAction } from "./android-gate";
@@ -128,10 +128,9 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const persistData = useCallback((next: FocusFlowData) => {
-    const serialized = JSON.stringify(next);
     persistQueue.current = persistQueue.current
       .catch(() => undefined)
-      .then(() => AsyncStorage.setItem(STORAGE_KEY, serialized))
+      .then(() => new Promise<void>((resolve) => { InteractionManager.runAfterInteractions(() => { void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).finally(resolve); }); }))
       .catch(() => undefined);
   }, []);
   const commit = useCallback((updater: (current: FocusFlowData) => FocusFlowData) => {

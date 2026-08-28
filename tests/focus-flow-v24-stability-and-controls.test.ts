@@ -11,7 +11,8 @@ describe("Focus Flow v24 安定性・操作面・設定UI", () => {
     expect(provider).toContain("const persistQueue = useRef<Promise<unknown>>(Promise.resolve())");
     expect(provider).toContain("const persistData = useCallback");
     expect(provider).toContain("persistQueue.current = persistQueue.current");
-    expect(provider).toContain("AsyncStorage.setItem(STORAGE_KEY, serialized)");
+    expect(provider).toContain("InteractionManager.runAfterInteractions");
+    expect(provider).toContain("AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next))");
     expect(provider).not.toContain("catch(() => { if (active) setData(EMPTY_FOCUS_FLOW_DATA); })");
   });
 
