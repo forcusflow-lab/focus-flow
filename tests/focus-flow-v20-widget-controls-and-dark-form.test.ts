@@ -5,12 +5,12 @@ import { describe, expect, it } from "vitest";
 const source = (...parts: string[]) => fs.readFileSync(path.join(process.cwd(), ...parts), "utf8");
 
 describe("Focus Flow v20 Widget controls and dark-form quality contract", () => {
-  it("uses one window-coordinate conversion for Slider taps and drags", () => {
+  it("uses one local-coordinate conversion for Slider taps and drags", () => {
     const settings = source("app", "(tabs)", "settings.tsx");
-    expect(settings).toContain("measureInWindow");
-    expect(settings).toContain("pageX - trackLeft.current");
-    expect(settings).toContain("gesture.moveX");
-    expect(settings).toContain("Math.round(raw / 10) * 10");
+    expect(settings).toContain("valueFromLocationX");
+    expect(settings).toContain("Math.round((locationX / trackWidth) * 100)");
+    expect(settings).toContain("onPanResponderRelease");
+    expect(settings).toContain("Math.max(0, Math.min(100");
     expect(settings).toContain('pointerEvents="none"');
   });
 

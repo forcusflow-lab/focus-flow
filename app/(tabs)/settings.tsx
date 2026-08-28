@@ -240,34 +240,33 @@ function ReminderPanel({ english, enabled, permission, time, busy, onToggle, onC
 function OpacitySlider({ english, label, detail, value, onChange }: { english: boolean; label: string; detail: string; value: number; onChange: (value: number) => void }) {
   const palette = useFocusPalette();
   const [trackWidth, setTrackWidth] = useState(0);
-  const trackRef = useRef<View>(null);
-  const trackLeft = useRef(0);
-  const normalized = Math.max(0, Math.min(100, Math.round(value / 10) * 10));
-  const measureTrack = useCallback(() => {
-    trackRef.current?.measureInWindow((left, _top, width) => {
-      trackLeft.current = left;
-      if (width > 0) setTrackWidth(width);
-    });
-  }, []);
-  const setFromPageX = useCallback((pageX: number) => {
+  const [dragValue, setDragValue] = useState<number>();
+  const normalized = Math.max(0, Math.min(100, Math.round(value)));
+  const displayedValue = dragValue ?? normalized;
+  const valueFromLocationX = useCallback((locationX: number) => {
     if (!trackWidth) return;
-    const raw = ((pageX - trackLeft.current) / trackWidth) * 100;
-    const next = Math.max(0, Math.min(100, Math.round(raw / 10) * 10));
-    if (next !== normalized) onChange(next);
-  }, [normalized, onChange, trackWidth]);
+    return Math.max(0, Math.min(100, Math.round((locationX / trackWidth) * 100)));
+  }, [trackWidth]);
   const responder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
     onPanResponderGrant: (event) => {
-      const left = event.nativeEvent.pageX - event.nativeEvent.locationX;
-      if (Number.isFinite(left)) trackLeft.current = left;
-      measureTrack();
-      setFromPageX(event.nativeEvent.pageX);
+      const next = valueFromLocationX(event.nativeEvent.locationX);
+      if (next !== undefined) setDragValue(next);
     },
-    onPanResponderMove: (_event, gesture) => setFromPageX(gesture.moveX),
-  }), [measureTrack, setFromPageX]);
+    onPanResponderMove: (event) => {
+      const next = valueFromLocationX(event.nativeEvent.locationX);
+      if (next !== undefined) setDragValue(next);
+    },
+    onPanResponderRelease: (event) => {
+      const next = valueFromLocationX(event.nativeEvent.locationX);
+      setDragValue(undefined);
+      if (next !== undefined && next !== normalized) onChange(next);
+    },
+    onPanResponderTerminate: () => setDragValue(undefined),
+  }), [normalized, onChange, valueFromLocationX]);
   const t = (ja: string, en: string) => english ? en : ja;
-  return <View style={appearanceStyles.sliderWrap}><View style={appearanceStyles.sliderHeading}><View style={styles.selectorCopy}><Text style={[styles.settingTitle, { color: palette.text }]}>{label}</Text><Text style={[styles.settingDetail, { color: palette.muted }]}>{detail}</Text></View><Text style={[appearanceStyles.sliderValue, { color: palette.primary }]}>{normalized}%</Text></View><View ref={trackRef} accessibilityRole="adjustable" accessibilityLabel={`${label}: ${normalized}%`} accessibilityValue={{ min: 0, max: 100, now: normalized, text: `${normalized}%` }} onLayout={measureTrack} {...responder.panHandlers} style={[appearanceStyles.sliderTrack, { backgroundColor: palette.elevated }]}><View pointerEvents="none" style={[appearanceStyles.sliderFill, { width: `${normalized}%`, backgroundColor: palette.primary }]} /><View pointerEvents="none" style={[appearanceStyles.sliderThumb, { left: `${normalized}%`, transform: [{ translateX: -11 }], backgroundColor: palette.surface, borderColor: palette.primary }]} /></View><View style={appearanceStyles.sliderMarks}>{[0, 25, 50, 75, 100].map((mark) => <Text key={mark} style={[appearanceStyles.sliderMark, { color: palette.muted }]}>{mark}%</Text>)}</View><Text style={[appearanceStyles.sliderHint, { color: palette.muted }]}>{t("タップ・スライドとも10%単位で反映されます", "Tap or slide to apply in 10% steps")}</Text></View>;
+  return <View style={appearanceStyles.sliderWrap}><View style={appearanceStyles.sliderHeading}><View style={styles.selectorCopy}><Text style={[styles.settingTitle, { color: palette.text }]}>{label}</Text><Text style={[styles.settingDetail, { color: palette.muted }]}>{detail}</Text></View><Text style={[appearanceStyles.sliderValue, { color: palette.primary }]}>{displayedValue}%</Text></View><View accessibilityRole="adjustable" accessibilityLabel={`${label}: ${displayedValue}%`} accessibilityValue={{ min: 0, max: 100, now: displayedValue, text: `${displayedValue}%` }} onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)} {...responder.panHandlers} style={[appearanceStyles.sliderTrack, { backgroundColor: palette.elevated }]}><View pointerEvents="none" style={[appearanceStyles.sliderFill, { width: `${displayedValue}%`, backgroundColor: palette.primary }]} /><View pointerEvents="none" style={[appearanceStyles.sliderThumb, { left: `${displayedValue}%`, transform: [{ translateX: -11 }], backgroundColor: palette.surface, borderColor: palette.primary }]} /></View><View style={appearanceStyles.sliderMarks}>{[0, 25, 50, 75, 100].map((mark) => <Text key={mark} style={[appearanceStyles.sliderMark, { color: palette.muted }]}>{mark}%</Text>)}</View><Text style={[appearanceStyles.sliderHint, { color: palette.muted }]}>{t("タップ・スライドとも1%単位で反映されます", "Tap or slide to apply in 1% steps")}</Text></View>;
 }
 
 function WidgetsPanel({ english, displaySettings, onBackgroundOpacity, onCardOpacity }: { english: boolean; displaySettings: DisplaySettings; onBackgroundOpacity: (value: number) => void; onCardOpacity: (value: number) => void }) {
@@ -293,7 +292,7 @@ function SettingsEntry({ icon, tint, color, title, detail, badge, onPress }: { i
 function SectionTitle({ title, detail }: { title: string; detail?: string }) { const palette = useFocusPalette(); return <View style={styles.sectionTitleWrap}><Text style={[styles.sectionTitle, { color: palette.text }]}>{title}</Text>{detail ? <Text style={[styles.sectionDetail, { color: palette.muted }]}>{detail}</Text> : null}</View>; }
 function InfoCard({ icon, title, detail }: { icon: React.ComponentProps<typeof MaterialIcons>["name"]; title: string; detail: string }) { const palette = useFocusPalette(); return <View style={[styles.infoCard, { backgroundColor: palette.primarySoft, borderColor: palette.border }]}><View style={[styles.infoIcon, { backgroundColor: palette.elevated }]}><MaterialIcons name={icon} size={22} color={palette.primary} /></View><View style={styles.infoCopy}><Text style={[styles.infoTitle, { color: palette.text }]}>{title}</Text><Text style={[styles.infoDetail, { color: palette.muted }]}>{detail}</Text></View></View>; }
 function SettingRow({ title, detail, control }: { title: string; detail: string; control: React.ReactNode }) { const palette = useFocusPalette(); return <View style={[styles.settingRow, { borderBottomColor: palette.border }]}><View style={styles.settingCopy}><Text style={[styles.settingTitle, { color: palette.text }]}>{title}</Text><Text style={[styles.settingDetail, { color: palette.muted }]}>{detail}</Text></View>{control}</View>; }
-function appSelectionRowHeight(fontScale: DisplaySettings["fontScale"]) { return fontScale === "large" ? 92 : fontScale === "compact" ? 72 : 82; }
+function appSelectionRowHeight(fontScale: DisplaySettings["fontScale"]) { return fontScale === "large" ? 76 : fontScale === "compact" ? 58 : 66; }
 const AppSelectionRow = memo(function AppSelectionRow({ app, selected, onPress, selectable = true, blockedByLimit = false }: { app: LaunchableApp; selected: boolean; onPress?: () => void; selectable?: boolean; blockedByLimit?: boolean }) {
   const palette = useFocusPalette();
   const { displaySettings } = useFocusFlow();
@@ -327,7 +326,7 @@ function AppPicker({ apps, loading, selected, onSelect, canSelect, english }: { 
   if (loading) return <View style={styles.loading}><ActivityIndicator color={palette.primary} /><Text style={[styles.mutedCopy, { color: palette.muted }]}>{t("アプリ一覧を読み込んでいます", "Loading apps")}</Text></View>;
   if (!apps.length) return <Text style={[styles.mutedCopy, { color: palette.muted }]}>{t("選択できるアプリを取得できませんでした。", "Available apps could not be loaded.")}</Text>;
   return <View style={[styles.appList, { borderTopColor: palette.border }]}>
-    <TextInput value={query} onChangeText={setQuery} placeholder={t("アプリ名またはパッケージ名で検索", "Search apps or package names")} placeholderTextColor={palette.muted} style={[styles.nameInput, { color: palette.text, backgroundColor: palette.elevated, borderColor: palette.border }]} />
+    <TextInput value={query} onChangeText={setQuery} placeholder={t("アプリ名またはパッケージ名で検索", "Search apps or package names")} placeholderTextColor={palette.muted} style={[appSelectionStyles.search, getAppFontStyle(displaySettings.fontFamily ?? "system"), { color: palette.text, backgroundColor: palette.elevated, borderColor: palette.border, fontSize: displaySettings.fontScale === "large" ? 14.8 : displaySettings.fontScale === "compact" ? 11.9 : 13, lineHeight: displaySettings.fontScale === "large" ? 20 : displaySettings.fontScale === "compact" ? 16 : 18 }]} />
     {visible.length ? <FlatList data={visible} renderItem={renderItem} keyExtractor={(item) => item.packageName} style={[appSelectionStyles.list, { maxHeight: rowHeight * 5 }]} contentContainerStyle={appSelectionStyles.listContent} initialNumToRender={10} maxToRenderPerBatch={10} windowSize={5} removeClippedSubviews={Platform.OS === "android"} nestedScrollEnabled keyboardShouldPersistTaps="handled" getItemLayout={getItemLayout} /> : <Text style={[styles.mutedCopy, { color: palette.muted }]}>{t("一致するアプリがありません。", "No matching apps.")}</Text>}
   </View>;
 }
@@ -349,12 +348,13 @@ const styles = StyleSheet.create({
 });
 
 const appSelectionStyles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, paddingHorizontal: 12 },
-  appTile: { width: 40, height: 40, alignItems: "center", justifyContent: "center", borderRadius: 13 },
-  appTileLabel: { fontSize: 19, lineHeight: 23, fontWeight: "900" },
+  row: { flexDirection: "row", alignItems: "center", gap: 10, borderBottomWidth: StyleSheet.hairlineWidth, paddingHorizontal: 12 },
+  appTile: { width: 34, height: 34, alignItems: "center", justifyContent: "center", borderRadius: 10 },
+  appTileLabel: { fontSize: 16, lineHeight: 20, fontWeight: "900" },
   copy: { flex: 1, minWidth: 0, justifyContent: "center" },
-  name: { fontSize: 17, lineHeight: 23, fontWeight: "900" },
-  packageName: { fontSize: 12, lineHeight: 16, marginTop: 2 },
+  name: { fontSize: 15, lineHeight: 19, fontWeight: "900" },
+  packageName: { fontSize: 11, lineHeight: 14, marginTop: 1 },
+  search: { minHeight: 44, borderWidth: 1, borderRadius: 0, paddingHorizontal: 12, fontWeight: "700" },
   list: { maxHeight: 360 },
   listContent: { paddingBottom: 4 },
   state: { width: 60, alignItems: "center", justifyContent: "center", gap: 2 },

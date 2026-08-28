@@ -28,6 +28,7 @@ class FocusGateService : AccessibilityService() {
   private var foregroundRecheck: Runnable? = null
   private var gateOverlay: View? = null
   private var gateOverlayPackage: String? = null
+  private var lastReliableForegroundPackage: String? = null
   private val foregroundRecheckDelays = longArrayOf(80L, 240L, 520L, 900L)
 
   override fun onServiceConnected() {
@@ -35,6 +36,7 @@ class FocusGateService : AccessibilityService() {
     lastBlockedAt = 0L
     foregroundRecheck?.let(foregroundRecheckHandler::removeCallbacks)
     foregroundRecheck = null
+    lastReliableForegroundPackage = null
     serviceInfo = serviceInfo.apply {
       eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
         AccessibilityEvent.TYPE_WINDOWS_CHANGED or
@@ -82,6 +84,7 @@ class FocusGateService : AccessibilityService() {
 
     val matchingRule = state.ruleBlocking(candidatePackage)
     if (matchingRule == null) {
+      lastReliableForegroundPackage = candidatePackage
       hideGateOverlay()
       return
     }
@@ -97,11 +100,25 @@ class FocusGateService : AccessibilityService() {
 
   private fun foregroundCandidate(eventPackage: String?, activePackage: String?, state: GateState): String? {
     val eventCandidate = eventPackage?.takeIf { it.isNotBlank() }
+    val activeCandidate = activePackage?.takeIf { it.isNotBlank() }
     // 遮断用UIがまだ前面として報告される切替の途中でも、対象アプリを送信元として受けたイベントは
-    // 最優先にする。これが遮断画面上から同じタスクを再開する経路を閉じる。
-    if (eventCandidate != null && state.ruleBlocking(eventCandidate) != null) return eventCandidate
-    return activePackage ?: eventCandidate
+    // 再遮断する。ただし、背景化された対象アプリの遅延イベントが前面の制限外アプリを
+    // 上書きしないよう、実際の前面が同じ対象または一過性システムUIの場合だけ採用する。
+    if (eventCandidate != null && state.ruleBlocking(eventCandidate) != null &&
+      (activeCandidate == null || activeCandidate == eventCandidate || isTransientForegroundPackage(activeCandidate))
+    ) return eventCandidate
+    // 遮断Overlay表示中は、システムUIやFocus Flow自身から発火する短命なイベントで
+    // 下層の遮断対象を「解除」と誤判定してOverlayを閉じない。
+    if (gateOverlay != null && gateOverlayPackage != null &&
+      (activeCandidate == null || isTransientForegroundPackage(activeCandidate))
+    ) return gateOverlayPackage
+    return activeCandidate ?: eventCandidate ?: lastReliableForegroundPackage
   }
+
+  private fun isTransientForegroundPackage(packageName: String): Boolean =
+    packageName == applicationContext.packageName ||
+      packageName == "android" ||
+      packageName.startsWith("com.android.systemui")
 
   private fun showGateOverlay(packageName: String, rule: GateRule, state: GateState) {
     if (gateOverlay != null && gateOverlayPackage == packageName) return
@@ -191,6 +208,7 @@ class FocusGateService : AccessibilityService() {
       })
       gateOverlay = layout
       gateOverlayPackage = packageName
+      lastReliableForegroundPackage = packageName
     } catch (_: Exception) {
       // オーバーレイ追加に失敗した場合も次のイベント・再判定で再試行する。
       gateOverlay = null

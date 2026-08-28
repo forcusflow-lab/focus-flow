@@ -10,7 +10,7 @@ describe("v21 制限一覧・遮断画面・起動体験", () => {
     const settings = source("app", "(tabs)", "settings.tsx");
     expect(settings).toContain("const AppSelectionRow = memo(function AppSelectionRow");
     expect(settings).toContain('accessibilityRole="checkbox"');
-    expect(settings).toContain("appTile: { width: 40, height: 40");
+    expect(settings).toContain("appTile: { width: 34, height: 34");
     expect(settings).toContain("function appSelectionRowHeight");
     expect(settings).toContain("numberOfLines={1}>{app.label}");
     expect(settings).toContain("numberOfLines={1}>{app.packageName}");

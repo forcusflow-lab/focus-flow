@@ -1,5 +1,5 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useEffect, useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -50,7 +50,7 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
   const dueAutoRequired = useMemo(() => Boolean(dueDate && dueDate <= dayKey()), [dueDate]);
   const effectiveRequired = isRequired || dueAutoRequired;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!visible) return;
     setTitle(todo?.title ?? "");
     setPriority(todo?.priority ?? "medium");

@@ -360,8 +360,18 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       val target = item.optInt("targetValue", 1).coerceAtLeast(1)
       views.setTextViewText(ids.progress, "$value/$target")
       views.setTextColor(ids.progress, primary)
-      listOf(ids.decrement, ids.increment).forEach { control -> views.setTextColor(control, primary); views.setInt(control, "setBackgroundColor", Color.TRANSPARENT); views.setTextViewTextSize(control, android.util.TypedValue.COMPLEX_UNIT_DIP, 17f * scale) }
-      views.setInt(ids.progress, "setBackgroundColor", Color.TRANSPARENT)
+      views.setTextViewText(ids.decrement, "−")
+      views.setTextViewText(ids.increment, "+")
+      listOf(ids.decrement, ids.increment).forEach { control ->
+        views.setTextColor(control, primary)
+        views.setInt(control, "setBackgroundResource", widgetCardDrawable(dark, rowOpacity))
+        views.setBoolean(control, "setIncludeFontPadding", false)
+        views.setTextViewTextSize(control, android.util.TypedValue.COMPLEX_UNIT_DIP, 14f * scale)
+      }
+      views.setContentDescription(ids.decrement, if (english) "Decrease count" else "回数を減らす")
+      views.setContentDescription(ids.increment, if (english) "Increase count" else "回数を増やす")
+      views.setInt(ids.progress, "setBackgroundColor", colorWithOpacity(elevated, rowOpacity))
+      views.setBoolean(ids.progress, "setIncludeFontPadding", false)
       views.setTextViewTextSize(ids.progress, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
       views.setOnClickPendingIntent(ids.decrement, actionIntent(context, widgetId, ids.position, ACTION_DECREMENT, itemId, kind))
       views.setOnClickPendingIntent(ids.increment, actionIntent(context, widgetId, ids.position, ACTION_INCREMENT, itemId, kind))

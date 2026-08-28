@@ -55,6 +55,8 @@ describe("Focus Flow v23 widget density, transparency, and app-picker performanc
         }
       }
     }
+    expect(source("plugins", "native", "android", "res", "drawable", "focus_flow_widget_badge_mist_light_100.xml")).toContain('android:width="1dp"');
+    expect(source("plugins", "native", "android", "res", "drawable", "focus_flow_widget_badge_mist_dark_100.xml")).toContain('android:width="1dp"');
   });
 
   it("keeps the expanded widget as a RemoteViews-only five-row list with compact in-card controls", () => {
@@ -81,9 +83,9 @@ describe("Focus Flow v23 widget density, transparency, and app-picker performanc
     expect(provider).toContain("if (!hasRunningTimedHabit) return;");
     expect(settings).toContain("<FlatList");
     expect(settings).toContain("function appSelectionRowHeight");
-    expect(settings).toContain("fontScale === \"large\" ? 92");
+    expect(settings).toContain("fontScale === \"large\" ? 76");
     expect(settings).toContain("appSelectionStyles.name");
-    expect(settings).toContain("fontSize: 17");
+    expect(settings).toContain("fontSize: 15");
     expect(settings).toContain("initialNumToRender={10}");
     expect(settings).toContain("maxToRenderPerBatch={10}");
     expect(settings).toContain("windowSize={5}");

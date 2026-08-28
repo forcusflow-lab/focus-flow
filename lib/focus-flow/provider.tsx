@@ -107,10 +107,40 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
   const [plusStatus, setPlusStatus] = useState<PlusStatus>(PERSONAL_UNLIMITED_BUILD ? PERSONAL_PLUS_STATUS : { status: "unavailable", active: false });
   const [earlyCompletionStatus, setEarlyCompletionStatus] = useState<EarlyCompletionStatus>({ status: "unavailable", productId: EARLY_COMPLETION_PRODUCT_ID });
   const pendingEarlyCompletion = useRef<EarlyCompletionTarget | undefined>(undefined);
+  const persistQueue = useRef<Promise<unknown>>(Promise.resolve());
 
-  useEffect(() => { let active = true; AsyncStorage.getItem(STORAGE_KEY).then((serialized) => { if (active && serialized) setData(normalizeData(JSON.parse(serialized))); }).catch(() => { if (active) setData(EMPTY_FOCUS_FLOW_DATA); }).finally(() => { if (active) setIsReady(true); }); return () => { active = false; }; }, []);
+  useEffect(() => {
+    let active = true;
+    void AsyncStorage.getItem(STORAGE_KEY)
+      .then((serialized) => {
+        if (!active || !serialized) return;
+        try {
+          setData(normalizeData(JSON.parse(serialized)));
+        } catch {
+          // 読込失敗時に空データを保存して既存の端末データを失わない。
+        }
+      })
+      .catch(() => {
+        // 一時的なストレージ障害では現在のメモリ状態を維持する。
+      })
+      .finally(() => { if (active) setIsReady(true); });
+    return () => { active = false; };
+  }, []);
 
-  const commit = useCallback((updater: (current: FocusFlowData) => FocusFlowData) => { setData((current) => { const next = updater(current); if (next !== current) void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)); return next; }); }, []);
+  const persistData = useCallback((next: FocusFlowData) => {
+    const serialized = JSON.stringify(next);
+    persistQueue.current = persistQueue.current
+      .catch(() => undefined)
+      .then(() => AsyncStorage.setItem(STORAGE_KEY, serialized))
+      .catch(() => undefined);
+  }, []);
+  const commit = useCallback((updater: (current: FocusFlowData) => FocusFlowData) => {
+    setData((current) => {
+      const next = updater(current);
+      if (next !== current) persistData(next);
+      return next;
+    });
+  }, [persistData]);
   const applyPlusStatus = useCallback((status: PlusStatus) => { setPlusStatus(status); commit((current) => current.displaySettings.plusEntitlement === status.active ? current : { ...current, displaySettings: { ...current.displaySettings, plusEntitlement: status.active } }); }, [commit]);
 
   const completeEarlyCompletion = useCallback(async (purchase: unknown, target: EarlyCompletionTarget) => {
