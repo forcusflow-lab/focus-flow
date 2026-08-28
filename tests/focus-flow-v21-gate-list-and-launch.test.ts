@@ -6,16 +6,16 @@ import { describe, expect, it } from "vitest";
 const source = (...parts: string[]) => fs.readFileSync(path.join(process.cwd(), ...parts), "utf8");
 
 describe("v21 制限一覧・遮断画面・起動体験", () => {
-  it("制限対象アプリを72dpの情報階層付き行で表示し、選択操作を維持する", () => {
+  it("制限対象アプリを文字倍率対応の情報階層付き行で表示し、選択操作を維持する", () => {
     const settings = source("app", "(tabs)", "settings.tsx");
     expect(settings).toContain("const AppSelectionRow = memo(function AppSelectionRow");
     expect(settings).toContain('accessibilityRole="checkbox"');
-    expect(settings).toContain("appTile: { width: 36, height: 36");
-    expect(settings).toContain("row: { height: 72");
+    expect(settings).toContain("appTile: { width: 40, height: 40");
+    expect(settings).toContain("function appSelectionRowHeight");
     expect(settings).toContain("numberOfLines={1}>{app.label}");
     expect(settings).toContain("numberOfLines={1}>{app.packageName}");
     expect(settings).toContain("<FlatList");
-    expect(settings).toContain("initialNumToRender={12}");
+    expect(settings).toContain("initialNumToRender={10}");
   });
 
   it("遮断オーバーレイとフォールバック画面に同期済みテーマとToday導線を適用する", () => {

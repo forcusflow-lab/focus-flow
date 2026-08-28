@@ -76,7 +76,8 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val mappings = linkedMapOf(
       SizeF(130f, 102f) to createWidgetViews(context, state, id, english, WidgetBucket(1, false, true), fallback),
       SizeF(130f, 155f) to createWidgetViews(context, state, id, english, WidgetBucket(2, true, false), fallback),
-      SizeF(130f, 250f) to createWidgetViews(context, state, id, english, WidgetBucket(3, true, false), fallback),
+      SizeF(130f, 210f) to createWidgetViews(context, state, id, english, WidgetBucket(3, true, false), fallback),
+      SizeF(130f, 250f) to createWidgetViews(context, state, id, english, WidgetBucket(5, true, false), fallback),
     )
     return RemoteViews(mappings)
   }
@@ -150,14 +151,16 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     1 -> WidgetBucket(1, false, true)
     2 -> WidgetBucket(2, true, false)
     3 -> WidgetBucket(3, true, false)
+    5 -> WidgetBucket(5, true, false)
     else -> null
   }
 
   private fun widgetBucket(width: Float, height: Float): WidgetBucket {
     return when {
       width < 190f || height < 150f -> WidgetBucket(1, false, true)
-      height < 250f -> WidgetBucket(2, true, false)
-      else -> WidgetBucket(3, true, false)
+      height < 210f -> WidgetBucket(2, true, false)
+      height < 250f -> WidgetBucket(3, true, false)
+      else -> WidgetBucket(5, true, false)
     }
   }
 
@@ -221,13 +224,14 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     }
   }
 
-  private data class StaticRowIds(val position: Int, val row: Int, val rail: Int, val action: Int, val check: Int, val content: Int, val title: Int, val badge: Int, val meta: Int, val chronometer: Int, val controls: Int, val decrement: Int, val progress: Int, val increment: Int, val timer: Int)
+  private data class StaticRowIds(val position: Int, val row: Int, val rail: Int, val action: Int, val check: Int, val content: Int, val title: Int, val badgeContainer: Int, val badgeBackground: Int, val badge: Int, val meta: Int, val chronometer: Int, val controls: Int, val controlsBackground: Int, val decrement: Int, val progress: Int, val increment: Int, val timerContainer: Int, val timerBackground: Int, val timer: Int)
 
   private fun staticRowIds(index: Int): StaticRowIds = when (index) {
-    0 -> StaticRowIds(0, R.id.focus_flow_widget_static_row_one, R.id.focus_flow_widget_static_row_one_rail, R.id.focus_flow_widget_static_row_one_action, R.id.focus_flow_widget_static_row_one_check, R.id.focus_flow_widget_static_row_one_content, R.id.focus_flow_widget_static_row_one_title, R.id.focus_flow_widget_static_row_one_badge, R.id.focus_flow_widget_static_row_one_meta, R.id.focus_flow_widget_static_row_one_chronometer, R.id.focus_flow_widget_static_row_one_controls, R.id.focus_flow_widget_static_row_one_decrement, R.id.focus_flow_widget_static_row_one_progress, R.id.focus_flow_widget_static_row_one_increment, R.id.focus_flow_widget_static_row_one_timer)
-    1 -> StaticRowIds(1, R.id.focus_flow_widget_static_row_two, R.id.focus_flow_widget_static_row_two_rail, R.id.focus_flow_widget_static_row_two_action, R.id.focus_flow_widget_static_row_two_check, R.id.focus_flow_widget_static_row_two_content, R.id.focus_flow_widget_static_row_two_title, R.id.focus_flow_widget_static_row_two_badge, R.id.focus_flow_widget_static_row_two_meta, R.id.focus_flow_widget_static_row_two_chronometer, R.id.focus_flow_widget_static_row_two_controls, R.id.focus_flow_widget_static_row_two_decrement, R.id.focus_flow_widget_static_row_two_progress, R.id.focus_flow_widget_static_row_two_increment, R.id.focus_flow_widget_static_row_two_timer)
-    2 -> StaticRowIds(2, R.id.focus_flow_widget_static_row_three, R.id.focus_flow_widget_static_row_three_rail, R.id.focus_flow_widget_static_row_three_action, R.id.focus_flow_widget_static_row_three_check, R.id.focus_flow_widget_static_row_three_content, R.id.focus_flow_widget_static_row_three_title, R.id.focus_flow_widget_static_row_three_badge, R.id.focus_flow_widget_static_row_three_meta, R.id.focus_flow_widget_static_row_three_chronometer, R.id.focus_flow_widget_static_row_three_controls, R.id.focus_flow_widget_static_row_three_decrement, R.id.focus_flow_widget_static_row_three_progress, R.id.focus_flow_widget_static_row_three_increment, R.id.focus_flow_widget_static_row_three_timer)
-    else -> StaticRowIds(2, R.id.focus_flow_widget_static_row_three, R.id.focus_flow_widget_static_row_three_rail, R.id.focus_flow_widget_static_row_three_action, R.id.focus_flow_widget_static_row_three_check, R.id.focus_flow_widget_static_row_three_content, R.id.focus_flow_widget_static_row_three_title, R.id.focus_flow_widget_static_row_three_badge, R.id.focus_flow_widget_static_row_three_meta, R.id.focus_flow_widget_static_row_three_chronometer, R.id.focus_flow_widget_static_row_three_controls, R.id.focus_flow_widget_static_row_three_decrement, R.id.focus_flow_widget_static_row_three_progress, R.id.focus_flow_widget_static_row_three_increment, R.id.focus_flow_widget_static_row_three_timer)
+    0 -> StaticRowIds(0, R.id.focus_flow_widget_static_row_one, R.id.focus_flow_widget_static_row_one_rail, R.id.focus_flow_widget_static_row_one_action, R.id.focus_flow_widget_static_row_one_check, R.id.focus_flow_widget_static_row_one_content, R.id.focus_flow_widget_static_row_one_title, R.id.focus_flow_widget_static_row_one_badge_container, R.id.focus_flow_widget_static_row_one_badge_background, R.id.focus_flow_widget_static_row_one_badge, R.id.focus_flow_widget_static_row_one_meta, R.id.focus_flow_widget_static_row_one_chronometer, R.id.focus_flow_widget_static_row_one_controls, R.id.focus_flow_widget_static_row_one_controls_background, R.id.focus_flow_widget_static_row_one_decrement, R.id.focus_flow_widget_static_row_one_progress, R.id.focus_flow_widget_static_row_one_increment, R.id.focus_flow_widget_static_row_one_timer_container, R.id.focus_flow_widget_static_row_one_timer_background, R.id.focus_flow_widget_static_row_one_timer)
+    1 -> StaticRowIds(1, R.id.focus_flow_widget_static_row_two, R.id.focus_flow_widget_static_row_two_rail, R.id.focus_flow_widget_static_row_two_action, R.id.focus_flow_widget_static_row_two_check, R.id.focus_flow_widget_static_row_two_content, R.id.focus_flow_widget_static_row_two_title, R.id.focus_flow_widget_static_row_two_badge_container, R.id.focus_flow_widget_static_row_two_badge_background, R.id.focus_flow_widget_static_row_two_badge, R.id.focus_flow_widget_static_row_two_meta, R.id.focus_flow_widget_static_row_two_chronometer, R.id.focus_flow_widget_static_row_two_controls, R.id.focus_flow_widget_static_row_two_controls_background, R.id.focus_flow_widget_static_row_two_decrement, R.id.focus_flow_widget_static_row_two_progress, R.id.focus_flow_widget_static_row_two_increment, R.id.focus_flow_widget_static_row_two_timer_container, R.id.focus_flow_widget_static_row_two_timer_background, R.id.focus_flow_widget_static_row_two_timer)
+    2 -> StaticRowIds(2, R.id.focus_flow_widget_static_row_three, R.id.focus_flow_widget_static_row_three_rail, R.id.focus_flow_widget_static_row_three_action, R.id.focus_flow_widget_static_row_three_check, R.id.focus_flow_widget_static_row_three_content, R.id.focus_flow_widget_static_row_three_title, R.id.focus_flow_widget_static_row_three_badge_container, R.id.focus_flow_widget_static_row_three_badge_background, R.id.focus_flow_widget_static_row_three_badge, R.id.focus_flow_widget_static_row_three_meta, R.id.focus_flow_widget_static_row_three_chronometer, R.id.focus_flow_widget_static_row_three_controls, R.id.focus_flow_widget_static_row_three_controls_background, R.id.focus_flow_widget_static_row_three_decrement, R.id.focus_flow_widget_static_row_three_progress, R.id.focus_flow_widget_static_row_three_increment, R.id.focus_flow_widget_static_row_three_timer_container, R.id.focus_flow_widget_static_row_three_timer_background, R.id.focus_flow_widget_static_row_three_timer)
+    3 -> StaticRowIds(3, R.id.focus_flow_widget_static_row_four, R.id.focus_flow_widget_static_row_four_rail, R.id.focus_flow_widget_static_row_four_action, R.id.focus_flow_widget_static_row_four_check, R.id.focus_flow_widget_static_row_four_content, R.id.focus_flow_widget_static_row_four_title, R.id.focus_flow_widget_static_row_four_badge_container, R.id.focus_flow_widget_static_row_four_badge_background, R.id.focus_flow_widget_static_row_four_badge, R.id.focus_flow_widget_static_row_four_meta, R.id.focus_flow_widget_static_row_four_chronometer, R.id.focus_flow_widget_static_row_four_controls, R.id.focus_flow_widget_static_row_four_controls_background, R.id.focus_flow_widget_static_row_four_decrement, R.id.focus_flow_widget_static_row_four_progress, R.id.focus_flow_widget_static_row_four_increment, R.id.focus_flow_widget_static_row_four_timer_container, R.id.focus_flow_widget_static_row_four_timer_background, R.id.focus_flow_widget_static_row_four_timer)
+    else -> StaticRowIds(4, R.id.focus_flow_widget_static_row_five, R.id.focus_flow_widget_static_row_five_rail, R.id.focus_flow_widget_static_row_five_action, R.id.focus_flow_widget_static_row_five_check, R.id.focus_flow_widget_static_row_five_content, R.id.focus_flow_widget_static_row_five_title, R.id.focus_flow_widget_static_row_five_badge_container, R.id.focus_flow_widget_static_row_five_badge_background, R.id.focus_flow_widget_static_row_five_badge, R.id.focus_flow_widget_static_row_five_meta, R.id.focus_flow_widget_static_row_five_chronometer, R.id.focus_flow_widget_static_row_five_controls, R.id.focus_flow_widget_static_row_five_controls_background, R.id.focus_flow_widget_static_row_five_decrement, R.id.focus_flow_widget_static_row_five_progress, R.id.focus_flow_widget_static_row_five_increment, R.id.focus_flow_widget_static_row_five_timer_container, R.id.focus_flow_widget_static_row_five_timer_background, R.id.focus_flow_widget_static_row_five_timer)
   }
 
   private fun bindStaticRows(context: Context, views: RemoteViews, state: JSONObject, widgetId: Int, english: Boolean, bucket: WidgetBucket) {
@@ -247,8 +251,8 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
     views.setViewVisibility(R.id.focus_flow_widget_empty, if (rows.isEmpty()) View.VISIBLE else View.GONE)
     if (rows.isEmpty()) views.setTextViewText(R.id.focus_flow_widget_empty, if (english) "Open Focus Flow to add today’s items" else "今日の項目はありません")
-    val dividers = listOf(R.id.focus_flow_widget_static_divider_one, R.id.focus_flow_widget_static_divider_two)
-    for (index in 0..2) {
+    val dividers = listOf(R.id.focus_flow_widget_static_divider_one, R.id.focus_flow_widget_static_divider_two, R.id.focus_flow_widget_static_divider_three, R.id.focus_flow_widget_static_divider_four)
+    for (index in 0..4) {
       val ids = staticRowIds(index)
       val item = rows.getOrNull(index)
       views.setViewVisibility(ids.row, if (item == null) View.GONE else View.VISIBLE)
@@ -276,9 +280,10 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setTextViewText(ids.title, "")
     views.setTextViewText(ids.badge, "")
     views.setTextViewText(ids.meta, "")
-    views.setViewVisibility(ids.badge, View.GONE)
+    views.setViewVisibility(ids.badgeContainer, View.GONE)
     views.setViewVisibility(ids.meta, View.GONE)
     views.setViewVisibility(ids.controls, View.GONE)
+    views.setViewVisibility(ids.timerContainer, View.GONE)
     views.setViewVisibility(ids.timer, View.GONE)
     views.setViewVisibility(ids.chronometer, View.GONE)
     views.setInt(ids.rail, "setBackgroundColor", Color.TRANSPARENT)
@@ -300,10 +305,10 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setTextViewText(ids.title, if (completed) struck(title) else title)
     views.setTextColor(ids.title, if (completed) mutedColor else titleColor)
     views.setTextViewTextSize(ids.title, android.util.TypedValue.COMPLEX_UNIT_DIP, 13f * scale)
-    views.setViewVisibility(ids.badge, if (badge.isBlank()) View.GONE else View.VISIBLE)
+    views.setViewVisibility(ids.badgeContainer, if (badge.isBlank()) View.GONE else View.VISIBLE)
     views.setTextViewText(ids.badge, badge)
     views.setTextColor(ids.badge, primary)
-    views.setInt(ids.badge, "setBackgroundResource", widgetBadgeDrawable(theme, dark))
+    views.setImageViewResource(ids.badgeBackground, widgetBadgeDrawable(context, theme, dark, rowOpacity))
     views.setTextViewTextSize(ids.badge, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
     val unit = item.optString("progressUnit", "check")
     val timerRunning = item.optBoolean("timerRunning", false)
@@ -346,26 +351,30 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setOnClickPendingIntent(ids.action, if (canToggle) actionIntent(context, widgetId, ids.position, action, itemId, kind) else noOpIntent(context, widgetId, ids.position, itemId, kind))
     val supportsControls = showControls && kind == "habit" && !completed && (unit == "count" || unit == "minutes")
     views.setViewVisibility(ids.controls, if (supportsControls) View.VISIBLE else View.GONE)
-    views.setViewVisibility(ids.timer, if (supportsControls && unit == "minutes") View.VISIBLE else View.GONE)
     if (supportsControls && unit == "count") {
+      views.setViewVisibility(ids.controlsBackground, View.VISIBLE)
+      views.setViewVisibility(ids.timerContainer, View.GONE)
+      views.setImageViewResource(ids.controlsBackground, widgetCardDrawable(dark, rowOpacity))
       listOf(ids.decrement, ids.progress, ids.increment).forEach { control -> views.setViewVisibility(control, View.VISIBLE) }
       val value = item.optInt("progressValue", 0)
       val target = item.optInt("targetValue", 1).coerceAtLeast(1)
       views.setTextViewText(ids.progress, "$value/$target")
       views.setTextColor(ids.progress, primary)
-      val controlSurface = colorWithOpacity(primarySoft, rowOpacity)
-      listOf(ids.decrement, ids.increment).forEach { control -> views.setTextColor(control, primary); views.setInt(control, "setBackgroundColor", controlSurface); views.setTextViewTextSize(control, android.util.TypedValue.COMPLEX_UNIT_DIP, 17f * scale) }
+      listOf(ids.decrement, ids.increment).forEach { control -> views.setTextColor(control, primary); views.setInt(control, "setBackgroundColor", Color.TRANSPARENT); views.setTextViewTextSize(control, android.util.TypedValue.COMPLEX_UNIT_DIP, 17f * scale) }
       views.setInt(ids.progress, "setBackgroundColor", Color.TRANSPARENT)
       views.setTextViewTextSize(ids.progress, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
       views.setOnClickPendingIntent(ids.decrement, actionIntent(context, widgetId, ids.position, ACTION_DECREMENT, itemId, kind))
       views.setOnClickPendingIntent(ids.increment, actionIntent(context, widgetId, ids.position, ACTION_INCREMENT, itemId, kind))
     } else if (supportsControls) {
+      views.setViewVisibility(ids.controlsBackground, View.GONE)
+      views.setViewVisibility(ids.timerContainer, View.VISIBLE)
+      views.setImageViewResource(ids.timerBackground, widgetCardDrawable(dark, rowOpacity))
       listOf(ids.decrement, ids.progress, ids.increment).forEach { control -> views.setViewVisibility(control, View.GONE) }
       val timerAction = if (timerRunning) ACTION_TIMER_PAUSE else ACTION_TIMER_START
       views.setTextViewText(ids.timer, if (timerRunning) if (english) "Pause" else "停止" else if (timerPaused) if (english) "Resume" else "再開" else if (english) "Start" else "開始")
       views.setTextColor(ids.timer, primary)
-      views.setInt(ids.timer, "setBackgroundColor", colorWithOpacity(primarySoft, rowOpacity))
       views.setOnClickPendingIntent(ids.timer, actionIntent(context, widgetId, ids.position, timerAction, itemId, kind))
+      views.setOnClickPendingIntent(ids.controls, actionIntent(context, widgetId, ids.position, timerAction, itemId, kind))
     }
   }
 
@@ -379,13 +388,12 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     }
   }
 
-  private fun widgetBadgeDrawable(theme: String, dark: Boolean): Int = when (theme) {
-    "slate" -> if (dark) R.drawable.focus_flow_widget_badge_slate_dark else R.drawable.focus_flow_widget_badge_slate_light
-    "evergreen" -> if (dark) R.drawable.focus_flow_widget_badge_evergreen_dark else R.drawable.focus_flow_widget_badge_evergreen_light
-    "ocean" -> if (dark) R.drawable.focus_flow_widget_badge_ocean_dark else R.drawable.focus_flow_widget_badge_ocean_light
-    "orchid" -> if (dark) R.drawable.focus_flow_widget_badge_orchid_dark else R.drawable.focus_flow_widget_badge_orchid_light
-    "sunrise" -> if (dark) R.drawable.focus_flow_widget_badge_sunrise_dark else R.drawable.focus_flow_widget_badge_sunrise_light
-    else -> if (dark) R.drawable.focus_flow_widget_badge_mist_dark else R.drawable.focus_flow_widget_badge_mist_light
+  private fun widgetBadgeDrawable(context: Context, theme: String, dark: Boolean, opacity: Int): Int {
+    val appearance = if (dark) "dark" else "light"
+    val level = when { opacity < 13 -> 0; opacity < 38 -> 25; opacity < 63 -> 50; opacity < 88 -> 75; else -> 100 }
+    val name = "focus_flow_widget_badge_${theme}_${appearance}_$level"
+    return context.resources.getIdentifier(name, "drawable", context.packageName).takeIf { it != 0 }
+      ?: context.resources.getIdentifier("focus_flow_widget_badge_mist_${appearance}_$level", "drawable", context.packageName)
   }
 
   private fun itemCardDrawable(theme: String, dark: Boolean, completed: Boolean, required: Boolean): Int = widgetSurfaceDrawable(theme, dark)
