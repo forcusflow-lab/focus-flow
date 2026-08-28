@@ -376,11 +376,12 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     } else if (supportsControls) {
       views.setViewVisibility(ids.controlsBackground, View.GONE)
       views.setViewVisibility(ids.timerContainer, View.VISIBLE)
-      views.setImageViewResource(ids.timerBackground, widgetCardDrawable(dark, rowOpacity))
+      views.setViewVisibility(ids.timerBackground, View.GONE)
       listOf(ids.decrement, ids.progress, ids.increment).forEach { control -> views.setViewVisibility(control, View.GONE) }
       val timerAction = if (timerRunning) ACTION_TIMER_PAUSE else ACTION_TIMER_START
       views.setTextViewText(ids.timer, if (timerRunning) if (english) "Pause" else "停止" else if (timerPaused) if (english) "Resume" else "再開" else if (english) "Start" else "開始")
       views.setTextColor(ids.timer, primary)
+      views.setInt(ids.timer, "setBackgroundResource", widgetCardDrawable(dark, rowOpacity))
       views.setOnClickPendingIntent(ids.timer, actionIntent(context, widgetId, ids.position, timerAction, itemId, kind))
       views.setOnClickPendingIntent(ids.controls, actionIntent(context, widgetId, ids.position, timerAction, itemId, kind))
     }

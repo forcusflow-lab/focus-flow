@@ -176,6 +176,9 @@ class FocusGateService : AccessibilityService() {
       minHeight = dp(52)
       setPadding(dp(16), 0, dp(16), 0)
       setOnClickListener {
+        foregroundRecheck?.let(foregroundRecheckHandler::removeCallbacks)
+        foregroundRecheck = null
+        lastReliableForegroundPackage = applicationContext.packageName
         hideGateOverlay()
         startActivity(focusFlowTodayIntent())
       }

@@ -439,3 +439,8 @@
 - [ ] v25の全回帰、通常/本人用Android生成、署名APK独立検証、実機受入を完了する
 - [x] v25で回数HabitのRemoteViews反射呼出を標準操作へ限定し、全5行の回数操作IDを検査したうえで、SliderのThumb半径を含む可動域・0〜100%clampを実装し、109件の全回帰・TypeScript・Lint・本人用クリーンAndroid生成で検証した
 - [ ] v25本人用署名APKを生成し、package/versionCode 24・v2署名・Widget資産・Slider可動域・ハッシュを独立検証して.apk添付と再取得確認済みURLで提供する
+- [ ] v26でWidgetの時間Habit開始・停止ボタンの文字色と背景を6テーマ×light/dark・全透過段階で可読にし、操作面を実機受入する
+- [ ] v26でFocus Gateの「今日の項目を確認する」導線を一回の操作でTodayへ遷移させ、直後のAccessibilityイベントによる同一Gate再表示を抑止する
+- [ ] v26でTodayの「残りn件」と進捗補足をテーマprimary上で可読な前景色へ統一し、6テーマ×light/darkのコントラストを回帰テストする
+- [ ] v26の自動回帰、通常/本人用Android生成、署名APK独立検証、実機受入を完了する
+- [x] v26でWidget開始ボタン自身へ透過対応背景を設定し、Focus Gate CTA後の再確認を取消し、白い進捗カード文字をテーマ本文色へ置換しないよう修正した。アプリ内108件の回帰・TypeScript・Lint・通常/本人用クリーンAndroid生成に成功し、Expo外部認証テストのみTLS接続リセットのため分離した
