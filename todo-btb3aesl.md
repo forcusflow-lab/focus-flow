@@ -438,3 +438,4 @@
 - [ ] v25で6テーマ×light/darkの本文・補足・入力・操作・Widget文字コントラストを網羅し、可読性不合格を修正する
 - [ ] v25の全回帰、通常/本人用Android生成、署名APK独立検証、実機受入を完了する
 - [x] v25で回数HabitのRemoteViews反射呼出を標準操作へ限定し、全5行の回数操作IDを検査したうえで、SliderのThumb半径を含む可動域・0〜100%clampを実装し、109件の全回帰・TypeScript・Lint・本人用クリーンAndroid生成で検証した
+- [ ] v25本人用署名APKを生成し、package/versionCode 24・v2署名・Widget資産・Slider可動域・ハッシュを独立検証して.apk添付と再取得確認済みURLで提供する
