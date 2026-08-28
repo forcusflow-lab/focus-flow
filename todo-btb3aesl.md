@@ -448,3 +448,6 @@
 - [x] v27でFocus Gateの「今日の項目を確認する」CTAを一回の操作でTodayへ遷移させ、直後のAccessibilityイベントによる同一画面の再表示を3秒間抑止し、対象回帰6件とTypeScript検査に成功した
 - [ ] v27のWidget開始ボタン文字を全テーマ・透過段階で可読にし、既存の完了済み表示・回数操作・1/2/3/5行を回帰する
 - [ ] v27の自動回帰、通常/本人用Android生成、署名APK独立検証、実機受入を完了する
+
+- [ ] v27本人用制限なしAPKのGitHub Actionsビルドを起動し、生成成果物を取得可能な状態にする
+- [ ] v27本人用APKのpackage・versionCode・署名・Widget／Focus Gate資産を独立検証し、実機受入前の配布可否を判定する
