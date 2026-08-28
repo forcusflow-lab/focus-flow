@@ -62,12 +62,12 @@ describe("Focus Flow v19 flat Widget and completion quality contract", () => {
     expect(layout).not.toContain('android:layout_weight');
     expect(layout).not.toContain('<ListView');
     expect(settings).toContain('function OpacitySlider');
-    expect(settings).toContain('Math.round((locationX / trackWidth) * 100)');
+    expect(settings).toContain('Math.round(((clampedX - thumbRadius) / usableTrackWidth) * 100)');
   });
 
   it("keeps the normal and personal Android version codes separated for the current build", () => {
     const config = projectFile("app.config.ts");
-    expect(config).toContain('versionCode: isPersonalUnlimitedBuild ? 23 : 33');
+    expect(config).toContain('versionCode: isPersonalUnlimitedBuild ? 24 : 34');
     expect(config).toContain('"com.app.focusflow.personal"');
     expect(config).toContain('"manusfocusflowpersonal"');
   });

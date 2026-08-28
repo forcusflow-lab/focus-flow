@@ -15,6 +15,7 @@ function semanticTextColor(color: TextStyle["color"] | undefined, palette: AppPa
   if (PRIMARY_COLORS.has(normalized)) return palette.primary;
   if (TEXT_COLORS.has(normalized)) return palette.text;
   if (MUTED_COLORS.has(normalized)) return palette.muted;
+  if (/^#[0-9a-f]{6}$/.test(normalized)) return palette.text;
   return undefined;
 }
 

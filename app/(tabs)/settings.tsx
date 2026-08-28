@@ -241,12 +241,15 @@ function OpacitySlider({ english, label, detail, value, onChange }: { english: b
   const palette = useFocusPalette();
   const [trackWidth, setTrackWidth] = useState(0);
   const [dragValue, setDragValue] = useState<number>();
+  const thumbRadius = 11;
+  const usableTrackWidth = Math.max(1, trackWidth - thumbRadius * 2);
   const normalized = Math.max(0, Math.min(100, Math.round(value)));
   const displayedValue = dragValue ?? normalized;
   const valueFromLocationX = useCallback((locationX: number) => {
     if (!trackWidth) return;
-    return Math.max(0, Math.min(100, Math.round((locationX / trackWidth) * 100)));
-  }, [trackWidth]);
+    const clampedX = Math.max(thumbRadius, Math.min(trackWidth - thumbRadius, locationX));
+    return Math.max(0, Math.min(100, Math.round(((clampedX - thumbRadius) / usableTrackWidth) * 100)));
+  }, [thumbRadius, trackWidth, usableTrackWidth]);
   const responder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
@@ -266,7 +269,8 @@ function OpacitySlider({ english, label, detail, value, onChange }: { english: b
     onPanResponderTerminate: () => setDragValue(undefined),
   }), [normalized, onChange, valueFromLocationX]);
   const t = (ja: string, en: string) => english ? en : ja;
-  return <View style={appearanceStyles.sliderWrap}><View style={appearanceStyles.sliderHeading}><View style={styles.selectorCopy}><Text style={[styles.settingTitle, { color: palette.text }]}>{label}</Text><Text style={[styles.settingDetail, { color: palette.muted }]}>{detail}</Text></View><Text style={[appearanceStyles.sliderValue, { color: palette.primary }]}>{displayedValue}%</Text></View><View accessibilityRole="adjustable" accessibilityLabel={`${label}: ${displayedValue}%`} accessibilityValue={{ min: 0, max: 100, now: displayedValue, text: `${displayedValue}%` }} onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)} {...responder.panHandlers} style={[appearanceStyles.sliderTrack, { backgroundColor: palette.elevated }]}><View pointerEvents="none" style={[appearanceStyles.sliderFill, { width: `${displayedValue}%`, backgroundColor: palette.primary }]} /><View pointerEvents="none" style={[appearanceStyles.sliderThumb, { left: `${displayedValue}%`, transform: [{ translateX: -11 }], backgroundColor: palette.surface, borderColor: palette.primary }]} /></View><View style={appearanceStyles.sliderMarks}>{[0, 25, 50, 75, 100].map((mark) => <Text key={mark} style={[appearanceStyles.sliderMark, { color: palette.muted }]}>{mark}%</Text>)}</View><Text style={[appearanceStyles.sliderHint, { color: palette.muted }]}>{t("タップ・スライドとも1%単位で反映されます", "Tap or slide to apply in 1% steps")}</Text></View>;
+  const thumbLeft = thumbRadius + usableTrackWidth * (displayedValue / 100);
+  return <View style={appearanceStyles.sliderWrap}><View style={appearanceStyles.sliderHeading}><View style={styles.selectorCopy}><Text style={[styles.settingTitle, { color: palette.text }]}>{label}</Text><Text style={[styles.settingDetail, { color: palette.muted }]}>{detail}</Text></View><Text style={[appearanceStyles.sliderValue, { color: palette.primary }]}>{displayedValue}%</Text></View><View accessibilityRole="adjustable" accessibilityLabel={`${label}: ${displayedValue}%`} accessibilityValue={{ min: 0, max: 100, now: displayedValue, text: `${displayedValue}%` }} onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)} {...responder.panHandlers} style={[appearanceStyles.sliderTrack, { backgroundColor: palette.elevated }]}><View pointerEvents="none" style={[appearanceStyles.sliderFill, { width: `${displayedValue}%`, backgroundColor: palette.primary }]} /><View pointerEvents="none" style={[appearanceStyles.sliderThumb, { left: thumbLeft, transform: [{ translateX: -thumbRadius }], backgroundColor: palette.surface, borderColor: palette.primary }]} /></View><View style={appearanceStyles.sliderMarks}>{[0, 25, 50, 75, 100].map((mark) => <Text key={mark} style={[appearanceStyles.sliderMark, { color: palette.muted }]}>{mark}%</Text>)}</View><Text style={[appearanceStyles.sliderHint, { color: palette.muted }]}>{t("タップ・スライドとも1%単位で反映されます", "Tap or slide to apply in 1% steps")}</Text></View>;
 }
 
 function WidgetsPanel({ english, displaySettings, onBackgroundOpacity, onCardOpacity }: { english: boolean; displaySettings: DisplaySettings; onBackgroundOpacity: (value: number) => void; onCardOpacity: (value: number) => void }) {

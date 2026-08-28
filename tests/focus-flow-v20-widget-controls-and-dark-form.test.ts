@@ -8,7 +8,8 @@ describe("Focus Flow v20 Widget controls and dark-form quality contract", () => 
   it("uses one local-coordinate conversion for Slider taps and drags", () => {
     const settings = source("app", "(tabs)", "settings.tsx");
     expect(settings).toContain("valueFromLocationX");
-    expect(settings).toContain("Math.round((locationX / trackWidth) * 100)");
+    expect(settings).toContain("const usableTrackWidth = Math.max(1, trackWidth - thumbRadius * 2)");
+    expect(settings).toContain("Math.round(((clampedX - thumbRadius) / usableTrackWidth) * 100)");
     expect(settings).toContain("onPanResponderRelease");
     expect(settings).toContain("Math.max(0, Math.min(100");
     expect(settings).toContain('pointerEvents="none"');

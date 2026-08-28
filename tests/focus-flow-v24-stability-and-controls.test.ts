@@ -25,7 +25,8 @@ describe("Focus Flow v24 安定性・操作面・設定UI", () => {
 
   it("透過率Sliderは1%単位で領域外をclampし、ジェスチャー終了時にだけ永続状態を更新する", () => {
     const settings = source("app", "(tabs)", "settings.tsx");
-    expect(settings).toContain("Math.round((locationX / trackWidth) * 100)");
+    expect(settings).toContain("const usableTrackWidth = Math.max(1, trackWidth - thumbRadius * 2)");
+    expect(settings).toContain("Math.round(((clampedX - thumbRadius) / usableTrackWidth) * 100)");
     expect(settings).toContain("onPanResponderRelease");
     expect(settings).toContain("setDragValue(next)");
     expect(settings).toContain("setDragValue(undefined)");

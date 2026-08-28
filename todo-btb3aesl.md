@@ -431,3 +431,10 @@
 - [ ] v24でTodo入力時の詳細画面遷移が遅れる経路を計測・修正し、操作直後の遷移を妨げる同期処理・再描画を排除する
 - [ ] v24の自動回帰、通常版/本人用Android生成、署名APK独立検証、実機受入を完了する
 - [x] v24で保存キュー・読込失敗時の空上書き防止、Focus Gate背景イベント抑止、1%Slider、回数Widgetボタン面、Pill枠線、制限一覧のフラット検索・文字倍率・コンパクト行、Todo描画前初期化を実装し、108件の全回帰・TypeScript・Lint・通常/本人用クリーンAndroid生成で検証した
+- [x] GitHub Actions run 33142880236で本人用v24署名APKを生成し、artifact digest・ZIP整合性・APK hash・package/versionCode 23・5行Widget・Chronometer・禁止RemoteViews adapter不在を独立検証した
+- [ ] v25で回数設定ありHabitをWidget候補へ追加してもRemoteViewsが例外なく表示されるよう、全サイズ・完了状態・透過段階を回帰テストする
+- [ ] v25で透過Sliderのthumb位置・値・タップ/ドラッグ範囲を同一座標系へ統一し、描画負荷を抑えて0〜100%以外を選べないようにする
+- [ ] v25でTodo/Habit詳細の上下スライド遷移を計測し、初期化・同期・再描画を分離して操作直後に表示する
+- [ ] v25で6テーマ×light/darkの本文・補足・入力・操作・Widget文字コントラストを網羅し、可読性不合格を修正する
+- [ ] v25の全回帰、通常/本人用Android生成、署名APK独立検証、実機受入を完了する
+- [x] v25で回数HabitのRemoteViews反射呼出を標準操作へ限定し、全5行の回数操作IDを検査したうえで、SliderのThumb半径を含む可動域・0〜100%clampを実装し、109件の全回帰・TypeScript・Lint・本人用クリーンAndroid生成で検証した
