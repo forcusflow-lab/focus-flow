@@ -457,3 +457,6 @@
 
 - [x] Widgetタイトル背景を各テーマのprimaryと背景の混色による濃いアクセント面へ再設計し、Todoist系の見出し階層と可読性を実現する
 - [x] Widgetタイトル背景を6テーマ×light/dark×透過経路で回帰検証し、全回帰36 files / 110 passed / 1 skipped、TypeScript、Lintを通過したGitHub Actions起動前の状態を確認する
+
+- [x] Widgetタイトル背景が実機で変わらない原因を、静的RemoteViewsの実表示経路・透過処理・APKコミット差分から特定した（前回APKが旧版、かつ混色濃度が弱かった）
+- [x] 実機で表示されるWidgetタイトル背景へ各テーマの濃いアクセント面を適用し、全回帰36 files / 110 passed / 1 skipped、TypeScript、Lintを通過した

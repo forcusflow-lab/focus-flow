@@ -174,7 +174,9 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val opacity = state.optInt("widgetBackgroundOpacity", state.optInt("widgetOpacity", 86)).coerceIn(0, 100)
     // Todoist系の情報階層に合わせ、ヘッダーだけをprimaryのアクセント面へ。
     // 背景との混色で各テーマの個性を残し、透過設定は従来どおり維持する。
-    val headerSurface = blendColors(background, primary, if (dark) 0.28f else 0.18f)
+    // 薄いprimarySoftではなく、見出し専用のアクセント面として認識できる濃度にする。
+    // ダークは明るいprimary、ライトは濃いprimaryを背景へ混ぜるため、双方で同等の階層感になる。
+    val headerSurface = blendColors(background, primary, if (dark) 0.36f else 0.30f)
     views.setInt(R.id.focus_flow_widget_card, "setBackgroundColor", colorWithOpacity(background, opacity))
     views.setInt(R.id.focus_flow_widget_header, "setBackgroundColor", colorWithOpacity(headerSurface, opacity))
     listOf(R.id.focus_flow_widget_static_divider_one, R.id.focus_flow_widget_static_divider_two).forEach { dividerId -> views.setTextViewText(dividerId, ""); views.setInt(dividerId, "setBackgroundColor", colorWithOpacity(border, opacity)) }
