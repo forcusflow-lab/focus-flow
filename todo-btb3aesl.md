@@ -466,3 +466,7 @@
 
 - [x] 「今日の習慣」見出しの文字切れを修正し、件数バッジとの横並びで省略表示できるようにする（flex:1 / minWidth:0 / tail省略）
 - [x] 共通ScreenHeadingと主要画面の長い日本語見出しを監査し、全回帰36 files / 111 passed / 1 skipped、TypeScript、Lintを通過する状態へ修正する
+
+- [x] Widgetの時間型習慣で未開始・計測中・停止中の開始／停止／再開ボタンを復活させ、全サイズで表示する（smallを含む）
+- [x] WidgetにTodo追加ボタンを追加し、`create=1` Deep LinkでアプリのTodo作成画面へ直接遷移できるようにする
+- [x] 時間計測・Todo追加・既存の完了／回数操作を回帰検証し、全回帰36 files / 113 passed / 1 skipped、TypeScript、Lintを通過したActions起動前の状態にする

@@ -74,7 +74,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
 
   private fun responsiveWidgetViews(context: Context, state: JSONObject, id: Int, english: Boolean, fallback: Boolean): RemoteViews {
     val mappings = linkedMapOf(
-      SizeF(130f, 102f) to createWidgetViews(context, state, id, english, WidgetBucket(1, false, true), fallback),
+      SizeF(130f, 102f) to createWidgetViews(context, state, id, english, WidgetBucket(1, true, true), fallback),
       SizeF(130f, 155f) to createWidgetViews(context, state, id, english, WidgetBucket(2, true, false), fallback),
       SizeF(130f, 210f) to createWidgetViews(context, state, id, english, WidgetBucket(3, true, false), fallback),
       SizeF(130f, 250f) to createWidgetViews(context, state, id, english, WidgetBucket(5, true, false), fallback),
@@ -216,10 +216,16 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val title = primary
     val pending = state.optInt("pendingCount", 0)
     val active = state.optBoolean("active", false)
+    val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
     views.setTextColor(R.id.focus_flow_widget_title, title)
+    views.setTextViewText(R.id.focus_flow_widget_add_todo, "+")
+    views.setTextColor(R.id.focus_flow_widget_add_todo, primary)
+    views.setTextViewTextSize(R.id.focus_flow_widget_add_todo, android.util.TypedValue.COMPLEX_UNIT_DIP, 18f * scale)
+    views.setInt(R.id.focus_flow_widget_add_todo, "setBackgroundResource", widgetCardDrawable(dark, state.optInt("widgetBackgroundOpacity", state.optInt("widgetOpacity", 86)).coerceIn(0, 100)))
+    views.setContentDescription(R.id.focus_flow_widget_add_todo, if (english) "Add task" else "Todoを追加")
+    views.setOnClickPendingIntent(R.id.focus_flow_widget_add_todo, addTodoIntent(context, widgetId))
     views.setTextColor(R.id.focus_flow_widget_status, detail)
     views.setTextColor(R.id.focus_flow_widget_empty, detail)
-    val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
     views.setTextViewTextSize(R.id.focus_flow_widget_title, android.util.TypedValue.COMPLEX_UNIT_DIP, 12f * scale)
     views.setTextViewTextSize(R.id.focus_flow_widget_status, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
     views.setTextViewTextSize(R.id.focus_flow_widget_empty, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
@@ -556,7 +562,8 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     putExtra(EXTRA_WIDGET_ID, widgetId)
   }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
   private fun noOpIntent(context: Context, widgetId: Int, row: Int, targetId: String, kind: String): PendingIntent = PendingIntent.getBroadcast(context, ("noop:$widgetId:$row:$kind:$targetId").hashCode(), Intent(context, FocusFlowWidgetProvider::class.java).apply { action = ACTION_NOOP; data = Uri.parse("$DEEP_LINK_SCHEME:///widget/$widgetId/$row/noop/$kind/$targetId") }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-  private fun deepLink(context: Context, destination: String, targetId: String? = null, showCompleted: Boolean = false): Intent {
+  private fun addTodoIntent(context: Context, widgetId: Int): PendingIntent = PendingIntent.getActivity(context, ("add-todo:$widgetId").hashCode(), deepLink(context, "todos", createTodo = true), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+  private fun deepLink(context: Context, destination: String, targetId: String? = null, showCompleted: Boolean = false, createTodo: Boolean = false): Intent {
     val uri = Uri.parse("$DEEP_LINK_SCHEME:///").buildUpon().apply {
       when (destination) {
         "todos" -> appendPath("todos")
@@ -564,6 +571,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       }
       if (targetId != null) appendQueryParameter("open", targetId)
       if (showCompleted) appendQueryParameter("completed", "1")
+      if (createTodo) appendQueryParameter("create", "1")
     }.build()
     return Intent(Intent.ACTION_VIEW, uri).setPackage(context.packageName)
   }
