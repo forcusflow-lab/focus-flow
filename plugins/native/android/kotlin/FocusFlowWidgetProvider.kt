@@ -196,9 +196,11 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   private fun bindHeader(context: Context, views: RemoteViews, state: JSONObject, widgetId: Int, english: Boolean, bucket: WidgetBucket) {
     val palette = state.optJSONObject("widgetPalette")
     val dark = palette?.optBoolean("isDark", false) ?: false
-    val title = paletteColor(palette, "text", if (dark) "#F4FBF7" else "#13251F")
+    // Use the theme accent for the header so "今日の項目" reads as a
+    // section title, while each theme keeps its own light/dark contrast pair.
     val detail = paletteColor(palette, "muted", if (dark) "#B7CCC2" else "#4E655B")
     val primary = paletteColor(palette, "primary", if (dark) "#7FCBB0" else "#1B6B62")
+    val title = primary
     val pending = state.optInt("pendingCount", 0)
     val active = state.optBoolean("active", false)
     views.setTextColor(R.id.focus_flow_widget_title, title)

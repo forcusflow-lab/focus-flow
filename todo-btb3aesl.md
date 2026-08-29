@@ -451,3 +451,6 @@
 
 - [ ] v27本人用制限なしAPKのGitHub Actionsビルドを起動し、生成成果物を取得可能な状態にする
 - [ ] v27本人用APKのpackage・versionCode・署名・Widget／Focus Gate資産を独立検証し、実機受入前の配布可否を判定する
+
+- [ ] Widgetの「今日の項目」見出しを各テーマに応じた濃いアクセント色へ調整し、タイトルらしさと本文・必須タグの可読性を両立する
+- [ ] Widget見出し色を6テーマ×light/dark×透過段階で回帰検証し、GitHub Actions起動前のソース状態を保存する
