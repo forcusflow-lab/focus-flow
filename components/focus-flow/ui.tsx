@@ -103,7 +103,7 @@ export function safeHaptic(type: "light" | "success") {
 
 const styles = StyleSheet.create({
   heading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 15 },
-  headingCopy: { flexShrink: 1 },
+  headingCopy: { flex: 1, minWidth: 0, flexShrink: 1, paddingRight: 12 },
   eyebrow: { color: COLORS.forest, fontSize: 13, fontWeight: "700", letterSpacing: 0.5, marginBottom: 3 },
   headingTitle: { color: COLORS.text, fontSize: 26, lineHeight: 31, fontWeight: "800", letterSpacing: -0.6 },
   iconButton: { width: 42, height: 42, alignItems: "center", justifyContent: "center", borderRadius: 14, borderWidth: 1 },

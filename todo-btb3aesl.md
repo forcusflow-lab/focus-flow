@@ -463,3 +463,6 @@
 
 - [x] 最新の濃いWidgetタイトル背景修正版をforcusflow-lab/focus-flowのmainへ同期する（GitHub main: 41ed60f）
 - [x] GitHub main上で最新コミットとWidget背景変更を確認した（headerSurface: light 30% / dark 36%）。Actions起動前の同期完了を報告する
+
+- [x] 「今日の習慣」見出しの文字切れを修正し、件数バッジとの横並びで省略表示できるようにする（flex:1 / minWidth:0 / tail省略）
+- [x] 共通ScreenHeadingと主要画面の長い日本語見出しを監査し、全回帰36 files / 111 passed / 1 skipped、TypeScript、Lintを通過する状態へ修正する
