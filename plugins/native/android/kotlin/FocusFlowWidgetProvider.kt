@@ -170,15 +170,26 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val background = paletteColor(palette, "background", if (dark) "#14231F" else "#F7F8F5")
     val elevated = paletteColor(palette, "elevated", if (dark) "#263E36" else "#EDF4F0")
     val border = paletteColor(palette, "border", if (dark) "#3B554B" else "#D7E2DD")
+    val primary = paletteColor(palette, "primary", if (dark) "#7FCBB0" else "#1B6B62")
     val opacity = state.optInt("widgetBackgroundOpacity", state.optInt("widgetOpacity", 86)).coerceIn(0, 100)
-    // Widgetは角丸カードを重ねず、テーマ背景・高めの見出し・連続行だけで
-    // 情報を整理する。RemoteViewsでも安全なsetBackgroundColorのみを使う。
+    // Todoist系の情報階層に合わせ、ヘッダーだけをprimaryのアクセント面へ。
+    // 背景との混色で各テーマの個性を残し、透過設定は従来どおり維持する。
+    val headerSurface = blendColors(background, primary, if (dark) 0.28f else 0.18f)
     views.setInt(R.id.focus_flow_widget_card, "setBackgroundColor", colorWithOpacity(background, opacity))
-    views.setInt(R.id.focus_flow_widget_header, "setBackgroundColor", colorWithOpacity(elevated, opacity))
+    views.setInt(R.id.focus_flow_widget_header, "setBackgroundColor", colorWithOpacity(headerSurface, opacity))
     listOf(R.id.focus_flow_widget_static_divider_one, R.id.focus_flow_widget_static_divider_two).forEach { dividerId -> views.setTextViewText(dividerId, ""); views.setInt(dividerId, "setBackgroundColor", colorWithOpacity(border, opacity)) }
   }
 
   private fun paletteColor(palette: JSONObject?, key: String, fallback: String): Int = try { Color.parseColor(palette?.optString(key, fallback) ?: fallback) } catch (_: Exception) { Color.parseColor(fallback) }
+
+  private fun blendColors(base: Int, overlay: Int, fraction: Float): Int {
+    val amount = fraction.coerceIn(0f, 1f)
+    return Color.rgb(
+      (Color.red(base) * (1f - amount) + Color.red(overlay) * amount).toInt(),
+      (Color.green(base) * (1f - amount) + Color.green(overlay) * amount).toInt(),
+      (Color.blue(base) * (1f - amount) + Color.blue(overlay) * amount).toInt(),
+    )
+  }
 
   private fun colorWithOpacity(color: Int, opacity: Int): Int = Color.argb((opacity.coerceIn(0, 100) * 255 / 100), Color.red(color), Color.green(color), Color.blue(color))
 
