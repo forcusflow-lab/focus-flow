@@ -460,3 +460,6 @@
 
 - [x] Widgetタイトル背景が実機で変わらない原因を、静的RemoteViewsの実表示経路・透過処理・APKコミット差分から特定した（前回APKが旧版、かつ混色濃度が弱かった）
 - [x] 実機で表示されるWidgetタイトル背景へ各テーマの濃いアクセント面を適用し、全回帰36 files / 110 passed / 1 skipped、TypeScript、Lintを通過した
+
+- [ ] 最新の濃いWidgetタイトル背景修正版をforcusflow-lab/focus-flowのmainへ同期する
+- [ ] GitHub main上で最新コミットとWidget背景変更を確認し、Actions起動前の同期完了を報告する
