@@ -500,3 +500,6 @@
 - [x] 1cedaafで発生した最新Actionsビルドエラーと実機Widget表示不能を同一run・APK・Providerで再照合し、SizeF map・RemoteViews setter・Provider経路を再診断した
 - [x] 本体フォント連動を維持しつつ、単一RemoteViews・TypefaceSpan・最小fallbackで表示不能とビルドリスクを下げる方式へ再設計した
 - [ ] CIビルド成功、APK構成、Widget追加・表示・各サイズ・フォント反映の合格条件を満たしてからGitHub mainへ同期する（自動検証115件・Expo prebuild・静的安全検査完了、CI/実機合格未確認）
+
+- [ ] Widget表示不能対策・TypefaceSpanフォント連動修正版をGitHub `main`へpushする
+- [ ] GitHub `main`の最新コミットとActions実行条件を確認し、ユーザーが再実行できる状態を報告する
