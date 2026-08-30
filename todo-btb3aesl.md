@@ -494,5 +494,9 @@
 - [x] RemoteViews互換を保つフォント連動方式を実装し、Widgetの標準TextViewへ4種TextAppearanceを全サイズ適用する経路を整合させた
 - [x] CI相当のExpo Android生成、全回帰36 files / 114 passed / 1 skipped、型、Lint、Widget資産検査を成功させた（sandbox GradleはANDROID_HOME未設定で未実行）
 
-- [x] 最新フォント連動・ビルドエラー修正版チェックポイントをGitHub `main`へ同期する（remote main: c076c18）
-- [x] GitHub `main`の最新コミットと同期内容を確認し、Actions起動可能状態を報告する（ls-remoteでc076c1809bde610659765036cdd9492fd29a36edを確認）
+- [x] 最新フォント連動・ビルドエラー修正版チェックポイントをGitHub `main`へ同期する（remote main: 1cedaaf）
+- [x] GitHub `main`の最新コミットと同期内容を確認し、Actions起動可能状態を報告する（ls-remoteで1cedaaf559ecc235299e562c74de510872cd7d90を確認）
+
+- [x] 1cedaafで発生した最新Actionsビルドエラーと実機Widget表示不能を同一run・APK・Providerで再照合し、SizeF map・RemoteViews setter・Provider経路を再診断した
+- [x] 本体フォント連動を維持しつつ、単一RemoteViews・TypefaceSpan・最小fallbackで表示不能とビルドリスクを下げる方式へ再設計した
+- [ ] CIビルド成功、APK構成、Widget追加・表示・各サイズ・フォント反映の合格条件を満たしてからGitHub mainへ同期する（自動検証115件・Expo prebuild・静的安全検査完了、CI/実機合格未確認）
