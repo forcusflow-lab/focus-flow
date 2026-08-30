@@ -473,3 +473,7 @@
 
 - [x] WidgetのTodo追加ボタンをヘッダー右端の専用アクション領域へ再配置し、項目カードと同じ余白・高さ・押下領域で再設計する
 - [x] Todo追加ボタンの背景透過率をWidget全体・項目カードと同じ設定経路へ統一し、全テーマ・全サイズで回帰検証する（全回帰36 files / 114 passed / 1 skipped、TypeScript、Lint）
+
+- [x] WidgetのTodo追加ボタンを「新規Todo」を直感的に示すチェック付きメモ＋プラスのベクターアイコンへ変更し、全サイズで視認・押下できるようにする
+- [x] Widgetのフォントと文字倍率を本体設定の保存値から解決し、本体変更時にWidget更新へ反映する（system / serif / sans-serif-light / monospace）
+- [x] アイコン・フォント連動を全テーマ・全サイズ・長い日本語で回帰検証し、全回帰36 files / 114 passed / 1 skipped、TypeScript、Lintを通過する

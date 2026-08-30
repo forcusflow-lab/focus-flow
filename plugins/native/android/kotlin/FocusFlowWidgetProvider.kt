@@ -184,6 +184,12 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
 
   private fun paletteColor(palette: JSONObject?, key: String, fallback: String): Int = try { Color.parseColor(palette?.optString(key, fallback) ?: fallback) } catch (_: Exception) { Color.parseColor(fallback) }
 
+  private fun applyFont(views: RemoteViews, font: String, ids: List<Int>) {
+    val family = when (font) { "reading" -> "serif"; "notebook" -> "sans-serif-light"; "focus" -> "monospace"; else -> "sans-serif" }
+    ids.forEach { views.setString(it, "setFontFamilyName", family) }
+  }
+
+
   private fun blendColors(base: Int, overlay: Int, fraction: Float): Int {
     val amount = fraction.coerceIn(0f, 1f)
     return Color.rgb(
@@ -217,10 +223,9 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val pending = state.optInt("pendingCount", 0)
     val active = state.optBoolean("active", false)
     val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
+    applyFont(views, state.optString("fontFamily", "system"), listOf(R.id.focus_flow_widget_title, R.id.focus_flow_widget_status, R.id.focus_flow_widget_completed_toggle))
     views.setTextColor(R.id.focus_flow_widget_title, title)
-    views.setTextViewText(R.id.focus_flow_widget_add_todo, "+")
-    views.setTextColor(R.id.focus_flow_widget_add_todo, primary)
-    views.setTextViewTextSize(R.id.focus_flow_widget_add_todo, android.util.TypedValue.COMPLEX_UNIT_DIP, 18f * scale)
+    views.setImageViewResource(R.id.focus_flow_widget_add_todo, R.drawable.focus_flow_widget_add_todo)
     views.setInt(R.id.focus_flow_widget_add_todo, "setBackgroundResource", widgetCardDrawable(dark, state.optInt("widgetCardOpacity", state.optInt("widgetBackgroundOpacity", state.optInt("widgetOpacity", 86))).coerceIn(0, 100)))
     views.setContentDescription(R.id.focus_flow_widget_add_todo, if (english) "Add task" else "Todoを追加")
     views.setOnClickPendingIntent(R.id.focus_flow_widget_add_todo, addTodoIntent(context, widgetId))
@@ -271,6 +276,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val rowOpacity = state.optInt("widgetCardOpacity", 100).coerceIn(0, 100)
     val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
     views.setViewVisibility(R.id.focus_flow_widget_empty, if (rows.isEmpty()) View.VISIBLE else View.GONE)
+    applyFont(views, state.optString("fontFamily", "system"), listOf(R.id.focus_flow_widget_empty))
     if (rows.isEmpty()) views.setTextViewText(R.id.focus_flow_widget_empty, if (english) "Open Focus Flow to add today’s items" else "今日の項目はありません")
     val dividers = listOf(R.id.focus_flow_widget_static_divider_one, R.id.focus_flow_widget_static_divider_two, R.id.focus_flow_widget_static_divider_three, R.id.focus_flow_widget_static_divider_four)
     for (index in 0..4) {
@@ -316,6 +322,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   private fun bindStaticRow(context: Context, views: RemoteViews, ids: StaticRowIds, item: JSONObject, widgetId: Int, english: Boolean, titleColor: Int, mutedColor: Int, primary: Int, primarySoft: Int, elevated: Int, onPrimary: Int, surface: Int, rowOpacity: Int, scale: Float, showControls: Boolean, dark: Boolean, theme: String) {
     val completed = item.optBoolean("completed", false)
     val canToggle = item.optBoolean("canToggle", false)
+    applyFont(views, item.optString("fontFamily", ""), listOf(ids.title, ids.badge, ids.meta, ids.chronometer, ids.decrement, ids.progress, ids.increment, ids.timer))
     val title = item.optString("title")
     val badge = compactBadge(item, english)
     views.setInt(ids.row, "setBackgroundColor", colorWithOpacity(if (completed) elevated else surface, rowOpacity))
