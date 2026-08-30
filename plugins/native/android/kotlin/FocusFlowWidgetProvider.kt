@@ -221,7 +221,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setTextViewText(R.id.focus_flow_widget_add_todo, "+")
     views.setTextColor(R.id.focus_flow_widget_add_todo, primary)
     views.setTextViewTextSize(R.id.focus_flow_widget_add_todo, android.util.TypedValue.COMPLEX_UNIT_DIP, 18f * scale)
-    views.setInt(R.id.focus_flow_widget_add_todo, "setBackgroundResource", widgetCardDrawable(dark, state.optInt("widgetBackgroundOpacity", state.optInt("widgetOpacity", 86)).coerceIn(0, 100)))
+    views.setInt(R.id.focus_flow_widget_add_todo, "setBackgroundResource", widgetCardDrawable(dark, state.optInt("widgetCardOpacity", state.optInt("widgetBackgroundOpacity", state.optInt("widgetOpacity", 86))).coerceIn(0, 100)))
     views.setContentDescription(R.id.focus_flow_widget_add_todo, if (english) "Add task" else "Todoを追加")
     views.setOnClickPendingIntent(R.id.focus_flow_widget_add_todo, addTodoIntent(context, widgetId))
     views.setTextColor(R.id.focus_flow_widget_status, detail)

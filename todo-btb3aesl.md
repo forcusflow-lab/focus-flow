@@ -470,3 +470,6 @@
 - [x] Widgetの時間型習慣で未開始・計測中・停止中の開始／停止／再開ボタンを復活させ、全サイズで表示する（smallを含む）
 - [x] WidgetにTodo追加ボタンを追加し、`create=1` Deep LinkでアプリのTodo作成画面へ直接遷移できるようにする
 - [x] 時間計測・Todo追加・既存の完了／回数操作を回帰検証し、全回帰36 files / 113 passed / 1 skipped、TypeScript、Lintを通過したActions起動前の状態にする
+
+- [x] WidgetのTodo追加ボタンをヘッダー右端の専用アクション領域へ再配置し、項目カードと同じ余白・高さ・押下領域で再設計する
+- [x] Todo追加ボタンの背景透過率をWidget全体・項目カードと同じ設定経路へ統一し、全テーマ・全サイズで回帰検証する（全回帰36 files / 114 passed / 1 skipped、TypeScript、Lint）
