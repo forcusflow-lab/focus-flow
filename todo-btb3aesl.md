@@ -481,3 +481,7 @@
 - [x] GitHub Actions Personal APK失敗実行のジョブとGradleログから根本原因を特定する（AAPTが`focus_flow_widget_initial.xml`の`<$PACKAGE_NAME...>`でXML構文エラー）
 - [x] ビルド失敗原因を修正し、全回帰36 files / 114 passed / 1 skipped、TypeScript、Lint、Expo Android prebuildと生成資産検査を通過する状態にする（sandboxローカルGradleはメモリ圧迫でdaemon消失）
 - [ ] 修正版をGitHub mainへ同期し、ユーザーがActionsを再実行できる状態にする
+
+- [x] Android実機で「ウィジェットを表示できません」となる原因を特定した（RemoteViews非互換のカスタムTextView参照と実package不一致）
+- [x] Widget表示不能を修正し、全テキストを標準TextViewへ戻し、フォントはRemoteViews安全なTextAppearanceへ切り替えた
+- [x] 表示可能性を全サイズ・全テーマ・初期状態の静的経路で検証し、全回帰36 files / 114 passed / 1 skipped、TypeScript、Lint、Android資産検査を通過した

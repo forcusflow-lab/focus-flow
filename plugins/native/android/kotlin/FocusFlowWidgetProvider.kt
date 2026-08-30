@@ -185,8 +185,13 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   private fun paletteColor(palette: JSONObject?, key: String, fallback: String): Int = try { Color.parseColor(palette?.optString(key, fallback) ?: fallback) } catch (_: Exception) { Color.parseColor(fallback) }
 
   private fun applyFont(views: RemoteViews, font: String, ids: List<Int>) {
-    val family = when (font) { "reading" -> "serif"; "notebook" -> "sans-serif-light"; "focus" -> "monospace"; else -> "sans-serif" }
-    ids.forEach { views.setString(it, "setFontFamilyName", family) }
+    val appearance = when (font) {
+      "reading" -> R.style.FocusFlowWidgetFontReading
+      "notebook" -> R.style.FocusFlowWidgetFontNotebook
+      "focus" -> R.style.FocusFlowWidgetFontFocus
+      else -> R.style.FocusFlowWidgetFontSystem
+    }
+    ids.forEach { views.setInt(it, "setTextAppearance", appearance) }
   }
 
 

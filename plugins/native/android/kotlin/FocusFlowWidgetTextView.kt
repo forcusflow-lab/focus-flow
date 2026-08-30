@@ -1,3 +1,5 @@
+package $PACKAGE_NAME.focusflow
+
 import android.content.Context
 import android.graphics.Typeface
 import android.util.AttributeSet

@@ -4,4 +4,18 @@
     <item name="android:windowActionModeOverlay">true</item>
     <item name="android:windowNoTitle">true</item>
   </style>
+
+  <!-- RemoteViews-safe font choices; no text color or size is overridden. -->
+  <style name="FocusFlowWidgetFontSystem">
+    <item name="android:fontFamily">sans-serif</item>
+  </style>
+  <style name="FocusFlowWidgetFontReading">
+    <item name="android:fontFamily">serif</item>
+  </style>
+  <style name="FocusFlowWidgetFontNotebook">
+    <item name="android:fontFamily">sans-serif-light</item>
+  </style>
+  <style name="FocusFlowWidgetFontFocus">
+    <item name="android:fontFamily">monospace</item>
+  </style>
 </resources>
