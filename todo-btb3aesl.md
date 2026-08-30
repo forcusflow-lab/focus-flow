@@ -485,3 +485,7 @@
 - [x] Android実機で「ウィジェットを表示できません」となる原因を特定した（RemoteViews非互換のカスタムTextView参照と実package不一致）
 - [x] Widget表示不能を修正し、全テキストを標準TextViewへ戻し、フォントはRemoteViews安全なTextAppearanceへ切り替えた
 - [x] 表示可能性を全サイズ・全テーマ・初期状態の静的経路で検証し、全回帰36 files / 114 passed / 1 skipped、TypeScript、Lint、Android資産検査を通過した
+
+- [ ] 実機で直っていないWidget表示不能について、インストールAPKのpackage・versionCode・commit・署名を特定し、修正版が実機に入っているか確認する
+- [x] Widget Provider初期化、RemoteViews inflate、全静的layout、custom setter、TextAppearance、ベクター資産を再監査し、標準TextView・安全なAPIのみの生成資産を確認した
+- [ ] 実機表示不能を再現可能なテストケースで防止し、Android生成・全回帰・GitHub Actions成果物検証を完了する（自動検証は完了、実機APK検証は未完了）

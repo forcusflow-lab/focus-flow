@@ -184,17 +184,6 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
 
   private fun paletteColor(palette: JSONObject?, key: String, fallback: String): Int = try { Color.parseColor(palette?.optString(key, fallback) ?: fallback) } catch (_: Exception) { Color.parseColor(fallback) }
 
-  private fun applyFont(views: RemoteViews, font: String, ids: List<Int>) {
-    val appearance = when (font) {
-      "reading" -> R.style.FocusFlowWidgetFontReading
-      "notebook" -> R.style.FocusFlowWidgetFontNotebook
-      "focus" -> R.style.FocusFlowWidgetFontFocus
-      else -> R.style.FocusFlowWidgetFontSystem
-    }
-    ids.forEach { views.setInt(it, "setTextAppearance", appearance) }
-  }
-
-
   private fun blendColors(base: Int, overlay: Int, fraction: Float): Int {
     val amount = fraction.coerceIn(0f, 1f)
     return Color.rgb(
@@ -228,7 +217,10 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val pending = state.optInt("pendingCount", 0)
     val active = state.optBoolean("active", false)
     val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
-    applyFont(views, state.optString("fontFamily", "system"), listOf(R.id.focus_flow_widget_title, R.id.focus_flow_widget_status, R.id.focus_flow_widget_completed_toggle))
+    // Keep the initial RemoteViews action set to framework-safe TextView APIs.
+    // The payload still carries fontFamily for the app bridge; dynamic typeface
+    // application is intentionally deferred because arbitrary TextAppearance
+    // setters can make some launchers reject the entire widget tree.
     views.setTextColor(R.id.focus_flow_widget_title, title)
     views.setImageViewResource(R.id.focus_flow_widget_add_todo, R.drawable.focus_flow_widget_add_todo)
     views.setInt(R.id.focus_flow_widget_add_todo, "setBackgroundResource", widgetCardDrawable(dark, state.optInt("widgetCardOpacity", state.optInt("widgetBackgroundOpacity", state.optInt("widgetOpacity", 86))).coerceIn(0, 100)))
