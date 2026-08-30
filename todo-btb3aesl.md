@@ -489,3 +489,7 @@
 - [ ] 実機で直っていないWidget表示不能について、インストールAPKのpackage・versionCode・commit・署名を特定し、修正版が実機に入っているか確認する
 - [x] Widget Provider初期化、RemoteViews inflate、全静的layout、custom setter、TextAppearance、ベクター資産を再監査し、標準TextView・安全なAPIのみの生成資産を確認した
 - [ ] 実機表示不能を再現可能なテストケースで防止し、Android生成・全回帰・GitHub Actions成果物検証を完了する（自動検証は完了、実機APK検証は未完了）
+
+- [x] 最新GitHub Actions失敗runのGradleログを取得し、フォント連動変更とWidget表示不能の根本原因を特定する（run 33294913916は未定義applyFont呼び出しでコンパイル停止）
+- [x] RemoteViews互換を保つフォント連動方式を実装し、Widgetの標準TextViewへ4種TextAppearanceを全サイズ適用する経路を整合させた
+- [x] CI相当のExpo Android生成、全回帰36 files / 114 passed / 1 skipped、型、Lint、Widget資産検査を成功させた（sandbox GradleはANDROID_HOME未設定で未実行）

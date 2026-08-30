@@ -184,6 +184,16 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
 
   private fun paletteColor(palette: JSONObject?, key: String, fallback: String): Int = try { Color.parseColor(palette?.optString(key, fallback) ?: fallback) } catch (_: Exception) { Color.parseColor(fallback) }
 
+  private fun applyFont(views: RemoteViews, font: String, ids: List<Int>) {
+    val appearance = when (font) {
+      "reading" -> R.style.FocusFlowWidgetFontReading
+      "notebook" -> R.style.FocusFlowWidgetFontNotebook
+      "focus" -> R.style.FocusFlowWidgetFontFocus
+      else -> R.style.FocusFlowWidgetFontSystem
+    }
+    ids.forEach { views.setInt(it, "setTextAppearance", appearance) }
+  }
+
   private fun blendColors(base: Int, overlay: Int, fraction: Float): Int {
     val amount = fraction.coerceIn(0f, 1f)
     return Color.rgb(
@@ -217,10 +227,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val pending = state.optInt("pendingCount", 0)
     val active = state.optBoolean("active", false)
     val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
-    // Keep the initial RemoteViews action set to framework-safe TextView APIs.
-    // The payload still carries fontFamily for the app bridge; dynamic typeface
-    // application is intentionally deferred because arbitrary TextAppearance
-    // setters can make some launchers reject the entire widget tree.
+    applyFont(views, state.optString("fontFamily", "system"), listOf(R.id.focus_flow_widget_title, R.id.focus_flow_widget_status, R.id.focus_flow_widget_empty, R.id.focus_flow_widget_completed_toggle))
     views.setTextColor(R.id.focus_flow_widget_title, title)
     views.setImageViewResource(R.id.focus_flow_widget_add_todo, R.drawable.focus_flow_widget_add_todo)
     views.setInt(R.id.focus_flow_widget_add_todo, "setBackgroundResource", widgetCardDrawable(dark, state.optInt("widgetCardOpacity", state.optInt("widgetBackgroundOpacity", state.optInt("widgetOpacity", 86))).coerceIn(0, 100)))
@@ -281,7 +288,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       val item = rows.getOrNull(index)
       views.setViewVisibility(ids.row, if (item == null) View.GONE else View.VISIBLE)
       if (index < dividers.size) views.setViewVisibility(dividers[index], if (index < rows.size - 1) View.VISIBLE else View.GONE)
-      if (item != null) bindStaticRow(context, views, ids, item, widgetId, english, titleColor, mutedColor, primary, primarySoft, elevated, onPrimary, surface, rowOpacity, scale, bucket.showControls, dark, theme) else clearStaticRow(views, ids)
+      if (item != null) bindStaticRow(context, views, ids, item, widgetId, english, state.optString("fontFamily", "system"), titleColor, mutedColor, primary, primarySoft, elevated, onPrimary, surface, rowOpacity, scale, bucket.showControls, dark, theme) else clearStaticRow(views, ids)
     }
   }
 
@@ -316,10 +323,10 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setImageViewResource(ids.check, R.drawable.focus_flow_widget_check_empty)
   }
 
-  private fun bindStaticRow(context: Context, views: RemoteViews, ids: StaticRowIds, item: JSONObject, widgetId: Int, english: Boolean, titleColor: Int, mutedColor: Int, primary: Int, primarySoft: Int, elevated: Int, onPrimary: Int, surface: Int, rowOpacity: Int, scale: Float, showControls: Boolean, dark: Boolean, theme: String) {
+  private fun bindStaticRow(context: Context, views: RemoteViews, ids: StaticRowIds, item: JSONObject, widgetId: Int, english: Boolean, fontFamily: String, titleColor: Int, mutedColor: Int, primary: Int, primarySoft: Int, elevated: Int, onPrimary: Int, surface: Int, rowOpacity: Int, scale: Float, showControls: Boolean, dark: Boolean, theme: String) {
     val completed = item.optBoolean("completed", false)
     val canToggle = item.optBoolean("canToggle", false)
-    applyFont(views, item.optString("fontFamily", ""), listOf(ids.title, ids.badge, ids.meta, ids.chronometer, ids.decrement, ids.progress, ids.increment, ids.timer))
+    applyFont(views, fontFamily, listOf(ids.title, ids.badge, ids.meta, ids.chronometer, ids.decrement, ids.progress, ids.increment, ids.timer))
     val title = item.optString("title")
     val badge = compactBadge(item, english)
     views.setInt(ids.row, "setBackgroundColor", colorWithOpacity(if (completed) elevated else surface, rowOpacity))
