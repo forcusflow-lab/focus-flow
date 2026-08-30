@@ -477,3 +477,7 @@
 - [x] WidgetのTodo追加ボタンを「新規Todo」を直感的に示すチェック付きメモ＋プラスのベクターアイコンへ変更し、全サイズで視認・押下できるようにする
 - [x] Widgetのフォントと文字倍率を本体設定の保存値から解決し、本体変更時にWidget更新へ反映する（system / serif / sans-serif-light / monospace）
 - [x] アイコン・フォント連動を全テーマ・全サイズ・長い日本語で回帰検証し、全回帰36 files / 114 passed / 1 skipped、TypeScript、Lintを通過する
+
+- [x] GitHub Actions Personal APK失敗実行のジョブとGradleログから根本原因を特定する（AAPTが`focus_flow_widget_initial.xml`の`<$PACKAGE_NAME...>`でXML構文エラー）
+- [x] ビルド失敗原因を修正し、全回帰36 files / 114 passed / 1 skipped、TypeScript、Lint、Expo Android prebuildと生成資産検査を通過する状態にする（sandboxローカルGradleはメモリ圧迫でdaemon消失）
+- [ ] 修正版をGitHub mainへ同期し、ユーザーがActionsを再実行できる状態にする
