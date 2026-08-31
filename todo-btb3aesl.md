@@ -512,3 +512,6 @@
 - [x] WidgetのTodo追加ボタンから背景・枠・角丸面を除去し、「今日の項目」と同じテーマprimary色のアイコン単体へ統一する
 - [x] サブタスクを持つTodoカードだけに、右端の控えめなアウトライン階層識別アイコンを追加する
 - [x] アイコンのテーマ・文字切れ・押下領域を全回帰し、37 files / 119 passed / 1 skipped、TypeScript、Lint、差分検査を通過する
+
+- [ ] チェックポイントa42396f8相当のWidget追加アイコン・サブタスク識別修正版をGitHub `main`へpushする
+- [ ] GitHub `main`の最新SHAとActions実行条件を確認し、ユーザーがActionsを起動できる状態を報告する
