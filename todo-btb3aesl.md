@@ -501,3 +501,6 @@
 - [x] Todoに親子関係を持つサブタスクを追加し、一覧・詳細・完了状態・並び順を一貫させる
 - [x] Todoにメモ欄を追加し、メモからTodoへ移植する場合に本文を引き継ぐ
 - [x] 新機能と既存機能の全回帰・Android生成検証後、GitHub mainをActions実行前状態へ同期する（全回帰37 files / 117 passed / 1 skipped、TypeScript、Lint、Expo prebuild）
+- [x] 1cedaafで発生した最新Actionsビルドエラーと実機Widget表示不能を同一run・APK・Providerで再照合し、SizeF map・RemoteViews setter・Provider経路を再診断した
+- [x] 本体フォント連動を維持しつつ、単一RemoteViews・TypefaceSpan・最小fallbackで表示不能とビルドリスクを下げる方式へ再設計した
+- [ ] CIビルド成功、APK構成、Widget追加・表示・各サイズ・フォント反映の合格条件を満たしてからGitHub mainへ同期する（自動検証118件・Expo prebuild・静的安全検査完了、CI/実機合格未確認）

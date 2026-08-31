@@ -59,9 +59,9 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   private fun updateInitialWidget(context: Context, manager: AppWidgetManager, id: Int, fallback: Boolean = false, options: android.os.Bundle? = null) {
     val state = state(context)
     val english = state.optString("language", "ja") == "en"
-    // Use one standard RemoteViews tree for every launcher and Android version.
+    // Use one static RemoteViews tree for every launcher and Android version.
     // Size-specific maps can make some hosts reject the widget during placement;
-    // the persisted bucket still controls density on subsequent refreshes.
+    // resize callbacks still update the persisted row bucket for density.
     manager.updateAppWidget(id, createWidgetViews(context, state, id, english, widgetBucket(context, manager, id, options), fallback))
   }
 
@@ -77,9 +77,21 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     return views
   }
 
-  // Keep a placed widget valid and offer a route into Today on an unexpected
-  // Provider-side failure. No collection or RemoteViewsService is involved.
-  private fun updateFallbackWidget(context: Context, manager: AppWidgetManager, id: Int, options: android.os.Bundle? = null) = updateInitialWidget(context, manager, id, true, options)
+  // Keep a placed widget valid on a launcher that rejects an advanced action.
+  // The fallback intentionally uses only primitive RemoteViews operations and
+  // does not retry the failing responsive map or font setter.
+  private fun updateFallbackWidget(context: Context, manager: AppWidgetManager, id: Int, options: android.os.Bundle? = null) {
+    val views = RemoteViews(context.packageName, R.layout.focus_flow_widget_initial)
+    val english = state(context).optString("language", "ja") == "en"
+    val fontFamily = state(context).optString("fontFamily", "system")
+    views.setTextViewText(R.id.focus_flow_widget_title, fontText(if (english) "TODAY" else "今日の項目", fontFamily))
+    views.setTextViewText(R.id.focus_flow_widget_status, fontText(if (english) "Open Focus Flow to refresh your list" else "Focus Flowを開くと項目を更新します", fontFamily))
+    views.setViewVisibility(R.id.focus_flow_widget_empty, View.VISIBLE)
+    views.setTextViewText(R.id.focus_flow_widget_empty, fontText(if (english) "Open Focus Flow to add today’s items" else "今日の項目はありません", fontFamily))
+    views.setOnClickPendingIntent(R.id.focus_flow_widget_header, todayIntent(context, id, false))
+    views.setOnClickPendingIntent(R.id.focus_flow_widget_root, todayIntent(context, id, false))
+    manager.updateAppWidget(id, views)
+  }
 
   private fun updateWidget(context: Context, manager: AppWidgetManager, id: Int, options: android.os.Bundle? = null) {
     updateInitialWidget(context, manager, id, false, options)
@@ -167,14 +179,16 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
 
   private fun paletteColor(palette: JSONObject?, key: String, fallback: String): Int = try { Color.parseColor(palette?.optString(key, fallback) ?: fallback) } catch (_: Exception) { Color.parseColor(fallback) }
 
-  private fun applyFont(views: RemoteViews, font: String, ids: List<Int>) {
-    val appearance = when (font) {
-      "reading" -> R.style.FocusFlowWidgetFontReading
-      "notebook" -> R.style.FocusFlowWidgetFontNotebook
-      "focus" -> R.style.FocusFlowWidgetFontFocus
-      else -> R.style.FocusFlowWidgetFontSystem
+  private fun fontText(value: CharSequence, font: String): CharSequence {
+    val family = when (font) {
+      "reading" -> "serif"
+      "notebook" -> "sans-serif-light"
+      "focus" -> "monospace"
+      else -> "sans-serif"
     }
-    ids.forEach { views.setInt(it, "setTextAppearance", appearance) }
+    return SpannableString(value).apply {
+      if (length > 0) setSpan(android.text.style.TypefaceSpan(family), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+    }
   }
 
   private fun blendColors(base: Int, overlay: Int, fraction: Float): Int {
@@ -210,7 +224,6 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val pending = state.optInt("pendingCount", 0)
     val active = state.optBoolean("active", false)
     val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
-    applyFont(views, state.optString("fontFamily", "system"), listOf(R.id.focus_flow_widget_title, R.id.focus_flow_widget_status, R.id.focus_flow_widget_empty, R.id.focus_flow_widget_completed_toggle))
     views.setTextColor(R.id.focus_flow_widget_title, title)
     views.setImageViewResource(R.id.focus_flow_widget_add_todo, R.drawable.focus_flow_widget_add_todo)
     views.setInt(R.id.focus_flow_widget_add_todo, "setBackgroundResource", widgetCardDrawable(dark, state.optInt("widgetCardOpacity", state.optInt("widgetBackgroundOpacity", state.optInt("widgetOpacity", 86))).coerceIn(0, 100)))
@@ -221,16 +234,16 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setTextViewTextSize(R.id.focus_flow_widget_title, android.util.TypedValue.COMPLEX_UNIT_DIP, 12f * scale)
     views.setTextViewTextSize(R.id.focus_flow_widget_status, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
     views.setTextViewTextSize(R.id.focus_flow_widget_empty, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
-    views.setTextViewText(R.id.focus_flow_widget_title, if (english) "TODAY" else "今日の項目")
+    views.setTextViewText(R.id.focus_flow_widget_title, fontText(if (english) "TODAY" else "今日の項目", state.optString("fontFamily", "system")))
     val candidates = visibleWidgetItems(context, widgetId, state.optJSONArray("widgetItems") ?: JSONArray()).length()
     val overflow = (candidates - bucket.maxRows).coerceAtLeast(0)
     val baseStatus = if (!active) if (english) "App limits off" else "集中制限はオフ" else if (pending == 0) if (english) "Must-dos complete" else "必須項目を完了しました" else if (english) "$pending must-do${if (pending == 1) "" else "s"} remaining" else "必須項目 残り${pending}件"
-    views.setTextViewText(R.id.focus_flow_widget_status, if (overflow > 0) "$baseStatus · ${if (english) "$overflow more" else "ほか${overflow}件"}" else baseStatus)
+    views.setTextViewText(R.id.focus_flow_widget_status, fontText(if (overflow > 0) "$baseStatus · ${if (english) "$overflow more" else "ほか${overflow}件"}" else baseStatus, state.optString("fontFamily", "system")))
     val completedCount = state.optInt("widgetHiddenCompletedCount", 0)
     val showingCompleted = widgetCompletedVisible(context, widgetId)
     views.setViewVisibility(R.id.focus_flow_widget_completed_toggle, if (completedCount > 0) View.VISIBLE else View.GONE)
     if (completedCount > 0) {
-      views.setTextViewText(R.id.focus_flow_widget_completed_toggle, if (showingCompleted) if (english) "Open only" else "未完了のみ" else if (english) "Show all ($completedCount)" else "すべて表示（$completedCount）")
+      views.setTextViewText(R.id.focus_flow_widget_completed_toggle, fontText(if (showingCompleted) if (english) "Open only" else "未完了のみ" else if (english) "Show all ($completedCount)" else "すべて表示（$completedCount）", state.optString("fontFamily", "system")))
       views.setTextColor(R.id.focus_flow_widget_completed_toggle, primary)
       views.setTextViewTextSize(R.id.focus_flow_widget_completed_toggle, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
       views.setOnClickPendingIntent(R.id.focus_flow_widget_completed_toggle, completedToggleIntent(context, widgetId))
@@ -263,8 +276,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val rowOpacity = state.optInt("widgetCardOpacity", 100).coerceIn(0, 100)
     val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
     views.setViewVisibility(R.id.focus_flow_widget_empty, if (rows.isEmpty()) View.VISIBLE else View.GONE)
-    applyFont(views, state.optString("fontFamily", "system"), listOf(R.id.focus_flow_widget_empty))
-    if (rows.isEmpty()) views.setTextViewText(R.id.focus_flow_widget_empty, if (english) "Open Focus Flow to add today’s items" else "今日の項目はありません")
+    if (rows.isEmpty()) views.setTextViewText(R.id.focus_flow_widget_empty, fontText(if (english) "Open Focus Flow to add today’s items" else "今日の項目はありません", state.optString("fontFamily", "system")))
     val dividers = listOf(R.id.focus_flow_widget_static_divider_one, R.id.focus_flow_widget_static_divider_two, R.id.focus_flow_widget_static_divider_three, R.id.focus_flow_widget_static_divider_four)
     for (index in 0..4) {
       val ids = staticRowIds(index)
@@ -309,7 +321,6 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   private fun bindStaticRow(context: Context, views: RemoteViews, ids: StaticRowIds, item: JSONObject, widgetId: Int, english: Boolean, fontFamily: String, titleColor: Int, mutedColor: Int, primary: Int, primarySoft: Int, elevated: Int, onPrimary: Int, surface: Int, rowOpacity: Int, scale: Float, showControls: Boolean, dark: Boolean, theme: String) {
     val completed = item.optBoolean("completed", false)
     val canToggle = item.optBoolean("canToggle", false)
-    applyFont(views, fontFamily, listOf(ids.title, ids.badge, ids.meta, ids.chronometer, ids.decrement, ids.progress, ids.increment, ids.timer))
     val title = item.optString("title")
     val badge = compactBadge(item, english)
     views.setInt(ids.row, "setBackgroundColor", colorWithOpacity(if (completed) elevated else surface, rowOpacity))
@@ -317,11 +328,11 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val accentFallback = if (kind == "habit") primary else Color.parseColor("#3566B7")
     val accent = try { Color.parseColor(item.optString("accentColor")) } catch (_: Exception) { accentFallback }
     views.setInt(ids.rail, "setBackgroundColor", accent)
-    views.setTextViewText(ids.title, if (completed) struck(title) else title)
+    views.setTextViewText(ids.title, fontText(if (completed) struck(title) else title, fontFamily))
     views.setTextColor(ids.title, if (completed) mutedColor else titleColor)
     views.setTextViewTextSize(ids.title, android.util.TypedValue.COMPLEX_UNIT_DIP, 13f * scale)
     views.setViewVisibility(ids.badgeContainer, if (badge.isBlank()) View.GONE else View.VISIBLE)
-    views.setTextViewText(ids.badge, badge)
+    views.setTextViewText(ids.badge, fontText(badge, fontFamily))
     views.setTextColor(ids.badge, primary)
     views.setImageViewResource(ids.badgeBackground, widgetBadgeDrawable(context, theme, dark, rowOpacity))
     views.setTextViewTextSize(ids.badge, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
@@ -339,7 +350,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       else -> if (english) "Todo" else "Todo"
     }
     views.setViewVisibility(ids.meta, if (meta.isBlank()) View.GONE else View.VISIBLE)
-    views.setTextViewText(ids.meta, meta)
+    views.setTextViewText(ids.meta, fontText(meta, fontFamily))
     views.setTextColor(ids.meta, mutedColor)
     views.setTextViewTextSize(ids.meta, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
     val showChronometer = unit == "minutes" && timerRunning && !completed
@@ -373,10 +384,10 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       listOf(ids.decrement, ids.progress, ids.increment).forEach { control -> views.setViewVisibility(control, View.VISIBLE) }
       val value = item.optInt("progressValue", 0)
       val target = item.optInt("targetValue", 1).coerceAtLeast(1)
-      views.setTextViewText(ids.progress, "$value/$target")
+      views.setTextViewText(ids.progress, fontText("$value/$target", fontFamily))
       views.setTextColor(ids.progress, primary)
-      views.setTextViewText(ids.decrement, "−")
-      views.setTextViewText(ids.increment, "+")
+      views.setTextViewText(ids.decrement, fontText("−", fontFamily))
+      views.setTextViewText(ids.increment, fontText("+", fontFamily))
       listOf(ids.decrement, ids.increment).forEach { control ->
         views.setTextColor(control, primary)
         views.setInt(control, "setBackgroundResource", widgetCardDrawable(dark, rowOpacity))
@@ -394,7 +405,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       views.setViewVisibility(ids.timerBackground, View.GONE)
       listOf(ids.decrement, ids.progress, ids.increment).forEach { control -> views.setViewVisibility(control, View.GONE) }
       val timerAction = if (timerRunning) ACTION_TIMER_PAUSE else ACTION_TIMER_START
-      views.setTextViewText(ids.timer, if (timerRunning) if (english) "Pause" else "停止" else if (timerPaused) if (english) "Resume" else "再開" else if (english) "Start" else "開始")
+      views.setTextViewText(ids.timer, fontText(if (timerRunning) if (english) "Pause" else "停止" else if (timerPaused) if (english) "Resume" else "再開" else if (english) "Start" else "開始", fontFamily))
       views.setTextColor(ids.timer, primary)
       views.setInt(ids.timer, "setBackgroundResource", widgetCardDrawable(dark, rowOpacity))
       views.setOnClickPendingIntent(ids.timer, actionIntent(context, widgetId, ids.position, timerAction, itemId, kind))
