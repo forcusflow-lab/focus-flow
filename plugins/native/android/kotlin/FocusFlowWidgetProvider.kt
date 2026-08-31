@@ -226,7 +226,10 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
     views.setTextColor(R.id.focus_flow_widget_title, title)
     views.setImageViewResource(R.id.focus_flow_widget_add_todo, R.drawable.focus_flow_widget_add_todo)
-    views.setInt(R.id.focus_flow_widget_add_todo, "setBackgroundResource", widgetCardDrawable(dark, state.optInt("widgetCardOpacity", state.optInt("widgetBackgroundOpacity", state.optInt("widgetOpacity", 86))).coerceIn(0, 100)))
+    // Keep the 48dp hit target but remove the card surface: the add control is
+    // an icon-only secondary action and deliberately uses the same accent as TODAY.
+    views.setInt(R.id.focus_flow_widget_add_todo, "setBackgroundColor", Color.TRANSPARENT)
+    views.setInt(R.id.focus_flow_widget_add_todo, "setColorFilter", primary)
     views.setContentDescription(R.id.focus_flow_widget_add_todo, if (english) "Add task" else "Todoを追加")
     views.setOnClickPendingIntent(R.id.focus_flow_widget_add_todo, addTodoIntent(context, widgetId))
     views.setTextColor(R.id.focus_flow_widget_status, detail)
