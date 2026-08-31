@@ -513,7 +513,7 @@
 - [x] サブタスクを持つTodoカードだけに、右端の控えめなアウトライン階層識別アイコンを追加する
 - [x] アイコンのテーマ・文字切れ・押下領域を全回帰し、37 files / 119 passed / 1 skipped、TypeScript、Lint、差分検査を通過する
 
-- [ ] チェックポイントa42396f8相当のWidget追加アイコン・サブタスク識別修正版をGitHub `main`へpushする
-- [ ] GitHub `main`の最新SHAとActions実行条件を確認し、ユーザーがActionsを起動できる状態を報告する
+- [x] チェックポイントa42396f8相当のWidget追加アイコン・サブタスク識別修正版をGitHub `main`へpushする（merge後main: 34964a8）
+- [x] GitHub `main`の最新SHAとActions実行条件を確認し、ユーザーがActionsを起動できる状態を報告する（SHA: 34964a86fa3b8a165efa9f54c8ddb92703a81153）
 - [x] チェックポイント027f9e5e相当の最新Widget修正版をGitHub `main`へpushする（main: 87755da）
 - [x] GitHub `main`の最新SHAとActions実行条件を確認し、ユーザーがActionsを起動できる状態を報告する（SHA: 87755da66ab5f9a802d2d647965e639917d58788）
