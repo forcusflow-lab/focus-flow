@@ -21,7 +21,8 @@ describe("Focus Flow v23 widget density, transparency, and app-picker performanc
     expect(provider).toContain("WidgetBucket(2");
     expect(provider).toContain("WidgetBucket(3");
     expect(provider).toContain("WidgetBucket(5");
-    expect(provider).toContain("SizeF(130f, 250f)");
+    expect(provider).toContain("manager.updateAppWidget(id, createWidgetViews");
+    expect(provider).not.toContain("SizeF(");
     expect(provider).toContain("for (index in 0..4)");
   });
 

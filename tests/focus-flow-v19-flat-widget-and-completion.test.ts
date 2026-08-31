@@ -25,8 +25,9 @@ describe("Focus Flow v19 flat Widget and completion quality contract", () => {
     expect(provider).toContain('progressUnit: "check", targetValue: 1');
     expect(provider).toContain('const completed = !todo.completed;');
     expect(todoCard).not.toContain('onProgress');
-    expect(todoCard).not.toContain('subtasks');
-    expect(form).not.toContain('回数・時間・繰り返し・サブタスク');
+    expect(todoCard).toContain('subtasks');
+    expect(todoCard).toContain('onToggleSubtask');
+    expect(form).toContain('サブタスク');
   });
 
   it("places completed-item controls on Today, Todo, and Habit screens without a Settings switch", () => {

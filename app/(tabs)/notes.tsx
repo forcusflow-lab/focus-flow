@@ -29,7 +29,7 @@ export default function NotesScreen() {
   const showFreeLimit = (kind: string) => Alert.alert(t("無料版の上限です", "Free plan limit"), t(`${kind}は無料版では2件までです。Plusでは無制限に追加できます。`, `The free plan allows up to 2 ${kind.toLowerCase()}. Plus removes this limit.`));
   const convert = (memo: Memo) => {
     const confirm = () => {
-      const result = addTodo({ title: displayTitle(memo), priority: "medium", isRequired: false });
+      const result = addTodo({ title: displayTitle(memo), memo: memo.body.trim() || undefined, priority: "medium", isRequired: false });
       if (!result.ok) { showFreeLimit(t("Todo", "Tasks")); return; }
       safeHaptic("success");
     };

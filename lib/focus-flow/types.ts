@@ -24,6 +24,8 @@ export type TodoSubtask = {
 export type Todo = {
   id: string;
   title: string;
+  /** Todoに紐づく補足メモ。メモから移植した本文もここへ保存する。 */
+  memo?: string;
   priority: Priority;
   dueDate?: string;
   isRequired: boolean;
@@ -41,6 +43,7 @@ export type Todo = {
   /** 消費型の早期完了商品が使われた時刻。 */
   earlyCompletionAt?: string;
   repeatRule?: RepeatRule;
+  /** Todoistのような親Todo内の一次階層サブタスク。 */
   subtasks?: TodoSubtask[];
   createdAt: string;
 };

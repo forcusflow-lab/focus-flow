@@ -494,5 +494,10 @@
 - [x] RemoteViews互換を保つフォント連動方式を実装し、Widgetの標準TextViewへ4種TextAppearanceを全サイズ適用する経路を整合させた
 - [x] CI相当のExpo Android生成、全回帰36 files / 114 passed / 1 skipped、型、Lint、Widget資産検査を成功させた（sandbox GradleはANDROID_HOME未設定で未実行）
 
-- [x] 最新フォント連動・ビルドエラー修正版チェックポイントをGitHub `main`へ同期する（remote main: c076c18）
-- [x] GitHub `main`の最新コミットと同期内容を確認し、Actions起動可能状態を報告する（ls-remoteでc076c1809bde610659765036cdd9492fd29a36edを確認）
+- [x] 最新フォント連動・ビルドエラー修正版チェックポイントをGitHub `main`へ同期する（remote main: 1cedaaf）
+- [x] GitHub `main`の最新コミットと同期内容を確認し、Actions起動可能状態を報告する（ls-remoteで1cedaaf559ecc235299e562c74de510872cd7d90を確認）
+
+- [x] 画面追加ボタンをアイコンのみへ変更し、「今日の項目」と同じテーマ色・押下領域へ統一する
+- [x] Todoに親子関係を持つサブタスクを追加し、一覧・詳細・完了状態・並び順を一貫させる
+- [x] Todoにメモ欄を追加し、メモからTodoへ移植する場合に本文を引き継ぐ
+- [x] 新機能と既存機能の全回帰・Android生成検証後、GitHub mainをActions実行前状態へ同期する（全回帰37 files / 117 passed / 1 skipped、TypeScript、Lint、Expo prebuild）

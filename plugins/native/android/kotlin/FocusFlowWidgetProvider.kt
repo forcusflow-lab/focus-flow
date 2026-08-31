@@ -14,8 +14,6 @@ import android.text.Spanned
 import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.graphics.Typeface
-import android.os.Build
-import android.util.SizeF
 import android.view.View
 import android.widget.RemoteViews
 import org.json.JSONArray
@@ -61,25 +59,10 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   private fun updateInitialWidget(context: Context, manager: AppWidgetManager, id: Int, fallback: Boolean = false, options: android.os.Bundle? = null) {
     val state = state(context)
     val english = state.optString("language", "ja") == "en"
-    // Android 12+ selects a responsive RemoteViews map directly as the host
-    // changes cells. This is more robust than exact-size lists: launchers are
-    // allowed to omit OPTION_APPWIDGET_SIZES, and normal app syncs must not
-    // replace a resize-specific view with their default option Bundle.
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-      manager.updateAppWidget(id, responsiveWidgetViews(context, state, id, english, fallback))
-      return
-    }
+    // Use one standard RemoteViews tree for every launcher and Android version.
+    // Size-specific maps can make some hosts reject the widget during placement;
+    // the persisted bucket still controls density on subsequent refreshes.
     manager.updateAppWidget(id, createWidgetViews(context, state, id, english, widgetBucket(context, manager, id, options), fallback))
-  }
-
-  private fun responsiveWidgetViews(context: Context, state: JSONObject, id: Int, english: Boolean, fallback: Boolean): RemoteViews {
-    val mappings = linkedMapOf(
-      SizeF(130f, 102f) to createWidgetViews(context, state, id, english, WidgetBucket(1, true, true), fallback),
-      SizeF(130f, 155f) to createWidgetViews(context, state, id, english, WidgetBucket(2, true, false), fallback),
-      SizeF(130f, 210f) to createWidgetViews(context, state, id, english, WidgetBucket(3, true, false), fallback),
-      SizeF(130f, 250f) to createWidgetViews(context, state, id, english, WidgetBucket(5, true, false), fallback),
-    )
-    return RemoteViews(mappings)
   }
 
   private fun createWidgetViews(context: Context, state: JSONObject, id: Int, english: Boolean, bucket: WidgetBucket, fallback: Boolean): RemoteViews {

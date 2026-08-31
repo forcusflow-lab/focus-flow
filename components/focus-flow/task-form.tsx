@@ -5,8 +5,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { getAppLanguage, localized } from "@/lib/focus-flow/i18n";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
-import type { Priority, Todo } from "@/lib/focus-flow/types";
-import { dayKey, formatJapaneseDate } from "@/lib/focus-flow/utils";
+import type { Priority, Todo, TodoSubtask } from "@/lib/focus-flow/types";
+import { createId, dayKey, formatJapaneseDate, getTodoSubtasks } from "@/lib/focus-flow/utils";
 import { DatePicker } from "./date-picker";
 import { RequiredWindowSelector } from "./required-window-selector";
 import { ScaledText as Text } from "./scaled-text";
@@ -19,6 +19,8 @@ export type TaskInput = {
   isRequired: boolean;
   requiredWindowMode: "always" | "scheduled";
   requiredScheduleIds: string[];
+  memo?: string;
+  subtasks: TodoSubtask[];
 };
 
 type TaskFormProps = {
@@ -47,6 +49,9 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
   const [isRequired, setIsRequired] = useState(false);
   const [requiredWindowMode, setRequiredWindowMode] = useState<"always" | "scheduled">("always");
   const [requiredScheduleIds, setRequiredScheduleIds] = useState<string[]>([]);
+  const [memo, setMemo] = useState("");
+  const [subtasks, setSubtasks] = useState<TodoSubtask[]>([]);
+  const [subtaskDraft, setSubtaskDraft] = useState("");
   const dueAutoRequired = useMemo(() => Boolean(dueDate && dueDate <= dayKey()), [dueDate]);
   const effectiveRequired = isRequired || dueAutoRequired;
 
@@ -58,12 +63,15 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
     setIsRequired(todo?.isRequired ?? defaultRequired);
     setRequiredWindowMode(todo?.requiredWindowMode === "scheduled" && (todo.requiredScheduleIds?.length ?? 0) ? "scheduled" : "always");
     setRequiredScheduleIds(todo?.requiredScheduleIds ?? []);
+    setMemo(todo?.memo ?? "");
+    setSubtasks(todo ? getTodoSubtasks(todo) : []);
+    setSubtaskDraft("");
   }, [defaultRequired, todo, visible]);
 
   const save = () => {
     if (!title.trim()) return;
     safeHaptic("light");
-    const result = onSave({ title: title.trim(), priority, dueDate: dueDate || undefined, isRequired, requiredWindowMode, requiredScheduleIds });
+    const result = onSave({ title: title.trim(), memo: memo.trim() || undefined, priority, dueDate: dueDate || undefined, isRequired, requiredWindowMode, requiredScheduleIds, subtasks });
     if (result.ok) onClose();
   };
 
@@ -86,6 +94,11 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
           <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.body}>
             <Text style={[styles.label, { color: palette.text }]}>{t("内容", "Task")}</Text>
             <TextInput value={title} onChangeText={setTitle} autoFocus placeholder={t("たとえば、企画書の構成を作る", "For example, outline a proposal")} placeholderTextColor={palette.muted} style={[styles.input, { backgroundColor: palette.surface, borderColor: palette.border, color: palette.text }]} returnKeyType="done" onSubmitEditing={save} />
+            <Text style={[styles.label, { color: palette.text }]}>{t("メモ", "Note")}</Text>
+            <TextInput value={memo} onChangeText={setMemo} placeholder={t("補足や完了条件をメモ", "Add context or a definition of done")} placeholderTextColor={palette.muted} style={[styles.memoInput, { backgroundColor: palette.surface, borderColor: palette.border, color: palette.text }]} multiline textAlignVertical="top" />
+            <View style={styles.subtaskHeader}><Text style={[styles.label, styles.subtaskLabel, { color: palette.text }]}>{t("サブタスク", "Subtasks")}</Text><Text style={[styles.subtaskCount, { color: palette.muted }]}>{subtasks.length}</Text></View>
+            {subtasks.map((subtask) => <View key={subtask.id} style={[styles.subtaskRow, { backgroundColor: palette.surface, borderColor: palette.border }]}><TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: subtask.completed }} onPress={() => setSubtasks((items) => items.map((item) => item.id === subtask.id ? { ...item, completed: !item.completed } : item))} style={styles.subtaskCheck}><View style={[styles.subtaskBox, { borderColor: palette.border }, subtask.completed && { backgroundColor: palette.primary, borderColor: palette.primary }]}>{subtask.completed ? <MaterialIcons name="check" size={13} color={palette.isDark ? palette.background : COLORS.white} /> : null}</View></TouchableOpacity><Text style={[styles.subtaskText, { color: subtask.completed ? palette.muted : palette.text }, subtask.completed && styles.subtaskDone]} numberOfLines={2}>{subtask.title}</Text><TouchableOpacity accessibilityLabel={t("サブタスクを削除", "Delete subtask")} onPress={() => setSubtasks((items) => items.filter((item) => item.id !== subtask.id))} style={styles.subtaskDelete}><MaterialIcons name="close" size={17} color={palette.muted} /></TouchableOpacity></View>)}
+            <View style={styles.subtaskAddRow}><TextInput value={subtaskDraft} onChangeText={setSubtaskDraft} placeholder={t("サブタスクを追加", "Add a subtask")} placeholderTextColor={palette.muted} style={[styles.subtaskInput, { backgroundColor: palette.surface, borderColor: palette.border, color: palette.text }]} returnKeyType="done" onSubmitEditing={() => { const value = subtaskDraft.trim(); if (!value) return; setSubtasks((items) => [...items, { id: createId("subtask"), title: value, completed: false }]); setSubtaskDraft(""); }} /><TouchableOpacity accessibilityLabel={t("サブタスクを追加", "Add subtask")} onPress={() => { const value = subtaskDraft.trim(); if (!value) return; setSubtasks((items) => [...items, { id: createId("subtask"), title: value, completed: false }]); setSubtaskDraft(""); }} style={[styles.subtaskAddButton, { backgroundColor: palette.primary }]}><MaterialIcons name="add" size={20} color={palette.isDark ? palette.background : COLORS.white} /></TouchableOpacity></View>
             <Text style={[styles.label, { color: palette.text }]}>{t("優先度", "Priority")}</Text>
             <View style={styles.optionRow}>{priorities.map((item) => <TouchableOpacity key={item.key} onPress={() => setPriority(item.key)} style={[styles.smallOption, { backgroundColor: palette.surface, borderColor: palette.border }, priority === item.key && { borderColor: item.color, backgroundColor: `${item.color}24` }]}><View style={[styles.priorityDot, { backgroundColor: item.color }]} /><Text style={[styles.smallOptionText, { color: palette.muted }, priority === item.key && { color: item.color }]}>{item.label}</Text></TouchableOpacity>)}</View>
             <Text style={[styles.label, { color: palette.text }]}>{t("期限", "Due date")}</Text>
@@ -117,6 +130,19 @@ const styles = StyleSheet.create({
   footer: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 12 },
   label: { fontSize: 13, fontWeight: "800", marginBottom: 8, marginTop: 2 },
   input: { minHeight: 50, borderRadius: 14, borderWidth: 1, fontSize: 16, paddingHorizontal: 14, marginBottom: 16 },
+  memoInput: { minHeight: 78, borderRadius: 14, borderWidth: 1, fontSize: 14, lineHeight: 20, paddingHorizontal: 14, paddingTop: 12, marginBottom: 16 },
+  subtaskHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
+  subtaskLabel: { marginBottom: 8 },
+  subtaskCount: { fontSize: 12, fontWeight: "800", marginBottom: 8 },
+  subtaskRow: { minHeight: 42, flexDirection: "row", alignItems: "center", borderWidth: 1, borderRadius: 12, marginBottom: 6, paddingRight: 5 },
+  subtaskCheck: { width: 42, height: 42, alignItems: "center", justifyContent: "center" },
+  subtaskBox: { width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
+  subtaskText: { flex: 1, fontSize: 13, lineHeight: 18, fontWeight: "700" },
+  subtaskDone: { textDecorationLine: "line-through" },
+  subtaskDelete: { width: 32, height: 36, alignItems: "center", justifyContent: "center" },
+  subtaskAddRow: { flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 16 },
+  subtaskInput: { flex: 1, minHeight: 44, borderRadius: 12, borderWidth: 1, fontSize: 14, paddingHorizontal: 12 },
+  subtaskAddButton: { width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   optionRow: { flexDirection: "row", gap: 8, marginBottom: 16 },
   smallOption: { flex: 1, minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 13, borderWidth: 1, paddingHorizontal: 4 },
   priorityDot: { width: 8, height: 8, borderRadius: 4 },
