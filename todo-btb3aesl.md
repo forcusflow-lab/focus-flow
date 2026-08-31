@@ -508,3 +508,6 @@
 - [x] リモートSHAとActions実行条件を確認し、ユーザーがActionsを起動できる状態を報告する（SHA: d4504185460a8b3b2c80acd639c31bd93a509cab）
 - [x] Widget表示不能対策・TypefaceSpanフォント連動修正版をGitHub `main`へpushする（先行main: d04a923）
 - [x] GitHub `main`の先行コミットとActions実行条件を確認した（SHA: d04a9238624c865ec58ea59584a33d539e3ab735）
+
+- [ ] チェックポイント027f9e5e相当の最新Widget修正版をGitHub `main`へpushする
+- [ ] GitHub `main`の最新SHAとActions実行条件を確認し、ユーザーがActionsを起動できる状態を報告する
