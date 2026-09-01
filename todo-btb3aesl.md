@@ -517,3 +517,6 @@
 - [x] GitHub `main`の最新SHAとActions実行条件を確認し、ユーザーがActionsを起動できる状態を報告する（SHA: 34964a86fa3b8a165efa9f54c8ddb92703a81153）
 - [x] チェックポイント027f9e5e相当の最新Widget修正版をGitHub `main`へpushする（main: 87755da）
 - [x] GitHub `main`の最新SHAとActions実行条件を確認し、ユーザーがActionsを起動できる状態を報告する（SHA: 87755da66ab5f9a802d2d647965e639917d58788）
+
+- [x] Todo一覧・Todo追加編集・習慣作成編集の情報密度とスクロール量を改善する（既存機能・保存ロジックは変更しない）
+- [x] 3画面のコンパクトUIを最小限の検証後、現在の作業ブランチへcommit・pushする

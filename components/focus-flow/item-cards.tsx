@@ -20,15 +20,15 @@ export function TodoItemCard({ todo, showRequired = todo.isRequired, language, t
   const doneTitleStyle = achieved ? { color: palette.muted, textDecorationLine: "line-through" as const, textDecorationColor: palette.muted } : undefined;
   return <View style={[styles.todoRow, { backgroundColor: achieved ? palette.elevated : palette.surface, borderColor: palette.border }]}>
     <View style={[styles.rail, { backgroundColor: palette.primary }]} />
-    <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: achieved }} accessibilityLabel={achieved ? t(`「${todo.title}」を未完了に戻す`, `Reopen “${todo.title}”`) : t(`「${todo.title}」を完了にする`, `Mark “${todo.title}” complete`)} onPress={(event) => { event.stopPropagation(); onToggle(); }} style={styles.checkTouchTarget}><View style={[styles.check, { borderColor: palette.border }, achieved && { backgroundColor: palette.primary, borderColor: palette.primary }]}>{achieved ? <MaterialIcons name="check" size={17} color={COLORS.white} /> : null}</View></TouchableOpacity>
+    <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: achieved }} accessibilityLabel={achieved ? t(`「${todo.title}」を未完了に戻す`, `Reopen “${todo.title}”`) : t(`「${todo.title}」を完了にする`, `Mark “${todo.title}” complete`)} onPress={(event) => { event.stopPropagation(); onToggle(); }} style={styles.todoCheckTouchTarget}><View style={[styles.todoCheck, { borderColor: palette.border }, achieved && { backgroundColor: palette.primary, borderColor: palette.primary }]}>{achieved ? <MaterialIcons name="check" size={15} color={COLORS.white} /> : null}</View></TouchableOpacity>
     <TouchableOpacity accessibilityRole="button" onPress={onOpen} activeOpacity={0.72} style={styles.copy}>
-      <Text style={[styles.title, { color: palette.text }, doneTitleStyle]} numberOfLines={2}>{todo.title}</Text>
-      {todo.memo ? <Text style={[styles.memo, { color: palette.muted }]} numberOfLines={1}>{todo.memo}</Text> : null}
-      <View style={styles.meta}>{effectiveRequired ? <Pill label={t("必須", "Must-do")} color={palette.primary} /> : null}{due ? <Text numberOfLines={1} style={[styles.due, { color: palette.muted }, dueStatus === "overdue" && styles.overdue]}>{due}</Text> : null}{subtasks.length ? <Text style={[styles.subtaskProgress, { color: palette.primary }]}>{t(`サブタスク ${completedSubtasks}/${subtasks.length}`, `Subtasks ${completedSubtasks}/${subtasks.length}`)}</Text> : null}</View>
-      {subtasks.length && onToggleSubtask ? <View style={styles.subtaskPreview}>{subtasks.slice(0, 3).map((subtask) => <TouchableOpacity key={subtask.id} accessibilityRole="checkbox" accessibilityState={{ checked: subtask.completed }} onPress={() => onToggleSubtask(subtask.id)} style={styles.subtaskPreviewRow}><View style={[styles.miniCheck, { borderColor: palette.border }, subtask.completed && { backgroundColor: palette.primary, borderColor: palette.primary }]}>{subtask.completed ? <MaterialIcons name="check" size={10} color={COLORS.white} /> : null}</View><Text style={[styles.subtaskPreviewText, { color: subtask.completed ? palette.muted : palette.text }, subtask.completed && styles.subtaskPreviewDone]} numberOfLines={1}>{subtask.title}</Text></TouchableOpacity>)}</View> : null}
+      <Text style={[styles.todoTitle, { color: palette.text }, doneTitleStyle]} numberOfLines={2}>{todo.title}</Text>
+      {todo.memo ? <Text style={[styles.todoMemo, { color: palette.muted }]} numberOfLines={1}>{todo.memo}</Text> : null}
+      <View style={styles.todoMeta}>{effectiveRequired ? <Pill label={t("必須", "Must-do")} color={palette.primary} /> : null}{due ? <Text numberOfLines={1} style={[styles.todoDue, { color: palette.muted }, dueStatus === "overdue" && styles.overdue]}>{due}</Text> : null}{subtasks.length ? <Text style={[styles.todoSubtaskProgress, { color: palette.primary }]}>{t(`サブタスク ${completedSubtasks}/${subtasks.length}`, `Subtasks ${completedSubtasks}/${subtasks.length}`)}</Text> : null}</View>
+      {subtasks.length && onToggleSubtask ? <View style={styles.subtaskPreview}>{subtasks.slice(0, 2).map((subtask) => <TouchableOpacity key={subtask.id} accessibilityRole="checkbox" accessibilityState={{ checked: subtask.completed }} onPress={() => onToggleSubtask(subtask.id)} style={styles.subtaskPreviewRow}><View style={[styles.miniCheck, { borderColor: palette.border }, subtask.completed && { backgroundColor: palette.primary, borderColor: palette.primary }]}>{subtask.completed ? <MaterialIcons name="check" size={9} color={COLORS.white} /> : null}</View><Text style={[styles.subtaskPreviewText, { color: subtask.completed ? palette.muted : palette.text }, subtask.completed && styles.subtaskPreviewDone]} numberOfLines={1}>{subtask.title}</Text></TouchableOpacity>)}</View> : null}
     </TouchableOpacity>
-    {subtasks.length ? <View accessibilityRole="image" accessibilityLabel={t(`サブタスク ${completedSubtasks}/${subtasks.length}`, `Subtasks ${completedSubtasks}/${subtasks.length}`)} style={styles.subtaskIndicator}><MaterialIcons name="subdirectory-arrow-right" size={18} color={palette.primary} /></View> : null}
-    <TouchableOpacity accessibilityLabel={onDelete ? t("Todoを削除", "Delete task") : t("Todoの詳細を開く", "Open task details")} hitSlop={8} onPress={onDelete ?? onOpen} style={styles.trailing}><MaterialIcons name={onDelete ? "delete-outline" : "chevron-right"} size={onDelete ? 20 : 21} color={palette.muted} /></TouchableOpacity>
+    {subtasks.length ? <View accessibilityRole="image" accessibilityLabel={t(`サブタスク ${completedSubtasks}/${subtasks.length}`, `Subtasks ${completedSubtasks}/${subtasks.length}`)} style={styles.subtaskIndicator}><MaterialIcons name="subdirectory-arrow-right" size={17} color={palette.primary} /></View> : null}
+    <TouchableOpacity accessibilityLabel={onDelete ? t("Todoを削除", "Delete task") : t("Todoの詳細を開く", "Open task details")} hitSlop={8} onPress={onDelete ?? onOpen} style={styles.trailing}><MaterialIcons name={onDelete ? "delete-outline" : "chevron-right"} size={onDelete ? 19 : 20} color={palette.muted} /></TouchableOpacity>
   </View>;
 }
 
@@ -40,13 +40,34 @@ export function HabitItemCard({ habit, showRequired = habit.isRequired, language
 }
 
 const styles = StyleSheet.create({
-  todoRow: { position: "relative", minHeight: 70, flexDirection: "row", alignItems: "flex-start", borderWidth: 1, borderRadius: 15, paddingVertical: 9, paddingLeft: 14, paddingRight: 4, marginBottom: 6, overflow: "hidden" },
+  todoRow: { position: "relative", minHeight: 66, flexDirection: "row", alignItems: "flex-start", borderWidth: 1, borderRadius: 14, paddingVertical: 7, paddingLeft: 12, paddingRight: 3, marginBottom: 5, overflow: "hidden" },
   habitRow: { position: "relative", minHeight: 98, flexDirection: "row", alignItems: "flex-start", borderWidth: 1, borderRadius: 15, paddingVertical: 9, paddingLeft: 14, paddingRight: 4, marginBottom: 6, overflow: "hidden" },
   rail: { position: "absolute", left: 0, top: 0, bottom: 0, width: 4 },
+  todoCheckTouchTarget: { width: 44, height: 44, alignItems: "center", justifyContent: "center", marginLeft: -8, marginTop: -5, marginRight: 2 },
   checkTouchTarget: { width: 44, height: 44, alignItems: "center", justifyContent: "center", marginLeft: -8, marginTop: -5, marginRight: 2 },
+  todoCheck: { width: 24, height: 24, borderRadius: 6, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
   check: { width: 28, height: 28, borderRadius: 6, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
-  copy: { flex: 1, minWidth: 0, overflow: "visible" }, title: { fontSize: 15, lineHeight: 21, fontWeight: "800" }, memo: { fontSize: 11, lineHeight: 16, marginTop: 2 }, subtaskProgress: { fontSize: 10, lineHeight: 15, fontWeight: "800" }, subtaskPreview: { marginTop: 4, gap: 2 }, subtaskPreviewRow: { minHeight: 22, flexDirection: "row", alignItems: "center", gap: 6 }, miniCheck: { width: 15, height: 15, borderRadius: 4, borderWidth: 1, alignItems: "center", justifyContent: "center" }, subtaskPreviewText: { flex: 1, fontSize: 11, lineHeight: 15, fontWeight: "600" }, subtaskPreviewDone: { textDecorationLine: "line-through" },
+  copy: { flex: 1, minWidth: 0, overflow: "visible" },
+  todoTitle: { fontSize: 14, lineHeight: 19, fontWeight: "800" },
+  title: { fontSize: 15, lineHeight: 21, fontWeight: "800" },
+  todoMemo: { fontSize: 10, lineHeight: 14, marginTop: 1 },
+  memo: { fontSize: 11, lineHeight: 16, marginTop: 2 },
+  todoSubtaskProgress: { fontSize: 10, lineHeight: 14, fontWeight: "800" },
+  subtaskProgress: { fontSize: 10, lineHeight: 15, fontWeight: "800" },
+  subtaskPreview: { marginTop: 2, gap: 1 },
+  subtaskPreviewRow: { minHeight: 19, flexDirection: "row", alignItems: "center", gap: 5 },
+  miniCheck: { width: 14, height: 14, borderRadius: 4, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  subtaskPreviewText: { flex: 1, fontSize: 10, lineHeight: 14, fontWeight: "600" },
+  subtaskPreviewDone: { textDecorationLine: "line-through" },
+  todoMeta: { width: "100%", minHeight: 19, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 5, marginTop: 2 },
   meta: { width: "100%", minHeight: 22, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6, marginTop: 4 },
-  due: { flexShrink: 1, fontSize: 11, lineHeight: 17, fontWeight: "800" }, overdue: { color: COLORS.error }, metaText: { width: "100%", fontSize: 11, lineHeight: 16, fontWeight: "700" },
-  weekRow: { flexDirection: "row", gap: 6, marginTop: 6 }, dayDot: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, alignItems: "center", justifyContent: "center" }, dayLetter: { fontSize: 9, fontWeight: "800" }, subtaskIndicator: { width: 28, height: 38, alignItems: "center", justifyContent: "center", marginLeft: 2 }, trailing: { width: 34, height: 38, alignItems: "center", justifyContent: "center", marginLeft: 2 },
+  todoDue: { flexShrink: 1, fontSize: 10, lineHeight: 15, fontWeight: "800" },
+  due: { flexShrink: 1, fontSize: 11, lineHeight: 17, fontWeight: "800" },
+  overdue: { color: COLORS.error },
+  metaText: { width: "100%", fontSize: 11, lineHeight: 16, fontWeight: "700" },
+  weekRow: { flexDirection: "row", gap: 6, marginTop: 6 },
+  dayDot: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  dayLetter: { fontSize: 9, fontWeight: "800" },
+  subtaskIndicator: { width: 28, height: 38, alignItems: "center", justifyContent: "center", marginLeft: 1 },
+  trailing: { width: 32, height: 34, alignItems: "center", justifyContent: "center", marginLeft: 1 },
 });
