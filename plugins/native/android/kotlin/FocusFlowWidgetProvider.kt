@@ -337,9 +337,8 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setViewVisibility(ids.badgeContainer, if (badge.isBlank()) View.GONE else View.VISIBLE)
     views.setTextViewText(ids.badge, fontText(badge, fontFamily))
     views.setTextColor(ids.badge, primary)
-    // Keep required/time labels inline and text-only so widget rows match app cards.
-    views.setViewVisibility(ids.badgeBackground, View.GONE)
-    views.setTextViewTextSize(ids.badge, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
+    views.setImageViewResource(ids.badgeBackground, widgetBadgeDrawable(context, theme, dark, rowOpacity))
+    views.setTextViewTextSize(ids.badge, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
     val unit = item.optString("progressUnit", "check")
     val timerRunning = item.optBoolean("timerRunning", false)
     val timerPaused = item.optBoolean("timerPaused", false)
