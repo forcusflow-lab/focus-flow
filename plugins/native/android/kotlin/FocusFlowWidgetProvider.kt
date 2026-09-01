@@ -331,13 +331,15 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val accentFallback = if (kind == "habit") primary else Color.parseColor("#3566B7")
     val accent = try { Color.parseColor(item.optString("accentColor")) } catch (_: Exception) { accentFallback }
     views.setInt(ids.rail, "setBackgroundColor", accent)
-    views.setTextViewText(ids.title, fontText(if (completed) struck(title) else title, fontFamily))
+    val hasSubtasks = kind == "todo" && item.optInt("subtaskCount", 0) > 0
+    val displayTitle = if (hasSubtasks) "↳ $title" else title
+    views.setTextViewText(ids.title, fontText(if (completed) struck(displayTitle) else displayTitle, fontFamily))
     views.setTextColor(ids.title, if (completed) mutedColor else titleColor)
     views.setTextViewTextSize(ids.title, android.util.TypedValue.COMPLEX_UNIT_DIP, 13f * scale)
     views.setViewVisibility(ids.badgeContainer, if (badge.isBlank()) View.GONE else View.VISIBLE)
     views.setTextViewText(ids.badge, fontText(badge, fontFamily))
     views.setTextColor(ids.badge, primary)
-    views.setImageViewResource(ids.badgeBackground, widgetBadgeDrawable(context, theme, dark, rowOpacity))
+    views.setViewVisibility(ids.badgeBackground, View.GONE)
     views.setTextViewTextSize(ids.badge, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
     val unit = item.optString("progressUnit", "check")
     val timerRunning = item.optBoolean("timerRunning", false)
