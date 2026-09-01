@@ -530,4 +530,4 @@
 - [x] 習慣カードのタップ操作を最小限検証後、現在の作業ブランチへcommit・pushする
 
 - [x] Todo・習慣・ホーム画面ウィジェットのカード表示と必須タグをUIのみ統一・コンパクト化する
-- [ ] 専用ブランチへcommit・Pushし、main向けPull Requestを作成する
+- [x] 専用ブランチへcommit・Pushし、main向けPull Requestを作成する
