@@ -1,6 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useLayoutEffect, useMemo, useState } from "react";
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { getAppLanguage, localized } from "@/lib/focus-flow/i18n";
@@ -29,9 +29,10 @@ type TaskFormProps = {
   defaultRequired?: boolean;
   onClose: () => void;
   onSave: (input: TaskInput) => { ok: boolean };
+  onDelete?: () => void;
 };
 
-export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSave }: TaskFormProps) {
+export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSave, onDelete }: TaskFormProps) {
   const { displaySettings, gateConfig } = useFocusFlow();
   const palette = useFocusPalette();
   const insets = useSafeAreaInsets();
@@ -81,6 +82,13 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
     safeHaptic("light");
     const result = onSave({ title: title.trim(), memo: memo.trim() || undefined, priority, dueDate: dueDate || undefined, isRequired, requiredWindowMode, requiredScheduleIds, subtasks });
     if (result.ok) onClose();
+  };
+
+  const requestDelete = () => {
+    if (!todo || !onDelete) return;
+    const confirm = () => { onDelete(); onClose(); };
+    if (Platform.OS === "web") confirm();
+    else Alert.alert(t("Todoを削除しますか？", "Delete this task?"), t(`「${todo.title}」は復元できません。`, `“${todo.title}” cannot be restored.`), [{ text: t("キャンセル", "Cancel"), style: "cancel" }, { text: t("削除", "Delete"), style: "destructive", onPress: confirm }]);
   };
 
   const selectDate = (value?: string) => {
@@ -138,7 +146,10 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
             <RequiredWindowSelector english={language === "en"} isRequired={isRequired && !dueAutoRequired} mode={requiredWindowMode} selectedIds={requiredScheduleIds} schedules={gateConfig.schedules} onChange={(mode, ids) => { setRequiredWindowMode(mode); setRequiredScheduleIds(ids); }} />
           </ScrollView>
           <View style={[styles.footer, { backgroundColor: palette.background, borderTopColor: palette.border, paddingBottom: Math.max(insets.bottom, 12) }]}>
-            <TouchableOpacity accessibilityRole="button" onPress={save} activeOpacity={0.8} style={[styles.saveButton, { backgroundColor: !title.trim() ? palette.elevated : palette.primary }]} disabled={!title.trim()}><Text style={[styles.saveText, { color: !title.trim() ? palette.muted : palette.isDark ? palette.background : COLORS.white }]}>{todo ? t("変更を保存", "Save changes") : t("Todoを作成", "Create task")}</Text></TouchableOpacity>
+            <View style={styles.footerActions}>
+              {todo && onDelete ? <TouchableOpacity accessibilityRole="button" onPress={requestDelete} activeOpacity={0.8} style={[styles.deleteButton, { backgroundColor: palette.elevated, borderColor: palette.border }]}><MaterialIcons name="delete-outline" size={18} color={COLORS.error} /><Text style={[styles.deleteText, { color: COLORS.error }]}>{t("削除", "Delete")}</Text></TouchableOpacity> : null}
+              <TouchableOpacity accessibilityRole="button" onPress={save} activeOpacity={0.8} style={[styles.saveButton, !todo && { flex: 1 }, { backgroundColor: !title.trim() ? palette.elevated : palette.primary }]} disabled={!title.trim()}><Text style={[styles.saveText, { color: !title.trim() ? palette.muted : palette.isDark ? palette.background : COLORS.white }]}>{todo ? t("変更を保存", "Save changes") : t("Todoを作成", "Create task")}</Text></TouchableOpacity>
+            </View>
           </View>
         </Pressable>
       </Pressable>
@@ -158,6 +169,7 @@ const styles = StyleSheet.create({
   scroll: { flexShrink: 1 },
   body: { paddingBottom: 16 },
   footer: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 10 },
+  footerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
   label: { fontSize: 12, fontWeight: "800", marginBottom: 6, marginTop: 2 },
   input: { minHeight: 48, borderRadius: 13, borderWidth: 1, fontSize: 16, paddingHorizontal: 13, marginBottom: 10 },
   quickSection: { marginBottom: 4 },
@@ -190,6 +202,8 @@ const styles = StyleSheet.create({
   requiredCopy: { flex: 1 },
   requiredTitle: { fontSize: 13, fontWeight: "800" },
   requiredDetail: { fontSize: 10, lineHeight: 15, marginTop: 1 },
-  saveButton: { minHeight: 50, alignItems: "center", justifyContent: "center", borderRadius: 15 },
+  deleteButton: { minHeight: 50, minWidth: 86, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4, borderRadius: 15, borderWidth: 1 },
+  deleteText: { fontSize: 13, fontWeight: "800" },
+  saveButton: { minHeight: 50, flex: 1, alignItems: "center", justifyContent: "center", borderRadius: 15 },
   saveText: { color: COLORS.white, fontSize: 15, fontWeight: "800" },
 });

@@ -335,20 +335,26 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setTextColor(ids.title, if (completed) mutedColor else titleColor)
     views.setTextViewTextSize(ids.title, android.util.TypedValue.COMPLEX_UNIT_DIP, 13f * scale)
     views.setViewVisibility(ids.badgeContainer, if (badge.isBlank()) View.GONE else View.VISIBLE)
+    views.setViewVisibility(ids.badgeBackground, View.GONE)
     views.setTextViewText(ids.badge, fontText(badge, fontFamily))
     views.setTextColor(ids.badge, primary)
-    views.setImageViewResource(ids.badgeBackground, widgetBadgeDrawable(context, theme, dark, rowOpacity))
-    views.setTextViewTextSize(ids.badge, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
+    views.setTextViewTextSize(ids.badge, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
     val unit = item.optString("progressUnit", "check")
     val timerRunning = item.optBoolean("timerRunning", false)
     val timerPaused = item.optBoolean("timerPaused", false)
     val timerElapsed = item.optInt("timerElapsedSeconds", 0).coerceAtLeast(0)
     val timerTarget = item.optInt("timerTargetSeconds", 0).coerceAtLeast(0)
     val timerClock = "${timerElapsed / 60}:${String.format(java.util.Locale.US, "%02d", timerElapsed % 60)} / ${timerTarget / 60}:${String.format(java.util.Locale.US, "%02d", timerTarget % 60)}"
+    val subtaskCount = item.optInt("subtaskCount", 0)
+    val completedSubtaskCount = item.optInt("completedSubtaskCount", 0)
+    val todoMeta = if (kind == "todo") listOfNotNull(if (item.optBoolean("hasMemo", false)) "▧" else null, item.optString("dueLabel").takeIf { it.isNotBlank() }, if (subtaskCount > 0) if (english) "Subtasks $completedSubtaskCount/$subtaskCount" else "サブタスク $completedSubtaskCount/$subtaskCount" else null).joinToString(" · ") else ""
+    val habitMeta = item.optString("habitMeta")
     val meta = when {
+      todoMeta.isNotBlank() -> todoMeta
       unit == "minutes" && timerRunning -> if (english) "Timing" else "計測中"
       unit == "minutes" && timerPaused -> if (english) "Paused $timerClock" else "一時停止 $timerClock"
       unit == "minutes" -> if (english) "Time goal $timerClock" else "時間目標 $timerClock"
+      habitMeta.isNotBlank() -> habitMeta
       kind == "habit" -> if (english) "Habit" else "習慣"
       else -> if (english) "Todo" else "Todo"
     }
