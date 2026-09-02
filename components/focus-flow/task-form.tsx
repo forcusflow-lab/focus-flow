@@ -52,6 +52,7 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
   const [memo, setMemo] = useState("");
   const [subtasks, setSubtasks] = useState<TodoSubtask[]>([]);
   const [subtaskDraft, setSubtaskDraft] = useState("");
+  const [editingSubtaskId, setEditingSubtaskId] = useState<string | undefined>();
   const [memoOpen, setMemoOpen] = useState(false);
   const [subtasksOpen, setSubtasksOpen] = useState(false);
   const dueAutoRequired = useMemo(() => Boolean(dueDate && dueDate <= dayKey()), [dueDate]);
@@ -70,6 +71,7 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
     setMemo(todo?.memo ?? "");
     setSubtasks(initialSubtasks);
     setSubtaskDraft("");
+    setEditingSubtaskId(undefined);
     setMemoOpen(Boolean(todo?.memo));
     setSubtasksOpen(initialSubtasks.length > 0);
   }, [defaultRequired, todo, visible]);
@@ -127,7 +129,7 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
               <MaterialIcons name={subtasksOpen ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={20} color={palette.muted} />
             </TouchableOpacity>
             {subtasksOpen ? <>
-              {subtasks.map((subtask) => <View key={subtask.id} style={[styles.subtaskRow, { backgroundColor: palette.surface, borderColor: palette.border }]}><TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: subtask.completed }} onPress={() => setSubtasks((items) => items.map((item) => item.id === subtask.id ? { ...item, completed: !item.completed } : item))} style={styles.subtaskCheck}><View style={[styles.subtaskBox, { borderColor: palette.border }, subtask.completed && { backgroundColor: palette.primary, borderColor: palette.primary }]}>{subtask.completed ? <MaterialIcons name="check" size={13} color={palette.isDark ? palette.background : COLORS.white} /> : null}</View></TouchableOpacity><Text style={[styles.subtaskText, { color: subtask.completed ? palette.muted : palette.text }, subtask.completed && styles.subtaskDone]} numberOfLines={2}>{subtask.title}</Text><TouchableOpacity accessibilityLabel={t("サブタスクを削除", "Delete subtask")} onPress={() => setSubtasks((items) => items.filter((item) => item.id !== subtask.id))} style={styles.subtaskDelete}><MaterialIcons name="close" size={17} color={palette.muted} /></TouchableOpacity></View>)}
+              {subtasks.map((subtask) => <View key={subtask.id} style={[styles.subtaskRow, { backgroundColor: palette.surface, borderColor: palette.border }]}><TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: subtask.completed }} onPress={() => setSubtasks((items) => items.map((item) => item.id === subtask.id ? { ...item, completed: !item.completed } : item))} style={styles.subtaskCheck}><View style={[styles.subtaskBox, { borderColor: palette.border }, subtask.completed && { backgroundColor: palette.primary, borderColor: palette.primary }]}>{subtask.completed ? <MaterialIcons name="check" size={13} color={palette.isDark ? palette.background : COLORS.white} /> : null}</View></TouchableOpacity>{editingSubtaskId === subtask.id ? <TextInput autoFocus value={subtask.title} onChangeText={(value) => setSubtasks((items) => items.map((item) => item.id === subtask.id ? { ...item, title: value } : item))} onBlur={() => setEditingSubtaskId(undefined)} style={[styles.subtaskTextInput, { backgroundColor: palette.background, borderColor: palette.border, color: palette.text }]} multiline /> : <TouchableOpacity accessibilityRole="button" onPress={() => setEditingSubtaskId(subtask.id)} style={styles.subtaskEditArea}><Text style={[styles.subtaskText, { color: subtask.completed ? palette.muted : palette.text }, subtask.completed && styles.subtaskDone]}>{subtask.title}</Text></TouchableOpacity>}<TouchableOpacity accessibilityLabel={t("サブタスクを削除", "Delete subtask")} onPress={() => setSubtasks((items) => items.filter((item) => item.id !== subtask.id))} style={styles.subtaskDelete}><MaterialIcons name="close" size={17} color={palette.muted} /></TouchableOpacity></View>)}
               <View style={styles.subtaskAddRow}><TextInput value={subtaskDraft} onChangeText={setSubtaskDraft} placeholder={t("サブタスクを追加", "Add a subtask")} placeholderTextColor={palette.muted} style={[styles.subtaskInput, { backgroundColor: palette.surface, borderColor: palette.border, color: palette.text }]} returnKeyType="done" onSubmitEditing={() => { const value = subtaskDraft.trim(); if (!value) return; setSubtasks((items) => [...items, { id: createId("subtask"), title: value, completed: false }]); setSubtaskDraft(""); }} /><TouchableOpacity accessibilityLabel={t("サブタスクを追加", "Add subtask")} onPress={() => { const value = subtaskDraft.trim(); if (!value) return; setSubtasks((items) => [...items, { id: createId("subtask"), title: value, completed: false }]); setSubtaskDraft(""); }} style={[styles.subtaskAddButton, { backgroundColor: palette.primary }]}><MaterialIcons name="add" size={20} color={palette.isDark ? palette.background : COLORS.white} /></TouchableOpacity></View>
             </> : null}
 
@@ -174,7 +176,9 @@ const styles = StyleSheet.create({
   subtaskRow: { minHeight: 40, flexDirection: "row", alignItems: "center", borderWidth: 1, borderRadius: 11, marginBottom: 5, paddingRight: 4 },
   subtaskCheck: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
   subtaskBox: { width: 19, height: 19, borderRadius: 5, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
-  subtaskText: { flex: 1, fontSize: 12, lineHeight: 17, fontWeight: "700" },
+  subtaskEditArea: { flex: 1, minWidth: 0, paddingVertical: 7 },
+  subtaskText: { fontSize: 12, lineHeight: 17, fontWeight: "700" },
+  subtaskTextInput: { flex: 1, minWidth: 0, minHeight: 38, borderWidth: 1, borderRadius: 8, fontSize: 12, lineHeight: 17, fontWeight: "700", paddingHorizontal: 8, paddingVertical: 6 },
   subtaskDone: { textDecorationLine: "line-through" },
   subtaskDelete: { width: 30, height: 34, alignItems: "center", justifyContent: "center" },
   subtaskAddRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 },
