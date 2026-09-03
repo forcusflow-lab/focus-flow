@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text as NativeText, TouchableOpacity, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 import { HabitProgressControl } from "@/components/focus-flow/habit-progress-control";
@@ -11,8 +11,8 @@ import { dayKey, dayKeyOffset, formatJapaneseDate, getTodoDueStatus, getTodoSubt
 type Translate = (ja: string, en: string) => string;
 
 function RequiredLabel({ label, color }: { label: string; color: string }) {
-  const displayLabel = label === "必" ? "必須" : label;
-  return <View style={[styles.requiredLabel, { backgroundColor: `${color}20` }]}><Text style={[styles.requiredLabelText, { color }]}>{displayLabel}</Text></View>;
+  const displayLabel = label === "Must-do" ? label : "必須";
+  return <View style={[styles.requiredLabel, displayLabel === "必須" ? styles.requiredLabelJapanese : styles.requiredLabelEnglish, { backgroundColor: `${color}20` }]}><NativeText allowFontScaling={false} numberOfLines={1} style={[styles.requiredLabelText, { color }]}>{displayLabel}</NativeText></View>;
 }
 
 export function TodoItemCard({ todo, showRequired = todo.isRequired, language, t, onOpen, onToggle, onToggleSubtask }: { todo: Todo; showRequired?: boolean; language: "ja" | "en"; t: Translate; onOpen: () => void; onToggle: () => void; onToggleSubtask?: (subtaskId: string) => void }) {
@@ -57,8 +57,10 @@ const styles = StyleSheet.create({
   habitTitleLine: { flexDirection: "row", alignItems: "center", gap: 3, paddingRight: 4 },
   expandButton: { width: 30, height: 32, alignItems: "center", justifyContent: "center", marginRight: -4 },
   detailSurface: { marginTop: 5, borderWidth: 1, borderRadius: 10, paddingHorizontal: 7, paddingVertical: 5 },
-  requiredLabel: { minWidth: 48, flexShrink: 0, alignItems: "center", borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, marginTop: 1, marginRight: 8 },
-  requiredLabelText: { fontSize: 10, lineHeight: 14, fontWeight: "900" },
+  requiredLabel: { height: 20, flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: 999, marginTop: 1, marginRight: 8 },
+  requiredLabelJapanese: { width: 44 },
+  requiredLabelEnglish: { minWidth: 62, paddingHorizontal: 7 },
+  requiredLabelText: { fontSize: 10, lineHeight: 14, fontWeight: "900", textAlign: "center", includeFontPadding: false },
   detailLabel: { fontSize: 9, lineHeight: 12, fontWeight: "800", marginBottom: 2 },
   todoTitleLine: { flexDirection: "row", alignItems: "flex-start", gap: 6, paddingRight: 4 },
   todoTitle: { flex: 1, minWidth: 0, flexShrink: 1, fontSize: 14, lineHeight: 19, fontWeight: "800" },
