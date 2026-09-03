@@ -46,6 +46,7 @@
         android:layout_width="wrap_content"
         android:layout_height="20dp"
         android:layout_marginStart="5dp"
+        android:minWidth="38dp"
         android:layout_marginTop="1dp"
         android:background="@drawable/focus_flow_widget_badge_mist_light_100"
         android:gravity="center"

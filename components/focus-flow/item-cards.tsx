@@ -11,7 +11,8 @@ import { dayKey, dayKeyOffset, formatJapaneseDate, getTodoDueStatus, getTodoSubt
 type Translate = (ja: string, en: string) => string;
 
 function RequiredLabel({ label, color }: { label: string; color: string }) {
-  return <View style={[styles.requiredLabel, { backgroundColor: `${color}20` }]}><Text style={[styles.requiredLabelText, { color }]}>{label}</Text></View>;
+  const displayLabel = label === "必" ? "必須" : label;
+  return <View style={[styles.requiredLabel, { backgroundColor: `${color}20` }]}><Text style={[styles.requiredLabelText, { color }]}>{displayLabel}</Text></View>;
 }
 
 export function TodoItemCard({ todo, showRequired = todo.isRequired, language, t, onOpen, onToggle, onToggleSubtask }: { todo: Todo; showRequired?: boolean; language: "ja" | "en"; t: Translate; onOpen: () => void; onToggle: () => void; onToggleSubtask?: (subtaskId: string) => void }) {
@@ -53,17 +54,17 @@ const styles = StyleSheet.create({
   check: { width: 28, height: 28, borderRadius: 6, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
   copy: { flex: 1, minWidth: 0, overflow: "visible" },
   habitSummary: { flex: 1, minWidth: 0 },
-  habitTitleLine: { flexDirection: "row", alignItems: "center", gap: 3 },
+  habitTitleLine: { flexDirection: "row", alignItems: "center", gap: 3, paddingRight: 4 },
   expandButton: { width: 30, height: 32, alignItems: "center", justifyContent: "center", marginRight: -4 },
   detailSurface: { marginTop: 5, borderWidth: 1, borderRadius: 10, paddingHorizontal: 7, paddingVertical: 5 },
-  requiredLabel: { flexShrink: 0, borderRadius: 999, paddingHorizontal: 6, paddingVertical: 2, marginTop: 1, marginRight: 6 },
+  requiredLabel: { minWidth: 38, flexShrink: 0, alignItems: "center", borderRadius: 999, paddingHorizontal: 6, paddingVertical: 2, marginTop: 1, marginRight: 6 },
   requiredLabelText: { fontSize: 10, lineHeight: 14, fontWeight: "900" },
   detailLabel: { fontSize: 9, lineHeight: 12, fontWeight: "800", marginBottom: 2 },
-  todoTitleLine: { flexDirection: "row", alignItems: "flex-start", gap: 6 },
+  todoTitleLine: { flexDirection: "row", alignItems: "flex-start", gap: 6, paddingRight: 4 },
   todoTitle: { flex: 1, minWidth: 0, flexShrink: 1, fontSize: 14, lineHeight: 19, fontWeight: "800" },
   title: { flex: 1, minWidth: 0, flexShrink: 1, fontSize: 15, lineHeight: 21, fontWeight: "800" },
   todoMemo: { fontSize: 10, lineHeight: 14, marginTop: 1 },
-  todoMetaLine: { minHeight: 18, flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 },
+  todoMetaLine: { minHeight: 18, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 5, marginTop: 3 },
   memo: { fontSize: 11, lineHeight: 16, marginTop: 2 },
   todoSubtaskProgress: { fontSize: 10, lineHeight: 14, fontWeight: "800" },
   subtaskProgress: { fontSize: 10, lineHeight: 15, fontWeight: "800" },
@@ -77,7 +78,7 @@ const styles = StyleSheet.create({
   subtaskPreviewDone: { textDecorationLine: "line-through" },
   todoMeta: { width: "100%", minHeight: 19, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 5, marginTop: 2 },
   meta: { width: "100%", minHeight: 22, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6, marginTop: 4 },
-  todoDue: { flexShrink: 1, fontSize: 10, lineHeight: 15, fontWeight: "800" },
+  todoDue: { flexShrink: 0, fontSize: 10, lineHeight: 15, fontWeight: "800" },
   due: { flexShrink: 1, fontSize: 11, lineHeight: 17, fontWeight: "800" },
   overdue: { color: COLORS.error },
   metaText: { width: "100%", fontSize: 11, lineHeight: 16, fontWeight: "700" },
