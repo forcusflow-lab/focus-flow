@@ -232,8 +232,8 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
       }, new Map<string, WidgetAction[]>());
       const todos: Todo[] = current.todos.map((todo): Todo => {
         const operation = byTarget.get(`todo:${todo.id}`)?.at(-1)?.operation;
-        if (operation === "restore" && todo.completed) return { ...todo, completed: false, completedAt: undefined, progressUnit: "check", targetValue: 1, progressValue: 0, subtasks: [], timerStartedAt: undefined, earlyCompletionAt: undefined };
-        if (operation === "complete" && !todo.completed) return { ...todo, completed: true, completedAt: new Date().toISOString(), progressUnit: "check", targetValue: 1, progressValue: 1, subtasks: [], timerStartedAt: undefined, earlyCompletionAt: undefined };
+        if (operation === "restore" && todo.completed) return { ...todo, completed: false, completedAt: undefined, progressUnit: "check", targetValue: 1, progressValue: 0, subtasks: getTodoSubtasks(todo), timerStartedAt: undefined, earlyCompletionAt: undefined };
+        if (operation === "complete" && !todo.completed) return { ...todo, completed: true, completedAt: new Date().toISOString(), progressUnit: "check", targetValue: 1, progressValue: 1, subtasks: getTodoSubtasks(todo), timerStartedAt: undefined, earlyCompletionAt: undefined };
         return todo;
       });
       const habits = current.habits.map((habit) => {

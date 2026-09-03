@@ -45,6 +45,15 @@ describe("Focus Flow v24 安定性・操作面・設定UI", () => {
     expect(provider).toContain("views.setOnClickPendingIntent(ids.increment");
   });
 
+  it("WidgetからTodoを完了・復元してもサブタスクを失わない", () => {
+    const provider = source("lib", "focus-flow", "provider.tsx");
+    expect(provider).toContain('operation === "restore" && todo.completed');
+    expect(provider).toContain('operation === "complete" && !todo.completed');
+    expect(provider).toContain("subtasks: getTodoSubtasks(todo)");
+    expect(provider).not.toContain('operation === "restore" && todo.completed) return { ...todo, completed: false, completedAt: undefined, progressUnit: "check", targetValue: 1, progressValue: 0, subtasks: []');
+    expect(provider).not.toContain('operation === "complete" && !todo.completed) return { ...todo, completed: true, completedAt: new Date().toISOString(), progressUnit: "check", targetValue: 1, progressValue: 1, subtasks: []');
+  });
+
   it("制限アプリ検索面は行と同じフラット境界で、コンパクトな文字倍率連動行を使う", () => {
     const settings = source("app", "(tabs)", "settings.tsx");
     expect(settings).toContain("appSelectionStyles.search");

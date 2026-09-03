@@ -36,11 +36,12 @@ describe("Todo subtasks, memo carryover, and add actions", () => {
     expect(notes).toContain('IconButton icon="add"');
   });
 
-  it("shows a subtle trailing hierarchy indicator only for Todo cards with subtasks", () => {
+  it("サブタスクを持つTodoだけに区切り線・進捗・独立した展開操作を表示する", () => {
     const cards = read("components", "focus-flow", "item-cards.tsx");
-    expect(cards).toContain('subtasks.length ? <View');
-    expect(cards).toContain('name="subdirectory-arrow-right"');
-    expect(cards).toContain('styles.subtaskIndicator');
-    expect(cards).toContain('subtaskIndicator: { width: 28, height: 38');
+    expect(cards).toContain("const [subtasksOpen, setSubtasksOpen] = useState(false)");
+    expect(cards).toContain("styles.subtaskDivider");
+    expect(cards).toContain("styles.subtaskSummary");
+    expect(cards).toContain("styles.subtaskExpandButton");
+    expect(cards).toContain("subtasksOpen && onToggleSubtask");
   });
 });

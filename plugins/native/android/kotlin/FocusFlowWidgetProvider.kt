@@ -152,9 +152,11 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
 
   private fun widgetBucket(width: Float, height: Float): WidgetBucket {
     return when {
-      width < 190f || height < 150f -> WidgetBucket(1, false, true)
-      height < 210f -> WidgetBucket(2, true, false)
-      height < 250f -> WidgetBucket(3, true, false)
+      // Header is 52dp. Each static row is 48dp with a 1dp separator, so
+      // a larger bucket must never claim rows that would be clipped.
+      width < 190f || height < 149f -> WidgetBucket(1, false, true)
+      height < 198f -> WidgetBucket(2, true, false)
+      height < 296f -> WidgetBucket(3, true, false)
       else -> WidgetBucket(5, true, false)
     }
   }

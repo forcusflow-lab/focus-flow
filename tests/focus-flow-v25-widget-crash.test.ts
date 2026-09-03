@@ -17,4 +17,12 @@ describe("Focus Flow v25 回数Habit Widget表示", () => {
       expect(layout).toContain(`focus_flow_widget_static_row_${row}_increment`);
     }
   });
+
+  it("Widget行数はヘッダー・行・区切りの実高さに合わせ、表示しきれない項目を描画しない", () => {
+    const provider = source("plugins", "native", "android", "kotlin", "FocusFlowWidgetProvider.kt");
+    expect(provider).toContain("height < 149f -> WidgetBucket(1, false, true)");
+    expect(provider).toContain("height < 198f -> WidgetBucket(2, true, false)");
+    expect(provider).toContain("height < 296f -> WidgetBucket(3, true, false)");
+    expect(provider).toContain("else -> WidgetBucket(5, true, false)");
+  });
 });
