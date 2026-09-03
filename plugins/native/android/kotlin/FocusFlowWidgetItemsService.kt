@@ -59,7 +59,8 @@ private class FocusFlowWidgetItemsFactory(private val context: Context, private 
     val badge = listOfNotNull(if (required) requiredLabel else null, windowLabel.ifBlank { null }).joinToString(" · ")
     views.setViewVisibility(R.id.focus_flow_widget_item_badge, if (badge.isNotBlank()) View.VISIBLE else View.GONE)
     views.setTextViewText(R.id.focus_flow_widget_item_badge, badge)
-    views.setTextColor(R.id.focus_flow_widget_item_badge, mutedColor)
+    views.setTextColor(R.id.focus_flow_widget_item_badge, primaryColor)
+    if (badge.isNotBlank()) views.setBackgroundResource(R.id.focus_flow_widget_item_badge, widgetBadgeDrawable(state.optString("widgetTheme", "mist"), dark, state.optInt("widgetCardOpacity", 100)))
     if (completed) {
       views.setInt(R.id.focus_flow_widget_item_check, "setBackgroundColor", primaryColor)
       views.setImageViewResource(R.id.focus_flow_widget_item_check, R.drawable.focus_flow_widget_check_mark)
@@ -84,4 +85,5 @@ private class FocusFlowWidgetItemsFactory(private val context: Context, private 
   override fun hasStableIds(): Boolean = true
   private fun struck(value: String): CharSequence = SpannableString(value).apply { setSpan(StrikethroughSpan(), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE); setSpan(StyleSpan(Typeface.BOLD), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
   private fun paletteColor(palette: JSONObject?, key: String, fallback: String): Int = try { Color.parseColor(palette?.optString(key, fallback) ?: fallback) } catch (_: Exception) { Color.parseColor(fallback) }
+  private fun widgetBadgeDrawable(theme: String, dark: Boolean, opacity: Int): Int { val appearance = if (dark) "dark" else "light"; val level = when { opacity < 13 -> 0; opacity < 38 -> 25; opacity < 63 -> 50; opacity < 88 -> 75; else -> 100 }; return context.resources.getIdentifier("focus_flow_widget_badge_${theme}_${appearance}_$level", "drawable", context.packageName).takeIf { it != 0 } ?: context.resources.getIdentifier("focus_flow_widget_badge_mist_${appearance}_$level", "drawable", context.packageName) }
 }

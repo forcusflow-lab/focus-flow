@@ -44,9 +44,14 @@
       <TextView
         android:id="@+id/focus_flow_widget_item_badge"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="20dp"
+        android:layout_marginStart="5dp"
         android:layout_marginTop="1dp"
+        android:background="@drawable/focus_flow_widget_badge_mist_light_100"
+        android:gravity="center"
         android:maxLines="1"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
         android:textSize="10sp"
         android:textStyle="bold" />
     </LinearLayout>

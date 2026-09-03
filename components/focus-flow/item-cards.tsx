@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   habitTitleLine: { flexDirection: "row", alignItems: "center", gap: 3 },
   expandButton: { width: 30, height: 32, alignItems: "center", justifyContent: "center", marginRight: -4 },
   detailSurface: { marginTop: 5, borderWidth: 1, borderRadius: 10, paddingHorizontal: 7, paddingVertical: 5 },
-  requiredLabel: { flexShrink: 0, borderRadius: 5, paddingHorizontal: 5, paddingVertical: 1, marginTop: 1 },
+  requiredLabel: { flexShrink: 0, borderRadius: 999, paddingHorizontal: 6, paddingVertical: 2, marginTop: 1, marginRight: 6 },
   requiredLabelText: { fontSize: 10, lineHeight: 14, fontWeight: "900" },
   detailLabel: { fontSize: 9, lineHeight: 12, fontWeight: "800", marginBottom: 2 },
   todoTitleLine: { flexDirection: "row", alignItems: "flex-start", gap: 6 },
