@@ -6,13 +6,17 @@ import { HabitProgressControl } from "@/components/focus-flow/habit-progress-con
 import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
 import { COLORS, useFocusPalette } from "@/components/focus-flow/ui";
 import type { Habit, Todo } from "@/lib/focus-flow/types";
-import { dayKey, dayKeyOffset, formatJapaneseDate, getTodoDueStatus, getTodoSubtasks, habitStreak, isHabitCompleteOn, isTodoAchieved, isTodoEffectiveRequired, shortWeekday, weeklyHabitProgress } from "@/lib/focus-flow/utils";
+import { dayKey, dayKeyOffset, formatJapaneseDate, getTodoDueStatus, getTodoSubtasks, habitProgressLabel, habitStreak, isHabitCompleteOn, isTodoAchieved, isTodoEffectiveRequired, shortWeekday, weeklyHabitProgress } from "@/lib/focus-flow/utils";
 
 type Translate = (ja: string, en: string) => string;
 
 function RequiredLabel({ label, color }: { label: string; color: string }) {
   const displayLabel = label === "Must-do" ? label : "必須";
-  return <View style={[styles.requiredLabel, displayLabel === "必須" ? styles.requiredLabelJapanese : styles.requiredLabelEnglish, { backgroundColor: `${color}20` }]}><NativeText allowFontScaling={false} numberOfLines={1} style={[styles.requiredLabelText, { color }]}>{displayLabel}</NativeText></View>;
+  return (
+    <View style={[styles.requiredLabel, displayLabel === "必須" ? styles.requiredLabelJapanese : styles.requiredLabelEnglish, { backgroundColor: `${color}20` }]}>
+      <NativeText allowFontScaling={false} numberOfLines={1} style={[styles.requiredLabelText, { color }]}>{displayLabel}</NativeText>
+    </View>
+  );
 }
 
 export function TodoItemCard({ todo, showRequired = todo.isRequired, language, t, onOpen, onToggle, onToggleSubtask }: { todo: Todo; showRequired?: boolean; language: "ja" | "en"; t: Translate; onOpen: () => void; onToggle: () => void; onToggleSubtask?: (subtaskId: string) => void }) {
@@ -21,26 +25,118 @@ export function TodoItemCard({ todo, showRequired = todo.isRequired, language, t
   const effectiveRequired = showRequired || isTodoEffectiveRequired(todo);
   const palette = useFocusPalette();
   const due = !todo.dueDate ? undefined : dueStatus === "overdue" ? t("期限切れ", "Overdue") : dueStatus === "today" ? t("今日まで", "Due today") : formatJapaneseDate(todo.dueDate, language);
-  const subtasks = getTodoSubtasks(todo); const completedSubtasks = subtasks.filter((subtask) => subtask.completed).length;
+  const subtasks = getTodoSubtasks(todo);
+  const completedSubtasks = subtasks.filter((subtask) => subtask.completed).length;
   const [subtasksOpen, setSubtasksOpen] = useState(false);
   const doneTitleStyle = achieved ? { color: palette.muted, textDecorationLine: "line-through" as const, textDecorationColor: palette.muted } : undefined;
-  return <View style={[styles.todoRow, { backgroundColor: achieved ? palette.elevated : palette.surface, borderColor: palette.border }]}>
-    <View style={[styles.rail, { backgroundColor: palette.primary }]} />
-    <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: achieved }} accessibilityLabel={achieved ? t(`「${todo.title}」を未完了に戻す`, `Reopen “${todo.title}”`) : t(`「${todo.title}」を完了にする`, `Mark “${todo.title}” complete`)} onPress={(event) => { event.stopPropagation(); onToggle(); }} style={styles.todoCheckTouchTarget}><View style={[styles.todoCheck, { borderColor: palette.border }, achieved && { backgroundColor: palette.primary, borderColor: palette.primary }]}>{achieved ? <MaterialIcons name="check" size={15} color={COLORS.white} /> : null}</View></TouchableOpacity>
-    <TouchableOpacity accessibilityRole="button" onPress={onOpen} activeOpacity={0.72} style={styles.copy}>
-      <View style={styles.todoTitleLine}><Text style={[styles.todoTitle, { color: palette.text }, doneTitleStyle]}>{todo.title}</Text>{effectiveRequired ? <RequiredLabel label={t("必須", "Must-do")} color={palette.primary} /> : null}</View>
-      {todo.memo || due ? <View style={styles.todoMetaLine}>{todo.memo ? <MaterialIcons accessibilityLabel={t("メモあり", "Has note")} name="sticky-note-2" size={14} color={palette.muted} /> : null}{due ? <Text style={[styles.todoDue, { color: palette.muted }, dueStatus === "overdue" && styles.overdue]}>{due}</Text> : null}</View> : null}
-      {subtasks.length ? <><View style={[styles.subtaskDivider, { backgroundColor: palette.border }]} /><View style={styles.subtaskSummary}><Text style={[styles.todoSubtaskProgress, { color: palette.primary }]}>{t(`サブタスク ${completedSubtasks}/${subtasks.length}`, `Subtasks ${completedSubtasks}/${subtasks.length}`)}</Text><TouchableOpacity accessibilityRole="button" accessibilityLabel={subtasksOpen ? t("サブタスクを閉じる", "Collapse subtasks") : t("サブタスクを展開する", "Expand subtasks")} hitSlop={8} onPress={(event) => { event.stopPropagation(); setSubtasksOpen((value) => !value); }} style={styles.subtaskExpandButton}><MaterialIcons name={subtasksOpen ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={18} color={palette.muted} /></TouchableOpacity></View>{subtasksOpen && onToggleSubtask ? <View style={styles.subtaskPreview}>{subtasks.map((subtask) => <TouchableOpacity key={subtask.id} accessibilityRole="checkbox" accessibilityState={{ checked: subtask.completed }} onPress={(event) => { event.stopPropagation(); onToggleSubtask(subtask.id); }} style={styles.subtaskPreviewRow}><View style={[styles.miniCheck, { borderColor: palette.border }, subtask.completed && { backgroundColor: palette.primary, borderColor: palette.primary }]}>{subtask.completed ? <MaterialIcons name="check" size={9} color={COLORS.white} /> : null}</View><Text style={[styles.subtaskPreviewText, { color: subtask.completed ? palette.muted : palette.text }, subtask.completed && styles.subtaskPreviewDone]}>{subtask.title}</Text></TouchableOpacity>)}</View> : null}</> : null}
-    </TouchableOpacity>
-  </View>;
+
+  return (
+    <View style={[styles.todoRow, { backgroundColor: achieved ? palette.elevated : palette.surface, borderColor: palette.border }]}>
+      <View style={[styles.rail, { backgroundColor: palette.primary }]} />
+      <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: achieved }} accessibilityLabel={achieved ? t(`「${todo.title}」を未完了に戻す`, `Reopen “${todo.title}”`) : t(`「${todo.title}」を完了にする`, `Mark “${todo.title}” complete`)} onPress={(event) => { event.stopPropagation(); onToggle(); }} style={styles.todoCheckTouchTarget}>
+        <View style={[styles.todoCheck, { borderColor: palette.border }, achieved && { backgroundColor: palette.primary, borderColor: palette.primary }]}>
+          {achieved ? <MaterialIcons name="check" size={15} color={COLORS.white} /> : null}
+        </View>
+      </TouchableOpacity>
+      <TouchableOpacity accessibilityRole="button" onPress={onOpen} activeOpacity={0.72} style={styles.copy}>
+        <View style={styles.todoTitleLine}>
+          <Text style={[styles.todoTitle, { color: palette.text }, doneTitleStyle]} numberOfLines={2}>{todo.title}</Text>
+          {effectiveRequired ? <RequiredLabel label={t("必須", "Must-do")} color={palette.primary} /> : null}
+        </View>
+        {todo.memo || due ? (
+          <View style={styles.todoMetaLine}>
+            {todo.memo ? <MaterialIcons accessibilityLabel={t("メモあり", "Has note")} name="sticky-note-2" size={14} color={palette.muted} /> : null}
+            {due ? <Text numberOfLines={1} style={[styles.todoDue, { color: palette.muted }, dueStatus === "overdue" && styles.overdue]}>{due}</Text> : null}
+          </View>
+        ) : null}
+        {subtasks.length ? (
+          <>
+            <View style={[styles.subtaskDivider, { backgroundColor: palette.border }]} />
+            <View style={styles.subtaskSummary}>
+              <Text style={[styles.todoSubtaskProgress, { color: palette.primary }]}>{t(`サブタスク ${completedSubtasks}/${subtasks.length}`, `Subtasks ${completedSubtasks}/${subtasks.length}`)}</Text>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={subtasksOpen ? t("サブタスクを閉じる", "Collapse subtasks") : t("サブタスクを展開する", "Expand subtasks")} hitSlop={8} onPress={(event) => { event.stopPropagation(); setSubtasksOpen((value) => !value); }} style={styles.subtaskExpandButton}>
+                <MaterialIcons name={subtasksOpen ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={18} color={palette.muted} />
+              </TouchableOpacity>
+            </View>
+            {subtasksOpen && onToggleSubtask ? (
+              <View style={styles.subtaskPreview}>
+                {subtasks.map((subtask) => (
+                  <TouchableOpacity key={subtask.id} accessibilityRole="checkbox" accessibilityState={{ checked: subtask.completed }} onPress={(event) => { event.stopPropagation(); onToggleSubtask(subtask.id); }} style={styles.subtaskPreviewRow}>
+                    <View style={[styles.miniCheck, { borderColor: palette.border }, subtask.completed && { backgroundColor: palette.primary, borderColor: palette.primary }]}>
+                      {subtask.completed ? <MaterialIcons name="check" size={9} color={COLORS.white} /> : null}
+                    </View>
+                    <Text style={[styles.subtaskPreviewText, { color: subtask.completed ? palette.muted : palette.text }, subtask.completed && styles.subtaskPreviewDone]}>{subtask.title}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : null}
+          </>
+        ) : null}
+      </TouchableOpacity>
+    </View>
+  );
 }
 
 export function HabitItemCard({ habit, showRequired = habit.isRequired, language, t, onOpen, onToggle, onStartTimer, onPauseTimer, onProgress }: { habit: Habit; showRequired?: boolean; language: "ja" | "en"; t: Translate; onOpen: () => void; onToggle: (date?: string) => void; onStartTimer: () => void; onPauseTimer: () => void; onProgress: (delta: number) => void }) {
-  const today = dayKey(); const done = isHabitCompleteOn(habit, today); const weekly = weeklyHabitProgress(habit); const week = useMemo(() => Array.from({ length: 7 }, (_, index) => dayKeyOffset(index - 6)), []);
+  const today = dayKey();
+  const done = isHabitCompleteOn(habit, today);
+  const weekly = weeklyHabitProgress(habit);
+  const week = useMemo(() => Array.from({ length: 7 }, (_, index) => dayKeyOffset(index - 6)), []);
   const palette = useFocusPalette();
   const [expanded, setExpanded] = useState(false);
   const doneTitleStyle = done ? { color: palette.muted, textDecorationLine: "line-through" as const, textDecorationColor: palette.muted } : undefined;
-  return <View style={[styles.habitRow, expanded && styles.habitRowExpanded, { backgroundColor: done ? palette.elevated : palette.surface, borderColor: palette.border }]}><View style={[styles.rail, { backgroundColor: habit.color }]} /><TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: done }} accessibilityLabel={t(`「${habit.title}」を今日の習慣として記録`, `Record “${habit.title}” for today`)} onPressIn={(event) => event.stopPropagation()} onPress={() => onToggle()} style={styles.checkTouchTarget}><View style={[styles.check, { borderColor: palette.border }, done && { backgroundColor: habit.color, borderColor: habit.color }]}>{done ? <MaterialIcons name="check" size={17} color={COLORS.white} /> : null}</View></TouchableOpacity><View style={styles.copy}><TouchableOpacity accessibilityRole="button" onPress={onOpen} style={styles.habitSummary}><View style={styles.habitTitleLine}><Text style={[styles.title, { color: palette.text }, doneTitleStyle]}>{habit.title}</Text>{showRequired ? <RequiredLabel label={t("必須", "Must-do")} color={palette.primary} /> : null}<TouchableOpacity accessibilityRole="button" accessibilityLabel={expanded ? t("習慣の詳細を閉じる", "Collapse habit details") : t("習慣の詳細を展開する", "Expand habit details")} hitSlop={8} onPress={(event) => { event.stopPropagation(); setExpanded((value) => !value); }} style={styles.expandButton}><MaterialIcons name={expanded ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={19} color={palette.muted} /></TouchableOpacity></View><View style={styles.meta}><Text style={[styles.metaText, { color: palette.muted }]}>{t(`週 ${weekly.completed}/${weekly.target}`, `${weekly.completed}/${weekly.target} this week`)} · {habitStreak(habit)}{t("日連続", "-day streak")}</Text></View></TouchableOpacity>{expanded ? <View style={[styles.detailSurface, { backgroundColor: palette.elevated, borderColor: palette.border }]}><Text style={[styles.detailLabel, { color: palette.muted }]}>{t("曜日", "Days")}</Text><View style={styles.weekRow}>{week.map((key) => { const marked = isHabitCompleteOn(habit, key); const current = key === today; return <TouchableOpacity key={key} accessibilityLabel={t(`${shortWeekday(key)}曜日を記録`, `Record ${shortWeekday(key, language)}`)} hitSlop={7} onPress={() => onToggle(key)} style={[styles.dayDot, { borderColor: palette.border }, current && { borderColor: habit.color }, marked && { backgroundColor: habit.color, borderColor: habit.color }]}>{marked ? <MaterialIcons name="check" size={10} color={COLORS.white} /> : <Text style={[styles.dayLetter, { color: palette.muted }, current && { color: habit.color }]}>{shortWeekday(key, language)}</Text>}</TouchableOpacity>})}</View><HabitProgressControl habit={habit} date={today} language={language} onAdjust={onProgress} onStartTimer={onStartTimer} onPauseTimer={onPauseTimer} /></View> : null}</View></View>;
+  const progressText = habitProgressLabel(habit, today, language);
+
+  return (
+    <View style={[styles.habitRow, expanded && styles.habitRowExpanded, { backgroundColor: done ? palette.elevated : palette.surface, borderColor: palette.border }]}>
+      <View style={[styles.rail, { backgroundColor: habit.color }]} />
+      <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: done }} accessibilityLabel={t(`「${habit.title}」を今日の習慣として記録`, `Record “${habit.title}” for today`)} onPressIn={(event) => event.stopPropagation()} onPress={() => onToggle()} style={styles.checkTouchTarget}>
+        <View style={[styles.check, { borderColor: palette.border }, done && { backgroundColor: habit.color, borderColor: habit.color }]}>
+          {done ? <MaterialIcons name="check" size={15} color={COLORS.white} /> : null}
+        </View>
+      </TouchableOpacity>
+      <View style={styles.copy}>
+        <TouchableOpacity accessibilityRole="button" onPress={onOpen} style={styles.habitSummary}>
+          <View style={styles.habitTitleLine}>
+            <Text style={[styles.title, { color: palette.text }, doneTitleStyle]} numberOfLines={1}>{habit.title}</Text>
+            {showRequired ? <RequiredLabel label={t("必須", "Must-do")} color={palette.primary} /> : null}
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={expanded ? t("習慣の詳細を閉じる", "Collapse habit details") : t("習慣の詳細を展開する", "Expand habit details")} hitSlop={8} onPress={(event) => { event.stopPropagation(); setExpanded((value) => !value); }} style={styles.expandButton}>
+              <MaterialIcons name={expanded ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={19} color={palette.muted} />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.meta}>
+            {progressText ? (
+              <View style={[styles.habitProgressPill, { backgroundColor: `${habit.color}1A` }]}>
+                <MaterialIcons name="flag" size={10} color={habit.color} />
+                <Text style={[styles.habitProgressPillText, { color: habit.color }]}>{t(`今日 ${progressText}`, `Today ${progressText}`)}</Text>
+              </View>
+            ) : null}
+            <Text style={[styles.metaText, { color: palette.muted }]}>
+              {t(`週 ${weekly.completed}/${weekly.target}`, `${weekly.completed}/${weekly.target} this week`)} · {habitStreak(habit)}{t("日連続", "-day streak")}
+            </Text>
+          </View>
+        </TouchableOpacity>
+        {expanded ? (
+          <View style={styles.detailSurface}>
+            <View style={[styles.subtaskDivider, { backgroundColor: palette.border }]} />
+            <Text style={[styles.detailLabel, { color: palette.muted }]}>{t("曜日", "Days")}</Text>
+            <View style={styles.weekRow}>
+              {week.map((key) => {
+                const marked = isHabitCompleteOn(habit, key);
+                const current = key === today;
+                return (
+                  <TouchableOpacity key={key} accessibilityLabel={t(`${shortWeekday(key)}曜日を記録`, `Record ${shortWeekday(key, language)}`)} hitSlop={7} onPress={() => onToggle(key)} style={[styles.dayDot, { borderColor: palette.border }, current && { borderColor: habit.color }, marked && { backgroundColor: habit.color, borderColor: habit.color }]}>
+                    {marked ? <MaterialIcons name="check" size={10} color={COLORS.white} /> : <Text style={[styles.dayLetter, { color: palette.muted }, current && { color: habit.color }]}>{shortWeekday(key, language)}</Text>}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <HabitProgressControl habit={habit} date={today} language={language} onAdjust={onProgress} onStartTimer={onStartTimer} onPauseTimer={onPauseTimer} />
+          </View>
+        ) : null}
+      </View>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -51,26 +147,26 @@ const styles = StyleSheet.create({
   todoCheckTouchTarget: { width: 44, height: 44, alignItems: "center", justifyContent: "center", marginLeft: -8, marginTop: -5, marginRight: 2 },
   checkTouchTarget: { width: 44, height: 44, alignItems: "center", justifyContent: "center", marginLeft: -8, marginTop: -5, marginRight: 2 },
   todoCheck: { width: 24, height: 24, borderRadius: 6, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
-  check: { width: 28, height: 28, borderRadius: 6, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
+  check: { width: 24, height: 24, borderRadius: 6, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
   copy: { flex: 1, minWidth: 0, overflow: "visible" },
   habitSummary: { flex: 1, minWidth: 0 },
   habitTitleLine: { flexDirection: "row", alignItems: "center", gap: 3, paddingRight: 4 },
   expandButton: { width: 30, height: 32, alignItems: "center", justifyContent: "center", marginRight: -4 },
-  detailSurface: { marginTop: 5, borderWidth: 1, borderRadius: 10, paddingHorizontal: 7, paddingVertical: 5 },
+  detailSurface: { marginTop: 1, paddingVertical: 1 },
   requiredLabel: { height: 20, flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: 999, marginTop: 1, marginRight: 8 },
   requiredLabelJapanese: { width: 44 },
   requiredLabelEnglish: { minWidth: 62, paddingHorizontal: 7 },
   requiredLabelText: { fontSize: 10, lineHeight: 14, fontWeight: "900", textAlign: "center", includeFontPadding: false },
-  detailLabel: { fontSize: 9, lineHeight: 12, fontWeight: "800", marginBottom: 2 },
+  detailLabel: { fontSize: 9, lineHeight: 12, fontWeight: "800", marginBottom: 3 },
   todoTitleLine: { flexDirection: "row", alignItems: "flex-start", gap: 6, paddingRight: 4 },
   todoTitle: { flex: 1, minWidth: 0, flexShrink: 1, fontSize: 14, lineHeight: 19, fontWeight: "800" },
-  title: { flex: 1, minWidth: 0, flexShrink: 1, fontSize: 15, lineHeight: 21, fontWeight: "800" },
+  title: { flex: 1, minWidth: 0, flexShrink: 1, fontSize: 14, lineHeight: 19, fontWeight: "800" },
   todoMemo: { fontSize: 10, lineHeight: 14, marginTop: 1 },
   todoMetaLine: { minHeight: 18, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 5, marginTop: 3 },
-  memo: { fontSize: 11, lineHeight: 16, marginTop: 2 },
+  memo: { fontSize: 10, lineHeight: 14, marginTop: 1 },
   todoSubtaskProgress: { fontSize: 10, lineHeight: 14, fontWeight: "800" },
-  subtaskProgress: { fontSize: 10, lineHeight: 15, fontWeight: "800" },
-  subtaskDivider: { height: 1, marginTop: 6, marginBottom: 3 },
+  subtaskProgress: { fontSize: 10, lineHeight: 14, fontWeight: "800" },
+  subtaskDivider: { height: StyleSheet.hairlineWidth, marginTop: 6, marginBottom: 3 },
   subtaskSummary: { minHeight: 28, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   subtaskExpandButton: { width: 32, height: 28, alignItems: "center", justifyContent: "center", marginRight: -4 },
   subtaskPreview: { marginTop: 1, marginLeft: 4, paddingLeft: 7, borderLeftWidth: 1, gap: 1 },
@@ -79,12 +175,14 @@ const styles = StyleSheet.create({
   subtaskPreviewText: { flex: 1, minWidth: 0, fontSize: 10, lineHeight: 14, fontWeight: "600", paddingVertical: 3 },
   subtaskPreviewDone: { textDecorationLine: "line-through" },
   todoMeta: { width: "100%", minHeight: 19, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 5, marginTop: 2 },
-  meta: { width: "100%", minHeight: 22, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6, marginTop: 4 },
+  meta: { width: "100%", minHeight: 19, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 5, marginTop: 2 },
+  habitProgressPill: { flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  habitProgressPillText: { fontSize: 10, lineHeight: 14, fontWeight: "800" },
   todoDue: { minWidth: 44, flexShrink: 0, fontSize: 10, lineHeight: 15, fontWeight: "800" },
-  due: { flexShrink: 1, fontSize: 11, lineHeight: 17, fontWeight: "800" },
+  due: { flexShrink: 1, fontSize: 10, lineHeight: 15, fontWeight: "800" },
   overdue: { color: COLORS.error },
-  metaText: { width: "100%", fontSize: 11, lineHeight: 16, fontWeight: "700" },
-  weekRow: { flexDirection: "row", gap: 6, marginTop: 6 },
+  metaText: { fontSize: 10, lineHeight: 15, fontWeight: "700" },
+  weekRow: { flexDirection: "row", gap: 6, marginBottom: 4 },
   dayDot: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   dayLetter: { fontSize: 9, fontWeight: "800" },
   trailing: { width: 32, height: 34, alignItems: "center", justifyContent: "center", marginLeft: 1 },
