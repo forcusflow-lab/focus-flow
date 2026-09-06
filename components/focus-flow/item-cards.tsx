@@ -112,7 +112,10 @@ export function HabitItemCard({ habit, showRequired = habit.isRequired, language
               </View>
             ) : null}
             <Text style={[styles.metaText, { color: palette.muted }]}>
-              {t(`週 ${weekly.completed}/${weekly.target}`, `${weekly.completed}/${weekly.target} this week`)} · {habitStreak(habit)}{t("日連続", "-day streak")}
+              {t(`週 ${weekly.completed}/${weekly.target}`, `${weekly.completed}/${weekly.target} this week`)}
+            </Text>
+            <Text style={[styles.metaText, { color: palette.muted }]}>
+              · {habitStreak(habit)}{t("日連続", "-day streak")}
             </Text>
           </View>
         </TouchableOpacity>
@@ -141,7 +144,7 @@ export function HabitItemCard({ habit, showRequired = habit.isRequired, language
 
 const styles = StyleSheet.create({
   todoRow: { position: "relative", minHeight: 66, flexDirection: "row", alignItems: "flex-start", borderWidth: 1, borderRadius: 14, paddingVertical: 7, paddingLeft: 12, paddingRight: 3, marginBottom: 5, overflow: "hidden" },
-  habitRow: { position: "relative", minHeight: 66, flexDirection: "row", alignItems: "flex-start", borderWidth: 1, borderRadius: 14, paddingVertical: 7, paddingLeft: 12, paddingRight: 3, marginBottom: 5, overflow: "hidden" },
+  habitRow: { position: "relative", minHeight: 66, flexDirection: "row", alignItems: "flex-start", borderWidth: 1, borderRadius: 14, paddingVertical: 7, paddingLeft: 12, paddingRight: 6, marginBottom: 5, overflow: "hidden" },
   habitRowExpanded: { minHeight: 98 },
   rail: { position: "absolute", left: 0, top: 0, bottom: 0, width: 4 },
   todoCheckTouchTarget: { width: 44, height: 44, alignItems: "center", justifyContent: "center", marginLeft: -8, marginTop: -5, marginRight: 2 },
@@ -181,7 +184,7 @@ const styles = StyleSheet.create({
   todoDue: { minWidth: 44, flexShrink: 0, fontSize: 10, lineHeight: 15, fontWeight: "800" },
   due: { flexShrink: 1, fontSize: 10, lineHeight: 15, fontWeight: "800" },
   overdue: { color: COLORS.error },
-  metaText: { flexShrink: 1, fontSize: 9.5, lineHeight: 14, fontWeight: "700" },
+  metaText: { fontSize: 9.5, lineHeight: 14, fontWeight: "700" },
   weekRow: { flexDirection: "row", gap: 6, marginBottom: 4 },
   dayDot: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   dayLetter: { fontSize: 9, fontWeight: "800" },
