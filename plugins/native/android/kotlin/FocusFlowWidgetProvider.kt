@@ -282,12 +282,19 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
     views.setViewVisibility(R.id.focus_flow_widget_empty, if (rows.isEmpty()) View.VISIBLE else View.GONE)
     if (rows.isEmpty()) views.setTextViewText(R.id.focus_flow_widget_empty, fontText(if (english) "Open Focus Flow to add today’s items" else "今日の項目はありません", state.optString("fontFamily", "system")))
+    val border = paletteColor(palette, "border", if (dark) "#2A4038" else "#DCE5E0")
     val dividers = listOf(R.id.focus_flow_widget_static_divider_one, R.id.focus_flow_widget_static_divider_two, R.id.focus_flow_widget_static_divider_three, R.id.focus_flow_widget_static_divider_four)
     for (index in 0..4) {
       val ids = staticRowIds(index)
       val item = rows.getOrNull(index)
       views.setViewVisibility(ids.row, if (item == null) View.GONE else View.VISIBLE)
-      if (index < dividers.size) views.setViewVisibility(dividers[index], if (index < rows.size - 1) View.VISIBLE else View.GONE)
+      if (index < dividers.size) {
+        val showDivider = index < rows.size - 1
+        views.setViewVisibility(dividers[index], if (showDivider) View.VISIBLE else View.GONE)
+        if (showDivider) {
+          views.setInt(dividers[index], "setBackgroundColor", colorWithOpacity(border, rowOpacity))
+        }
+      }
       if (item != null) bindStaticRow(context, views, ids, item, widgetId, english, state.optString("fontFamily", "system"), titleColor, mutedColor, primary, primarySoft, elevated, onPrimary, surface, rowOpacity, scale, bucket.showControls, dark, theme) else clearStaticRow(views, ids)
     }
   }
@@ -347,13 +354,19 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val timerPaused = item.optBoolean("timerPaused", false)
     val timerElapsed = item.optInt("timerElapsedSeconds", 0).coerceAtLeast(0)
     val timerTarget = item.optInt("timerTargetSeconds", 0).coerceAtLeast(0)
-    val timerClock = "${timerElapsed / 60}:${String.format(java.util.Locale.US, "%02d", timerElapsed % 60)} / ${timerTarget / 60}:${String.format(java.util.Locale.US, "%02d", timerTarget % 60)}"
+    val timerClock = "${String.format(java.util.Locale.US, "%02d:%02d", timerElapsed / 60, timerElapsed % 60)} / ${String.format(java.util.Locale.US, "%02d:%02d", timerTarget / 60, timerTarget % 60)}"
     val subtaskCount = item.optInt("subtaskCount", 0)
     val completedSubtaskCount = item.optInt("completedSubtaskCount", 0)
-    val todoMeta = if (kind == "todo") listOfNotNull(if (item.optBoolean("hasMemo", false)) "▧" else null, item.optString("dueLabel").takeIf { it.isNotBlank() }, if (subtaskCount > 0) if (english) "Subtasks $completedSubtaskCount/$subtaskCount" else "サブタスク $completedSubtaskCount/$subtaskCount" else null).joinToString(" · ") else ""
+    val memoNote = if (item.optBoolean("hasMemo", false)) "📝" else null
+    val todoMeta = if (kind == "todo") listOfNotNull(memoNote, item.optString("dueLabel").takeIf { it.isNotBlank() }, if (subtaskCount > 0) if (english) "Subtasks $completedSubtaskCount/$subtaskCount" else "サブタスク $completedSubtaskCount/$subtaskCount" else null).joinToString(" · ") else ""
     val habitMeta = item.optString("habitMeta")
+    val countValue = item.optInt("progressValue", 0)
+    val countTarget = item.optInt("targetValue", 1).coerceAtLeast(1)
+    val countLabel = if (english) "Today $countValue/$countTarget" else "今日 $countValue/${countTarget}回"
+    val habitCountMeta = if (kind == "habit" && unit == "count") listOfNotNull("⚑ $countLabel", habitMeta.takeIf { it.isNotBlank() }).joinToString(" · ") else ""
     val meta = when {
       todoMeta.isNotBlank() -> todoMeta
+      habitCountMeta.isNotBlank() -> habitCountMeta
       unit == "minutes" && timerRunning -> if (english) "Timing" else "計測中"
       unit == "minutes" && timerPaused -> if (english) "Paused $timerClock" else "一時停止 $timerClock"
       unit == "minutes" -> if (english) "Time goal $timerClock" else "時間目標 $timerClock"
@@ -371,16 +384,16 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       val startedAtMillis = item.optLong("timerStartedAtMillis", 0L)
       val elapsedAtRender = if (startedAtMillis > 0L) (timerElapsed + ((System.currentTimeMillis() - startedAtMillis).coerceAtLeast(0L) / 1_000L).toInt()).coerceAtLeast(0) else timerElapsed
       val baseElapsedRealtime = android.os.SystemClock.elapsedRealtime() - elapsedAtRender.toLong() * 1_000L
-      val targetClock = "${timerTarget / 60}:${String.format(java.util.Locale.US, "%02d", timerTarget % 60)}"
+      val targetClock = "${String.format(java.util.Locale.US, "%02d", timerTarget / 60)}:${String.format(java.util.Locale.US, "%02d", timerTarget % 60)}"
       views.setTextColor(ids.chronometer, mutedColor)
       views.setTextViewTextSize(ids.chronometer, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
       views.setChronometer(ids.chronometer, baseElapsedRealtime, "%s / $targetClock", true)
     }
     if (completed) {
-      views.setInt(ids.check, "setBackgroundResource", R.drawable.focus_flow_widget_check_circle_done)
+      views.setInt(ids.check, "setBackgroundResource", R.drawable.focus_flow_widget_checkbox_done)
       views.setImageViewResource(ids.check, R.drawable.focus_flow_widget_check_mark)
     } else {
-      views.setInt(ids.check, "setBackgroundResource", R.drawable.focus_flow_widget_check_circle)
+      views.setInt(ids.check, "setBackgroundResource", R.drawable.focus_flow_widget_checkbox)
       views.setImageViewResource(ids.check, R.drawable.focus_flow_widget_check_empty)
     }
     val itemId = item.optString("id")
