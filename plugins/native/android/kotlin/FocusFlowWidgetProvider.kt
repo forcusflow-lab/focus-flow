@@ -126,19 +126,32 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   private data class WidgetBucket(val maxRows: Int, val showControls: Boolean, val compactHeader: Boolean)
 
   private fun widgetBucket(context: Context, manager: AppWidgetManager, id: Int, updatedOptions: android.os.Bundle? = null): WidgetBucket {
-    if (updatedOptions == null) rememberedWidgetBucket(context, id)?.let { return it }
-    // Pre-Android 12 hosts offer only min/max bounds. Persist the callback
-    // bucket so refreshAll after app-state synchronization never discards the
-    // size that the launcher has just reported.
     val options = updatedOptions ?: manager.getAppWidgetOptions(id)
-    val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 180))
-    val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 110))
-    return widgetBucket(width.toFloat(), height.toFloat())
+    val width = maxOf(
+      options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0),
+      options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0)
+    ).takeIf { it > 0 } ?: 320
+    val height = maxOf(
+      options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0),
+      options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
+    ).takeIf { it > 0 } ?: 300
+    val calculated = widgetBucket(width.toFloat(), height.toFloat())
+    if (updatedOptions == null) {
+      val remembered = rememberedWidgetBucket(context, id)
+      if (remembered != null && remembered.maxRows >= calculated.maxRows) return remembered
+    }
+    return calculated
   }
 
   private fun rememberWidgetBucket(context: Context, id: Int, options: android.os.Bundle) {
-    val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 180))
-    val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 110))
+    val width = maxOf(
+      options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0),
+      options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0)
+    ).takeIf { it > 0 } ?: 320
+    val height = maxOf(
+      options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0),
+      options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
+    ).takeIf { it > 0 } ?: 300
     context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE).edit().putInt("$WIDGET_SIZE_PREFIX$id", widgetBucket(width.toFloat(), height.toFloat()).maxRows).apply()
   }
 
@@ -154,7 +167,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     return when {
       // Header is 52dp. Each static row is 48dp with a 1dp separator, so
       // a larger bucket must never claim rows that would be clipped.
-      width < 190f || height < 149f -> WidgetBucket(1, false, true)
+      height < 149f -> WidgetBucket(1, false, true)
       height < 198f -> WidgetBucket(2, true, false)
       height < 296f -> WidgetBucket(3, true, false)
       else -> WidgetBucket(5, true, false)
