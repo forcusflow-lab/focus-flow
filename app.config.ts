@@ -63,6 +63,7 @@ const config: ExpoConfig = {
     },
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
+    softwareKeyboardLayoutMode: "resize",
     package: env.androidPackage,
     // Google Playでは同一パッケージ内でバージョンコードを重複登録できない。
     // 本人専用APKは別パッケージなので、通常版の内部テスト版と競合しない。

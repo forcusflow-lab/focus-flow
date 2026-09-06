@@ -1,4 +1,5 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import React, { useCallback, useRef } from "react";
 import { useLayoutEffect, useMemo, useState } from "react";
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -32,17 +33,62 @@ type TaskFormProps = {
   onDelete?: () => void;
 };
 
+const SubtaskRowItem = React.memo(function SubtaskRowItem({
+  subtask,
+  palette,
+  isEditing,
+  onToggle,
+  onStartEdit,
+  onChangeText,
+  onEndEdit,
+  onDelete,
+  t,
+}: {
+  subtask: TodoSubtask;
+  palette: ReturnType<typeof useFocusPalette>;
+  isEditing: boolean;
+  onToggle: (id: string) => void;
+  onStartEdit: (id: string) => void;
+  onChangeText: (id: string, text: string) => void;
+  onEndEdit: () => void;
+  onDelete: (id: string) => void;
+  t: (ja: string, en: string) => string;
+}) {
+  return (
+    <View style={[styles.subtaskRow, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+      <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: subtask.completed }} onPress={() => onToggle(subtask.id)} style={styles.subtaskCheck}>
+        <View style={[styles.subtaskBox, { borderColor: palette.border }, subtask.completed && { backgroundColor: palette.primary, borderColor: palette.primary }]}>
+          {subtask.completed ? <MaterialIcons name="check" size={13} color={palette.isDark ? palette.background : COLORS.white} /> : null}
+        </View>
+      </TouchableOpacity>
+      {isEditing ? (
+        <TextInput autoFocus value={subtask.title} onChangeText={(value) => onChangeText(subtask.id, value)} onBlur={onEndEdit} style={[styles.subtaskTextInput, { backgroundColor: palette.background, borderColor: palette.border, color: palette.text }]} multiline />
+      ) : (
+        <TouchableOpacity accessibilityRole="button" onPress={() => onStartEdit(subtask.id)} style={styles.subtaskEditArea}>
+          <Text style={[styles.subtaskText, { color: subtask.completed ? palette.muted : palette.text }, subtask.completed && styles.subtaskDone]}>{subtask.title}</Text>
+        </TouchableOpacity>
+      )}
+      <TouchableOpacity accessibilityLabel={t("サブタスクを削除", "Delete subtask")} onPress={() => onDelete(subtask.id)} style={styles.subtaskDelete}>
+        <MaterialIcons name="close" size={17} color={palette.muted} />
+      </TouchableOpacity>
+    </View>
+  );
+});
+
 export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSave, onDelete }: TaskFormProps) {
   const { displaySettings, gateConfig } = useFocusFlow();
   const palette = useFocusPalette();
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
+  const isSubmitting = useRef(false);
+  const [isSaving, setIsSaving] = useState(false);
   const language = getAppLanguage(displaySettings);
   const t = (ja: string, en: string) => localized(language, ja, en);
-  const priorities: { key: Priority; label: string; color: string }[] = [
+  const priorities: { key: Priority; label: string; color: string }[] = useMemo(() => [
     { key: "high", label: t("高", "High"), color: COLORS.error },
     { key: "medium", label: t("中", "Medium"), color: COLORS.warning },
     { key: "low", label: t("低", "Low"), color: COLORS.blue },
-  ];
+  ], [language]);
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<Priority>("medium");
   const [dueDate, setDueDate] = useState("");
@@ -62,6 +108,8 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
 
   useLayoutEffect(() => {
     if (!visible) return;
+    isSubmitting.current = false;
+    setIsSaving(false);
     const initialSubtasks = todo ? getTodoSubtasks(todo) : [];
     setTitle(todo?.title ?? "");
     setPriority(todo?.priority ?? "medium");
@@ -77,16 +125,58 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
     setSubtasksOpen(initialSubtasks.length > 0);
   }, [defaultRequired, todo, visible]);
 
+  const handleToggleSubtask = useCallback((id: string) => {
+    setSubtasks((items) => items.map((item) => item.id === id ? { ...item, completed: !item.completed } : item));
+  }, []);
+
+  const handleStartEditSubtask = useCallback((id: string) => {
+    setEditingSubtaskId(id);
+  }, []);
+
+  const handleChangeSubtaskText = useCallback((id: string, value: string) => {
+    setSubtasks((items) => items.map((item) => item.id === id ? { ...item, title: value } : item));
+  }, []);
+
+  const handleEndEditSubtask = useCallback(() => {
+    setEditingSubtaskId(undefined);
+  }, []);
+
+  const handleDeleteSubtask = useCallback((id: string) => {
+    setSubtasks((items) => items.filter((item) => item.id !== id));
+  }, []);
+
   const save = () => {
-    if (!title.trim()) return;
+    if (isSubmitting.current || !title.trim()) return;
+    isSubmitting.current = true;
+    setIsSaving(true);
     safeHaptic("light");
-    const result = onSave({ title: title.trim(), memo: memo.trim() || undefined, priority, dueDate: dueDate || undefined, isRequired, requiredWindowMode, requiredScheduleIds, subtasks });
-    if (result.ok) onClose();
+    try {
+      const result = onSave({ title: title.trim(), memo: memo.trim() || undefined, priority, dueDate: dueDate || undefined, isRequired, requiredWindowMode, requiredScheduleIds, subtasks });
+      if (result.ok) {
+        onClose();
+      } else {
+        isSubmitting.current = false;
+        setIsSaving(false);
+      }
+    } catch {
+      isSubmitting.current = false;
+      setIsSaving(false);
+    }
   };
 
   const requestDelete = () => {
-    if (!todo || !onDelete) return;
-    const confirm = () => { onDelete(); onClose(); };
+    if (!todo || !onDelete || isSubmitting.current) return;
+    const confirm = () => {
+      isSubmitting.current = true;
+      setIsSaving(true);
+      try {
+        onDelete();
+        onClose();
+      } finally {
+        isSubmitting.current = false;
+        setIsSaving(false);
+      }
+    };
     if (Platform.OS === "web") confirm();
     else Alert.alert(t("Todoを削除しますか？", "Delete this task?"), t(`「${todo.title}」は復元できません。`, `“${todo.title}” cannot be restored.`), [{ text: t("キャンセル", "Cancel"), style: "cancel" }, { text: t("削除", "Delete"), style: "destructive", onPress: confirm }]);
   };
@@ -97,7 +187,7 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
   };
 
   return <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboardAvoider}>
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboardAvoider}>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={[styles.sheet, { backgroundColor: palette.background }]} onPress={() => undefined}>
           <View style={[styles.handle, { backgroundColor: palette.primarySoft }]} />
@@ -107,7 +197,18 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
               <MaterialIcons name="close" size={21} color={palette.muted} />
             </TouchableOpacity>
           </View>
-          <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.body}>
+          <ScrollView
+            ref={scrollRef}
+            style={styles.scroll}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            automaticallyAdjustKeyboardInsets={true}
+            removeClippedSubviews={Platform.OS === "android"}
+            nestedScrollEnabled={true}
+            scrollEventThrottle={16}
+            contentContainerStyle={styles.body}
+          >
             <Text style={[styles.label, { color: palette.text }]}>{t("内容", "Task")}</Text>
             <TextInput value={title} onChangeText={setTitle} autoFocus placeholder={t("たとえば、企画書の構成を作る", "For example, outline a proposal")} placeholderTextColor={palette.muted} style={[styles.input, { backgroundColor: palette.surface, borderColor: palette.border, color: palette.text }]} returnKeyType="done" onSubmitEditing={save} />
 
@@ -126,7 +227,7 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
               </View>
               <MaterialIcons name={memoOpen ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={20} color={palette.muted} />
             </TouchableOpacity>
-            {memoOpen ? <TextInput value={memo} onChangeText={setMemo} placeholder={t("補足や完了条件をメモ", "Add context or a definition of done")} placeholderTextColor={palette.muted} style={[styles.memoInput, { backgroundColor: palette.surface, borderColor: palette.border, color: palette.text }]} multiline textAlignVertical="top" /> : null}
+            {memoOpen ? <TextInput value={memo} onChangeText={setMemo} onFocus={() => { setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150); }} placeholder={t("補足や完了条件をメモ", "Add context or a definition of done")} placeholderTextColor={palette.muted} style={[styles.memoInput, { backgroundColor: palette.surface, borderColor: palette.border, color: palette.text }]} multiline textAlignVertical="top" /> : null}
 
             <TouchableOpacity accessibilityRole="button" accessibilityState={{ expanded: subtasksOpen }} onPress={() => setSubtasksOpen((value) => !value)} style={[styles.disclosureRow, { backgroundColor: palette.elevated }]}>
               <MaterialIcons name="account-tree" size={18} color={palette.primary} />
@@ -137,8 +238,21 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
               <MaterialIcons name={subtasksOpen ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={20} color={palette.muted} />
             </TouchableOpacity>
             {subtasksOpen ? <>
-              {subtasks.map((subtask) => <View key={subtask.id} style={[styles.subtaskRow, { backgroundColor: palette.surface, borderColor: palette.border }]}><TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: subtask.completed }} onPress={() => setSubtasks((items) => items.map((item) => item.id === subtask.id ? { ...item, completed: !item.completed } : item))} style={styles.subtaskCheck}><View style={[styles.subtaskBox, { borderColor: palette.border }, subtask.completed && { backgroundColor: palette.primary, borderColor: palette.primary }]}>{subtask.completed ? <MaterialIcons name="check" size={13} color={palette.isDark ? palette.background : COLORS.white} /> : null}</View></TouchableOpacity>{editingSubtaskId === subtask.id ? <TextInput autoFocus value={subtask.title} onChangeText={(value) => setSubtasks((items) => items.map((item) => item.id === subtask.id ? { ...item, title: value } : item))} onBlur={() => setEditingSubtaskId(undefined)} style={[styles.subtaskTextInput, { backgroundColor: palette.background, borderColor: palette.border, color: palette.text }]} multiline /> : <TouchableOpacity accessibilityRole="button" onPress={() => setEditingSubtaskId(subtask.id)} style={styles.subtaskEditArea}><Text style={[styles.subtaskText, { color: subtask.completed ? palette.muted : palette.text }, subtask.completed && styles.subtaskDone]}>{subtask.title}</Text></TouchableOpacity>}<TouchableOpacity accessibilityLabel={t("サブタスクを削除", "Delete subtask")} onPress={() => setSubtasks((items) => items.filter((item) => item.id !== subtask.id))} style={styles.subtaskDelete}><MaterialIcons name="close" size={17} color={palette.muted} /></TouchableOpacity></View>)}
-              <View style={styles.subtaskAddRow}><TextInput value={subtaskDraft} onChangeText={setSubtaskDraft} placeholder={t("サブタスクを追加", "Add a subtask")} placeholderTextColor={palette.muted} style={[styles.subtaskInput, { backgroundColor: palette.surface, borderColor: palette.border, color: palette.text }]} returnKeyType="done" onSubmitEditing={() => { const value = subtaskDraft.trim(); if (!value) return; setSubtasks((items) => [...items, { id: createId("subtask"), title: value, completed: false }]); setSubtaskDraft(""); }} /><TouchableOpacity accessibilityLabel={t("サブタスクを追加", "Add subtask")} onPress={() => { const value = subtaskDraft.trim(); if (!value) return; setSubtasks((items) => [...items, { id: createId("subtask"), title: value, completed: false }]); setSubtaskDraft(""); }} style={[styles.subtaskAddButton, { backgroundColor: palette.primary }]}><MaterialIcons name="add" size={20} color={palette.isDark ? palette.background : COLORS.white} /></TouchableOpacity></View>
+              {subtasks.map((subtask) => (
+                <SubtaskRowItem
+                  key={subtask.id}
+                  subtask={subtask}
+                  palette={palette}
+                  isEditing={editingSubtaskId === subtask.id}
+                  onToggle={handleToggleSubtask}
+                  onStartEdit={handleStartEditSubtask}
+                  onChangeText={handleChangeSubtaskText}
+                  onEndEdit={handleEndEditSubtask}
+                  onDelete={handleDeleteSubtask}
+                  t={t}
+                />
+              ))}
+              <View style={styles.subtaskAddRow}><TextInput value={subtaskDraft} onChangeText={setSubtaskDraft} onFocus={() => { setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150); }} placeholder={t("サブタスクを追加", "Add a subtask")} placeholderTextColor={palette.muted} style={[styles.subtaskInput, { backgroundColor: palette.surface, borderColor: palette.border, color: palette.text }]} returnKeyType="done" onSubmitEditing={() => { const value = subtaskDraft.trim(); if (!value) return; setSubtasks((items) => [...items, { id: createId("subtask"), title: value, completed: false }]); setSubtaskDraft(""); }} /><TouchableOpacity accessibilityLabel={t("サブタスクを追加", "Add subtask")} onPress={() => { const value = subtaskDraft.trim(); if (!value) return; setSubtasks((items) => [...items, { id: createId("subtask"), title: value, completed: false }]); setSubtaskDraft(""); }} style={[styles.subtaskAddButton, { backgroundColor: palette.primary }]}><MaterialIcons name="add" size={20} color={palette.isDark ? palette.background : COLORS.white} /></TouchableOpacity></View>
             </> : null}
 
             <Text style={[styles.label, styles.requiredLabel, { color: palette.text }]}>{t("アプリの制限", "App limits")}</Text>
@@ -147,8 +261,8 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
           </ScrollView>
           <View style={[styles.footer, { backgroundColor: palette.background, borderTopColor: palette.border, paddingBottom: Math.max(insets.bottom, 12) }]}>
             <View style={styles.footerActions}>
-              {todo && onDelete ? <TouchableOpacity accessibilityRole="button" onPress={requestDelete} activeOpacity={0.8} style={[styles.deleteButton, { backgroundColor: palette.elevated, borderColor: palette.border }]}><MaterialIcons name="delete-outline" size={18} color={COLORS.error} /><Text style={[styles.deleteText, { color: COLORS.error }]}>{t("削除", "Delete")}</Text></TouchableOpacity> : null}
-              <TouchableOpacity accessibilityRole="button" onPress={save} activeOpacity={0.8} style={[styles.saveButton, !todo && { flex: 1 }, { backgroundColor: !title.trim() ? palette.elevated : palette.primary }]} disabled={!title.trim()}><Text style={[styles.saveText, { color: !title.trim() ? palette.muted : palette.isDark ? palette.background : COLORS.white }]}>{todo ? t("変更を保存", "Save changes") : t("Todoを作成", "Create task")}</Text></TouchableOpacity>
+              {todo && onDelete ? <TouchableOpacity accessibilityRole="button" onPress={requestDelete} activeOpacity={0.8} style={[styles.deleteButton, { backgroundColor: palette.elevated, borderColor: palette.border }]} disabled={isSaving}><MaterialIcons name="delete-outline" size={18} color={COLORS.error} /><Text style={[styles.deleteText, { color: COLORS.error }]}>{t("削除", "Delete")}</Text></TouchableOpacity> : null}
+              <TouchableOpacity accessibilityRole="button" onPress={save} activeOpacity={0.8} style={[styles.saveButton, !todo && { flex: 1 }, { backgroundColor: !title.trim() || isSaving ? palette.elevated : palette.primary }]} disabled={!title.trim() || isSaving}><Text style={[styles.saveText, { color: !title.trim() || isSaving ? palette.muted : palette.isDark ? palette.background : COLORS.white }]}>{isSaving ? (todo ? t("保存中...", "Saving...") : t("作成中...", "Creating...")) : todo ? t("変更を保存", "Save changes") : t("Todoを作成", "Create task")}</Text></TouchableOpacity>
             </View>
           </View>
         </Pressable>

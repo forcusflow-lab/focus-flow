@@ -1,4 +1,5 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import React, { useRef } from "react";
 import { useLayoutEffect, useState } from "react";
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,6 +18,9 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
   const { displaySettings, gateConfig } = useFocusFlow();
   const palette = useFocusPalette();
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
+  const isSubmitting = useRef(false);
+  const [isSaving, setIsSaving] = useState(false);
   const language = getAppLanguage(displaySettings);
   const t = (ja: string, en: string) => localized(language, ja, en);
   const units: { key: ProgressUnit; label: string }[] = [{ key: "check", label: t("完了チェック", "Check off") }, { key: "count", label: t("回数", "Count") }, { key: "minutes", label: t("分", "Minutes") }];
@@ -31,6 +35,8 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
 
   useLayoutEffect(() => {
     if (visible) {
+      isSubmitting.current = false;
+      setIsSaving(false);
       const required = habit?.isRequired ?? defaultRequired;
       setTitle(habit?.title ?? "");
       setColor(habit?.color ?? HABIT_COLORS[0]);
@@ -44,27 +50,46 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
   }, [defaultRequired, habit, visible]);
 
   const save = () => {
-    if (!title.trim()) return;
+    if (isSubmitting.current || !title.trim()) return;
+    isSubmitting.current = true;
+    setIsSaving(true);
     safeHaptic("light");
-    const result = onSave({
-      title: title.trim(),
-      color,
-      goalPerWeek: goal,
-      isRequired,
-      requiredWindowMode,
-      requiredScheduleIds,
-      progressUnit,
-      targetValue: Math.max(Number(targetValue) || 1, 1),
-    });
-    if (result.ok) onClose();
+    try {
+      const result = onSave({
+        title: title.trim(),
+        color,
+        goalPerWeek: goal,
+        isRequired,
+        requiredWindowMode,
+        requiredScheduleIds,
+        progressUnit,
+        targetValue: Math.max(Number(targetValue) || 1, 1),
+      });
+      if (result.ok) {
+        onClose();
+      } else {
+        isSubmitting.current = false;
+        setIsSaving(false);
+      }
+    } catch {
+      isSubmitting.current = false;
+      setIsSaving(false);
+    }
   };
 
   const remove = () => {
-    if (!habit || !onDelete) return;
+    if (!habit || !onDelete || isSubmitting.current) return;
     const confirm = () => {
-      safeHaptic("light");
-      onDelete();
-      onClose();
+      isSubmitting.current = true;
+      setIsSaving(true);
+      try {
+        safeHaptic("light");
+        onDelete();
+        onClose();
+      } finally {
+        isSubmitting.current = false;
+        setIsSaving(false);
+      }
     };
     if (Platform.OS === "web") confirm();
     else Alert.alert(t("習慣を削除しますか？", "Delete habit?"), t(`「${habit.title}」の記録も削除されます。`, `The records for “${habit.title}” will also be deleted.`), [{ text: t("キャンセル", "Cancel"), style: "cancel" }, { text: t("削除", "Delete"), style: "destructive", onPress: confirm }]);
@@ -72,7 +97,7 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboardAvoider}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboardAvoider}>
         <Pressable style={styles.backdrop} onPress={onClose}>
           <Pressable style={[styles.sheet, { backgroundColor: palette.background }]} onPress={() => undefined}>
             <View style={[styles.handle, { backgroundColor: palette.primarySoft }]} />
@@ -82,7 +107,18 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
                 <MaterialIcons name="close" size={21} color={palette.muted} />
               </TouchableOpacity>
             </View>
-            <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.body}>
+            <ScrollView
+              ref={scrollRef}
+              style={styles.scroll}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              automaticallyAdjustKeyboardInsets={true}
+              removeClippedSubviews={Platform.OS === "android"}
+              nestedScrollEnabled={true}
+              scrollEventThrottle={16}
+              contentContainerStyle={styles.body}
+            >
               {/* Habit Name */}
               <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: palette.text }]}>{t("習慣の名前", "Habit name")}</Text>
@@ -174,6 +210,7 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
                       <TextInput
                         value={targetValue}
                         onChangeText={setTargetValue}
+                        onFocus={() => { setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150); }}
                         keyboardType="number-pad"
                         style={[styles.targetInput, { backgroundColor: palette.surface, borderColor: palette.border, color: palette.text }]}
                       />
@@ -230,7 +267,7 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
             </ScrollView>
             <View style={[styles.footer, { backgroundColor: palette.background, borderTopColor: palette.border, paddingBottom: Math.max(insets.bottom, 12) }]}>
               {habit && onDelete ? (
-                <TouchableOpacity accessibilityRole="button" onPress={remove} activeOpacity={0.8} style={[styles.deleteButton, { backgroundColor: palette.elevated, borderColor: palette.border }]}>
+                <TouchableOpacity accessibilityRole="button" onPress={remove} activeOpacity={0.8} style={[styles.deleteButton, { backgroundColor: palette.elevated, borderColor: palette.border }]} disabled={isSaving}>
                   <MaterialIcons name="delete-outline" size={18} color={COLORS.error} />
                   <Text style={[styles.deleteButtonText, { color: COLORS.error }]}>{t("習慣を削除", "Delete habit")}</Text>
                 </TouchableOpacity>
@@ -239,11 +276,11 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
                 accessibilityRole="button"
                 onPress={save}
                 activeOpacity={0.8}
-                style={[styles.saveButton, { backgroundColor: !title.trim() ? palette.elevated : palette.primary }]}
-                disabled={!title.trim()}
+                style={[styles.saveButton, { backgroundColor: !title.trim() || isSaving ? palette.elevated : palette.primary }]}
+                disabled={!title.trim() || isSaving}
               >
-                <Text style={[styles.saveText, { color: !title.trim() ? palette.muted : palette.isDark ? palette.background : COLORS.white }]}>
-                  {habit ? t("変更を保存", "Save changes") : t("習慣を作る", "Create habit")}
+                <Text style={[styles.saveText, { color: !title.trim() || isSaving ? palette.muted : palette.isDark ? palette.background : COLORS.white }]}>
+                  {isSaving ? (habit ? t("保存中...", "Saving...") : t("作成中...", "Creating...")) : habit ? t("変更を保存", "Save changes") : t("習慣を作る", "Create habit")}
                 </Text>
               </TouchableOpacity>
             </View>
