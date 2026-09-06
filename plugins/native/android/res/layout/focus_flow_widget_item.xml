@@ -2,8 +2,8 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
   android:id="@+id/focus_flow_widget_item_root"
   android:layout_width="match_parent"
-  android:layout_height="48dp"
-  android:minHeight="48dp">
+  android:layout_height="44dp"
+  android:minHeight="44dp">
   <LinearLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -15,7 +15,7 @@
       android:layout_height="match_parent" />
     <FrameLayout
       android:id="@+id/focus_flow_widget_item_action"
-      android:layout_width="48dp"
+      android:layout_width="44dp"
       android:layout_height="match_parent"
       android:gravity="center">
       <ImageView
@@ -62,5 +62,5 @@
     android:layout_width="match_parent"
     android:layout_height="1dp"
     android:layout_gravity="bottom"
-    android:layout_marginStart="51dp" />
+    android:layout_marginStart="47dp" />
 </FrameLayout>

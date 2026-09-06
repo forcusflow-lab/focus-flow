@@ -19,7 +19,7 @@
     android:id="@+id/focus_flow_widget_list"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_marginTop="40dp"
+    android:layout_marginTop="36dp"
     android:divider="@android:color/transparent"
     android:dividerHeight="0dp"
     android:scrollbars="vertical" />
@@ -27,7 +27,7 @@
     android:id="@+id/focus_flow_widget_empty"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_marginTop="40dp"
+    android:layout_marginTop="36dp"
     android:gravity="center"
     android:padding="8dp"
     android:textSize="11sp"

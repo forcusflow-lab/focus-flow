@@ -44,4 +44,11 @@ describe("Todo subtasks, memo carryover, and add actions", () => {
     expect(cards).toContain("styles.subtaskExpandButton");
     expect(cards).toContain("subtasksOpen && onToggleSubtask");
   });
+
+  it("すべてのサブタスクが完了した際に親Todoも自動完了し、未完了化で親Todoも未完了へ戻る", () => {
+    const provider = read("lib", "focus-flow", "provider.tsx");
+    expect(provider).toContain("const allCompleted = hasSubtasks && subtasks.every((s) => s.completed)");
+    expect(provider).toContain("if (allCompleted && !todo.completed)");
+    expect(provider).toContain("else if (!allCompleted && todo.completed)");
+  });
 });
