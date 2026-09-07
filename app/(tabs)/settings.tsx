@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScaledText } from "@/components/focus-flow/scaled-text";
 import { COLORS, LoadingScreen, ScreenHeading, useFocusPalette } from "@/components/focus-flow/ui";
 import { ScreenContainer } from "@/components/screen-container";
-import { getAccessibilityStatus, getGateDiagnostics, getLaunchableApps, isNativeGateAvailable, openAccessibilitySettings, openAppDetailsSettings, type GateDiagnostics, type LaunchableApp } from "@/lib/focus-flow/android-gate";
+import { getAccessibilityStatus, getGateDiagnostics, getLaunchableApps, isNativeGateAvailable, openAccessibilitySettings, openAppDetailsSettings, requestIgnoreBatteryOptimizations, type GateDiagnostics, type LaunchableApp } from "@/lib/focus-flow/android-gate";
 import { APP_FONT_OPTIONS, getAppFontStyle } from "@/lib/focus-flow/app-fonts";
 import { APPEARANCE_OPTIONS, APP_THEMES, resolvedAppTheme, type AppPalette } from "@/lib/focus-flow/app-themes";
 import { isEnglish } from "@/lib/focus-flow/i18n";
@@ -80,6 +80,30 @@ export default function SettingsScreen() {
 
   if (!isReady) return <ScreenContainer><LoadingScreen /></ScreenContainer>;
 
+  const requestBatteryOptimization = useCallback(async () => {
+    if (Platform.OS !== "android") return;
+    try {
+      await requestIgnoreBatteryOptimizations();
+    } catch (_e) {
+      await openAppDetailsSettings();
+    }
+    setTimeout(() => void loadAndroidStatus(), 1000);
+  }, [loadAndroidStatus]);
+
+  const confirmBatteryOptimization = useCallback(() => {
+    Alert.alert(
+      t("バッテリー最適化の無効化", "Disable battery optimization"),
+      t(
+        "Androidの省電力機能によってバックグラウンドで集中制限サービスが停止するのを防ぎます。最適化の対象外（無制限）に設定しますか？",
+        "Prevent Android battery saver from stopping Focus Flow limits in the background. Exclude Focus Flow from battery optimization?"
+      ),
+      [
+        { text: t("後で行う", "Later"), style: "cancel" },
+        { text: t("設定する", "Set up"), onPress: () => void requestBatteryOptimization() },
+      ]
+    );
+  }, [english, requestBatteryOptimization, t]);
+
   const setGateEnabled = (enabled: boolean) => {
     if (!enabled && gateConfig.strictMode && gateConfig.enabled && summary.pendingCount > 0) {
       Alert.alert(t("厳格モードで保護中です", "Strict mode is protecting your limits"), t("必須項目が残る間は、ここから集中制限をオフにできません。終了する場合は、厳格モードのスイッチから明示的に確認してください。", "You can't turn off App limits here while must-dos remain. To end it, use the Strict mode switch and confirm explicitly."));
@@ -88,6 +112,9 @@ export default function SettingsScreen() {
     if (isIOS || !enabled) { setGateConfig({ enabled }); return; }
     if (!gateConfig.accessibilityDisclosureAcceptedAt) { setDisclosureOpen(true); return; }
     setGateConfig({ enabled: true });
+    if (diagnostics && diagnostics.batteryOptimizationIgnored === false) {
+      confirmBatteryOptimization();
+    }
   };
   const setStrictMode = (strictMode: boolean) => {
     if (strictMode) {
@@ -162,7 +189,7 @@ export default function SettingsScreen() {
   ) : (
     <ScrollView key={panel} contentContainerStyle={[styles.detailContent, { paddingBottom: Math.max(88, insets.bottom + 44) }]} showsVerticalScrollIndicator={false}>
       <PanelHeader title={panel === "limits" ? t("集中制限", "App limits") : panel === "appearance" ? t("表示と言語", "Appearance & language") : panel === "reminders" ? t("毎日のリマインダー", "Daily reminder") : t("Plusとサブスクリプション", "Plus & subscription")} onBack={() => setPanel("home")} />
-      {panel === "limits" ? <LimitsPanel english={english} isIOS={isIOS} nativeReady={nativeReady} loadingApps={loadingApps} apps={apps} appPickerOpen={appPickerOpen} onToggleAppPicker={() => setAppPickerOpen((value) => !value)} selectedApps={gateConfig.blockedPackages} onSelectApp={selectGlobalApp} enabled={gateConfig.enabled} strictMode={Boolean(gateConfig.strictMode)} pendingCount={summary.pendingCount} scheduleActive={scheduleActive} accessibilityEnabled={accessibilityEnabled} diagnostics={diagnostics} schedules={gateConfig.schedules} routineOpenId={routineOpenId} onToggleEnabled={setGateEnabled} onToggleStrictMode={setStrictMode} onOpenAccessibility={() => void enableAndOpenAccessibility()} onRefresh={() => void loadAndroidStatus()} onOpenAppInfo={() => void openAppDetailsSettings()} onAddSchedule={addSchedule} onToggleRoutine={setRoutineOpenId} onUpdateSchedule={updateSchedule} onRemoveSchedule={removeSchedule} canSelectBlockedApp={canSelectBlockedApp} /> : null}
+      {panel === "limits" ? <LimitsPanel english={english} isIOS={isIOS} nativeReady={nativeReady} loadingApps={loadingApps} apps={apps} appPickerOpen={appPickerOpen} onToggleAppPicker={() => setAppPickerOpen((value) => !value)} selectedApps={gateConfig.blockedPackages} onSelectApp={selectGlobalApp} enabled={gateConfig.enabled} strictMode={Boolean(gateConfig.strictMode)} pendingCount={summary.pendingCount} scheduleActive={scheduleActive} accessibilityEnabled={accessibilityEnabled} diagnostics={diagnostics} schedules={gateConfig.schedules} routineOpenId={routineOpenId} onToggleEnabled={setGateEnabled} onToggleStrictMode={setStrictMode} onOpenAccessibility={() => void enableAndOpenAccessibility()} onRequestBatteryOptimization={confirmBatteryOptimization} onRefresh={() => void loadAndroidStatus()} onOpenAppInfo={() => void openAppDetailsSettings()} onAddSchedule={addSchedule} onToggleRoutine={setRoutineOpenId} onUpdateSchedule={updateSchedule} onRemoveSchedule={removeSchedule} canSelectBlockedApp={canSelectBlockedApp} /> : null}
       {panel === "appearance" ? <><AppearancePanel english={english} displaySettings={displaySettings} onChange={setDisplaySettings} /><WidgetsPanel english={english} displaySettings={displaySettings} onBackgroundOpacity={(widgetBackgroundOpacity) => setDisplaySettings({ widgetBackgroundOpacity })} onCardOpacity={(widgetCardOpacity) => setDisplaySettings({ widgetCardOpacity })} /></> : null}
       {panel === "reminders" ? <ReminderPanel english={english} enabled={Boolean(displaySettings.dailyReminderEnabled)} permission={reminderPermission} time={displaySettings.dailyReminderTime ?? "19:00"} busy={reminderBusy} onToggle={(enabled) => void toggleReminder(enabled)} onChangeTime={(time) => void updateReminderTime(time)} onTest={() => void (async () => { setReminderBusy(true); try { setReminderPermission((await sendReminderTest(english)) || reminderPermission); } finally { setReminderBusy(false); } })()} /> : null}
       {panel === "plus" ? <PlusPanel english={english} isIOS={isIOS} isPlus={isPlus} price={plusStatus.price} status={plusStatus.status} reason={plusStatus.reason} themeSetName={themeSetName} themeSets={displaySettings.savedThemeSets ?? []} onNameChange={setThemeSetName} onSaveSet={saveThemeSet} onApplySet={(set) => setDisplaySettings({ appTheme: set.appTheme, appearance: set.appearance, fontFamily: set.fontFamily ?? "system", widgetThemes: set.widgetThemes, widgetTextSizes: set.widgetTextSizes, widgetOpacity: set.widgetOpacity ?? 86, widgetBackgroundOpacity: set.widgetBackgroundOpacity ?? set.widgetOpacity ?? 86, widgetCardOpacity: set.widgetCardOpacity ?? 100 })} onRemoveSet={(id) => setDisplaySettings({ savedThemeSets: (displaySettings.savedThemeSets ?? []).filter((set) => set.id !== id) })} onPurchase={() => void purchasePlus()} onRestore={() => void restorePlus()} onRefresh={() => void refreshPlusStatus()} onManage={() => void managePlus()} /> : null}
@@ -196,7 +223,7 @@ function SettingsHome({ scrollRef, english, gateEnabled, pendingCount, accessibi
   </ScrollView>;
 }
 
-function LimitsPanel({ english, isIOS, nativeReady, loadingApps, apps, appPickerOpen, onToggleAppPicker, selectedApps, onSelectApp, enabled, strictMode, pendingCount, scheduleActive, accessibilityEnabled, diagnostics, schedules, routineOpenId, onToggleEnabled, onToggleStrictMode, onOpenAccessibility, onRefresh, onOpenAppInfo, onAddSchedule, onToggleRoutine, onUpdateSchedule, onRemoveSchedule, canSelectBlockedApp }: { english: boolean; isIOS: boolean; nativeReady: boolean; loadingApps: boolean; apps: LaunchableApp[]; appPickerOpen: boolean; onToggleAppPicker: () => void; selectedApps: string[]; onSelectApp: (value: string) => void; enabled: boolean; strictMode: boolean; pendingCount: number; scheduleActive: boolean; accessibilityEnabled: boolean; diagnostics?: GateDiagnostics; schedules: GateSchedule[]; routineOpenId?: string; onToggleEnabled: (value: boolean) => void; onToggleStrictMode: (value: boolean) => void; onOpenAccessibility: () => void; onRefresh: () => void; onOpenAppInfo: () => void; onAddSchedule: () => void; onToggleRoutine: (id?: string) => void; onUpdateSchedule: (id: string, input: Partial<GateSchedule>) => void; onRemoveSchedule: (id: string) => void; canSelectBlockedApp: (packageName: string) => boolean }) {
+function LimitsPanel({ english, isIOS, nativeReady, loadingApps, apps, appPickerOpen, onToggleAppPicker, selectedApps, onSelectApp, enabled, strictMode, pendingCount, scheduleActive, accessibilityEnabled, diagnostics, schedules, routineOpenId, onToggleEnabled, onToggleStrictMode, onOpenAccessibility, onRequestBatteryOptimization, onRefresh, onOpenAppInfo, onAddSchedule, onToggleRoutine, onUpdateSchedule, onRemoveSchedule, canSelectBlockedApp }: { english: boolean; isIOS: boolean; nativeReady: boolean; loadingApps: boolean; apps: LaunchableApp[]; appPickerOpen: boolean; onToggleAppPicker: () => void; selectedApps: string[]; onSelectApp: (value: string) => void; enabled: boolean; strictMode: boolean; pendingCount: number; scheduleActive: boolean; accessibilityEnabled: boolean; diagnostics?: GateDiagnostics; schedules: GateSchedule[]; routineOpenId?: string; onToggleEnabled: (value: boolean) => void; onToggleStrictMode: (value: boolean) => void; onOpenAccessibility: () => void; onRequestBatteryOptimization?: () => void; onRefresh: () => void; onOpenAppInfo: () => void; onAddSchedule: () => void; onToggleRoutine: (id?: string) => void; onUpdateSchedule: (id: string, input: Partial<GateSchedule>) => void; onRemoveSchedule: (id: string) => void; canSelectBlockedApp: (packageName: string) => boolean }) {
   const t = (ja: string, en: string) => english ? en : ja;
   const runtimeState = diagnostics?.lastGateStateUpdatedAt ? t(`同期済み：${diagnostics.configuredRuleCount}ルール・${diagnostics.configuredBlockedPackageCount}アプリ`, `Synced: ${diagnostics.configuredRuleCount} rule(s), ${diagnostics.configuredBlockedPackageCount} app(s)`) : t("同期情報を取得できません。状態を再確認してください。", "Sync details are unavailable. Refresh status.");
   const eventState = diagnostics?.lastGateEventAt ? t(`前面アプリを検出済み：${diagnostics.lastGateEventPackage || "不明"}`, `Foreground app detected: ${diagnostics.lastGateEventPackage || "Unknown"}`) : t("まだ前面アプリを検出していません。制限対象を一度開いて確認してください。", "No foreground app event yet. Open a selected app to verify.");
@@ -214,6 +241,15 @@ function LimitsPanel({ english, isIOS, nativeReady, loadingApps, apps, appPicker
         control={
           <TouchableOpacity onPress={onOpenAccessibility} style={[styles.smallButton, { backgroundColor: palette.primary }]}>
             <Text style={[styles.smallButtonText, { color: palette.isDark ? palette.background : COLORS.white }]}>{accessibilityEnabled ? t("開く", "Open") : t("許可", "Allow")}</Text>
+          </TouchableOpacity>
+        }
+      />
+      <SettingRow
+        title={diagnostics?.batteryOptimizationIgnored ? t("バッテリー最適化は無効化済みです", "Battery optimization disabled") : t("バッテリー最適化を無効化", "Disable battery optimization")}
+        detail={diagnostics?.batteryOptimizationIgnored ? t("省電力機能によるサービスの強制停止を防ぐ設定が完了しています。", "Exemption configured to prevent background service stoppage.") : t("省電力機能によるサービスの強制停止を防ぎ、制限を安定動作させます。", "Prevents the OS from killing the service in the background.")}
+        control={
+          <TouchableOpacity onPress={onRequestBatteryOptimization} style={[styles.smallButton, { backgroundColor: palette.primary }]}>
+            <Text style={[styles.smallButtonText, { color: palette.isDark ? palette.background : COLORS.white }]}>{diagnostics?.batteryOptimizationIgnored ? t("確認", "Check") : t("設定", "Set up")}</Text>
           </TouchableOpacity>
         }
       />

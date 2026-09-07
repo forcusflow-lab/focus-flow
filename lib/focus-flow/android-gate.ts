@@ -16,6 +16,7 @@ type FocusGateNativeModule = {
   getAccessibilityStatus: () => Promise<boolean>;
   openAccessibilitySettings: () => Promise<void>;
   openAppDetailsSettings: () => Promise<void>;
+  requestIgnoreBatteryOptimizations: () => Promise<boolean>;
   getGateDiagnostics: () => Promise<GateDiagnostics>;
   getLaunchableApps: () => Promise<LaunchableApp[]>;
 };
@@ -75,6 +76,7 @@ export async function syncAndroidGate(data: FocusFlowData) {
 export async function getAccessibilityStatus() { return (await nativeModule()?.getAccessibilityStatus()) ?? false; }
 export async function openAccessibilitySettings() { await nativeModule()?.openAccessibilitySettings(); }
 export async function openAppDetailsSettings() { await nativeModule()?.openAppDetailsSettings(); }
+export async function requestIgnoreBatteryOptimizations() { return (await nativeModule()?.requestIgnoreBatteryOptimizations()) ?? false; }
 export async function getGateDiagnostics() { return await nativeModule()?.getGateDiagnostics(); }
 export async function getLaunchableApps() { return (await nativeModule()?.getLaunchableApps()) ?? [] as LaunchableApp[]; }
 export async function consumeWidgetActions() { return (await nativeModule()?.consumeWidgetActions()) ?? [] as WidgetAction[]; }

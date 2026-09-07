@@ -47,6 +47,9 @@ function withFocusFlowAndroid(config) {
     if (!manifest["uses-permission"].some((item) => item.$?.["android:name"] === "android.permission.QUERY_ALL_PACKAGES")) {
       manifest["uses-permission"].push({ $: { "android:name": "android.permission.QUERY_ALL_PACKAGES" } });
     }
+    if (!manifest["uses-permission"].some((item) => item.$?.["android:name"] === "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS")) {
+      manifest["uses-permission"].push({ $: { "android:name": "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" } });
+    }
     const packageName = config.android?.package ?? "com.app.focusflow";
     const nativePackage = `${packageName}.focusflow`;
     addComponent(application, "service", { $: { "android:name": `${nativePackage}.FocusGateService`, "android:permission": "android.permission.BIND_ACCESSIBILITY_SERVICE", "android:exported": "true", "android:label": "Focus Flow 集中制限" }, "intent-filter": [{ action: [{ $: { "android:name": "android.accessibilityservice.AccessibilityService" } }] }], "meta-data": [{ $: { "android:name": "android.accessibilityservice", "android:resource": "@xml/focus_flow_accessibility_service" } }] });

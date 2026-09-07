@@ -33,74 +33,114 @@ class FocusGateService : AccessibilityService() {
   private var gateCtaSuppressUntil = 0L
 
   override fun onServiceConnected() {
-    lastPackage = ""
-    lastBlockedAt = 0L
-    foregroundRecheck?.let(foregroundRecheckHandler::removeCallbacks)
-    foregroundRecheck = null
-    lastReliableForegroundPackage = null
-    serviceInfo = serviceInfo.apply {
-      eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
-        AccessibilityEvent.TYPE_WINDOWS_CHANGED or
-        AccessibilityEvent.TYPE_VIEW_FOCUSED or
-        AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
-      flags = flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
-      notificationTimeout = 0
+    try {
+      super.onServiceConnected()
+      lastPackage = ""
+      lastBlockedAt = 0L
+      try {
+        foregroundRecheck?.let(foregroundRecheckHandler::removeCallbacks)
+      } catch (_: Throwable) {}
+      foregroundRecheck = null
+      lastReliableForegroundPackage = null
+      gateOverlay = null
+      gateOverlayPackage = null
+      val currentInfo = try { serviceInfo } catch (_: Throwable) { null } ?: AccessibilityServiceInfo()
+      currentInfo.apply {
+        eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
+          AccessibilityEvent.TYPE_WINDOWS_CHANGED or
+          AccessibilityEvent.TYPE_VIEW_FOCUSED or
+          AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+        flags = flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+        notificationTimeout = 0
+      }
+      try {
+        serviceInfo = currentInfo
+      } catch (_: Throwable) {}
+    } catch (_: Throwable) {
+      // 予期しない例外が発生してもサービスのライフサイクルをクラッシュさせない
     }
   }
 
   override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-    val eventType = event?.eventType ?: return
-    if (eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
-      eventType != AccessibilityEvent.TYPE_WINDOWS_CHANGED &&
-      eventType != AccessibilityEvent.TYPE_VIEW_FOCUSED &&
-      eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
-    ) return
+    try {
+      val eventType = event?.eventType ?: return
+      if (eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+        eventType != AccessibilityEvent.TYPE_WINDOWS_CHANGED &&
+        eventType != AccessibilityEvent.TYPE_VIEW_FOCUSED &&
+        eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+      ) return
 
-    evaluateForeground(event.packageName?.toString())
-    // 最近使ったアプリや既存タスクへの復帰は複数段階で前面化するため、イベント直後だけで
-    // 判定を終えない。アクセシビリティオーバーレイは入力を遮断しつつ、下層の前面ウィンドウを
-    // 継続評価できるため、対象アプリが描画された時点で必ず再遮断する。
-    scheduleForegroundRechecks()
+      val eventPackage = try {
+        val directPkg = event.packageName?.toString()
+        if (!directPkg.isNullOrBlank()) {
+          directPkg
+        } else {
+          val sourceNode = try { event.source } catch (_: Throwable) { null }
+          if (sourceNode != null) {
+            try {
+              sourceNode.packageName?.toString()?.takeIf { it.isNotBlank() }
+            } finally {
+              try { sourceNode.recycle() } catch (_: Throwable) {}
+            }
+          } else {
+            null
+          }
+        }
+      } catch (_: Throwable) {
+        null
+      }
+
+      evaluateForeground(eventPackage)
+      // 最近使ったアプリや既存タスクへの復帰は複数段階で前面化するため、イベント直後だけで
+      // 判定を終えない。アクセシビリティオーバーレイは入力を遮断しつつ、下層の前面ウィンドウを
+      // 継続評価できるため、対象アプリが描画された時点で必ず再遮断する。
+      scheduleForegroundRechecks()
+    } catch (_: Throwable) {
+      // 予期しないイベントやNull参照が発生してもサービス自体が絶対にクラッシュしないようにガード
+    }
   }
 
   private fun evaluateForeground(eventPackage: String?) {
-    if (System.currentTimeMillis() < gateCtaSuppressUntil) {
-      hideGateOverlay()
-      return
-    }
-    val state = readState()
-    if (state == null || !state.active) {
-      hideGateOverlay()
-      return
-    }
+    try {
+      if (System.currentTimeMillis() < gateCtaSuppressUntil) {
+        hideGateOverlay()
+        return
+      }
+      val state = readState()
+      if (state == null || !state.active) {
+        hideGateOverlay()
+        return
+      }
 
-    val activePackage = activeWindowPackage()
-    val candidatePackage = foregroundCandidate(eventPackage, activePackage, state) ?: return
-    if (candidatePackage == applicationContext.packageName) {
-      hideGateOverlay()
-      return
+      val activePackage = activeWindowPackage()
+      val candidatePackage = foregroundCandidate(eventPackage, activePackage, state) ?: return
+      if (candidatePackage == applicationContext.packageName) {
+        hideGateOverlay()
+        return
+      }
+
+      val now = System.currentTimeMillis()
+      preferences().edit()
+        .putLong(FocusGateModule.GATE_LAST_EVENT_AT, now)
+        .putString(FocusGateModule.GATE_LAST_EVENT_PACKAGE, candidatePackage)
+        .apply()
+
+      val matchingRule = state.ruleBlocking(candidatePackage)
+      if (matchingRule == null) {
+        lastReliableForegroundPackage = candidatePackage
+        hideGateOverlay()
+        return
+      }
+
+      lastPackage = candidatePackage
+      lastBlockedAt = now
+      preferences().edit()
+        .putLong(FocusGateModule.GATE_LAST_BLOCKED_AT, now)
+        .putString(FocusGateModule.GATE_LAST_BLOCKED_PACKAGE, candidatePackage)
+        .apply()
+      showGateOverlay(candidatePackage, matchingRule, state)
+    } catch (_: Throwable) {
     }
-
-    val now = System.currentTimeMillis()
-    preferences().edit()
-      .putLong(FocusGateModule.GATE_LAST_EVENT_AT, now)
-      .putString(FocusGateModule.GATE_LAST_EVENT_PACKAGE, candidatePackage)
-      .apply()
-
-    val matchingRule = state.ruleBlocking(candidatePackage)
-    if (matchingRule == null) {
-      lastReliableForegroundPackage = candidatePackage
-      hideGateOverlay()
-      return
-    }
-
-    lastPackage = candidatePackage
-    lastBlockedAt = now
-    preferences().edit()
-      .putLong(FocusGateModule.GATE_LAST_BLOCKED_AT, now)
-      .putString(FocusGateModule.GATE_LAST_BLOCKED_PACKAGE, candidatePackage)
-      .apply()
-    showGateOverlay(candidatePackage, matchingRule, state)
   }
 
   private fun foregroundCandidate(eventPackage: String?, activePackage: String?, state: GateState): String? {
@@ -218,7 +258,7 @@ class FocusGateService : AccessibilityService() {
       gateOverlay = layout
       gateOverlayPackage = packageName
       lastReliableForegroundPackage = packageName
-    } catch (_: Exception) {
+    } catch (_: Throwable) {
       // オーバーレイ追加に失敗した場合も次のイベント・再判定で再試行する。
       gateOverlay = null
       gateOverlayPackage = null
@@ -229,7 +269,7 @@ class FocusGateService : AccessibilityService() {
     val overlay = gateOverlay ?: return
     try {
       windowManager().removeViewImmediate(overlay)
-    } catch (_: Exception) {
+    } catch (_: Throwable) {
       // 既にWindowManagerから除去済みの場合は状態だけを破棄する。
     } finally {
       gateOverlay = null
@@ -243,46 +283,81 @@ class FocusGateService : AccessibilityService() {
   ).setPackage(applicationContext.packageName).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
 
   private fun scheduleForegroundRechecks() {
-    foregroundRecheck?.let(foregroundRecheckHandler::removeCallbacks)
-    var delayIndex = 0
-    val task = object : Runnable {
-      override fun run() {
-        evaluateForeground(null)
-        if (delayIndex >= foregroundRecheckDelays.size) {
-          foregroundRecheck = null
-          return
+    try {
+      foregroundRecheck?.let(foregroundRecheckHandler::removeCallbacks)
+      var delayIndex = 0
+      val task = object : Runnable {
+        override fun run() {
+          try {
+            evaluateForeground(null)
+            if (delayIndex >= foregroundRecheckDelays.size) {
+              foregroundRecheck = null
+              return
+            }
+            foregroundRecheckHandler.postDelayed(this, foregroundRecheckDelays[delayIndex++])
+          } catch (_: Throwable) {
+            foregroundRecheck = null
+          }
         }
-        foregroundRecheckHandler.postDelayed(this, foregroundRecheckDelays[delayIndex++])
       }
+      foregroundRecheck = task
+      foregroundRecheckHandler.postDelayed(task, foregroundRecheckDelays[delayIndex++])
+    } catch (_: Throwable) {
+      foregroundRecheck = null
     }
-    foregroundRecheck = task
-    foregroundRecheckHandler.postDelayed(task, foregroundRecheckDelays[delayIndex++])
   }
 
   private fun activeWindowPackage(): String? {
     return try {
-      val activeRoot = rootInActiveWindow
-      val activePackage = activeRoot?.packageName?.toString()
-      if (!activePackage.isNullOrBlank()) return activePackage
-      windows.firstOrNull { it.isActive || it.isFocused }?.root?.let { root ->
+      val activeRoot = try { rootInActiveWindow } catch (_: Throwable) { null }
+      if (activeRoot != null) {
+        try {
+          val activePackage = activeRoot.packageName?.toString()
+          if (!activePackage.isNullOrBlank()) return activePackage
+        } finally {
+          try { activeRoot.recycle() } catch (_: Throwable) {}
+        }
+      }
+      val currentWindows = try { windows } catch (_: Throwable) { null }
+      currentWindows?.firstOrNull { it.isActive || it.isFocused }?.root?.let { root ->
         try {
           root.packageName?.toString()?.takeIf { it.isNotBlank() }
         } finally {
-          root.recycle()
+          try { root.recycle() } catch (_: Throwable) {}
         }
       }
-    } catch (_: Exception) {
+    } catch (_: Throwable) {
       null
     }
   }
 
-  override fun onInterrupt() = Unit
+  override fun onInterrupt() {
+    try {
+      try {
+        foregroundRecheck?.let(foregroundRecheckHandler::removeCallbacks)
+      } catch (_: Throwable) {}
+      foregroundRecheck = null
+      lastPackage = ""
+      lastReliableForegroundPackage = null
+      hideGateOverlay()
+    } catch (_: Throwable) {}
+  }
 
   override fun onDestroy() {
-    foregroundRecheck?.let(foregroundRecheckHandler::removeCallbacks)
-    foregroundRecheck = null
-    hideGateOverlay()
-    super.onDestroy()
+    try {
+      try {
+        foregroundRecheck?.let(foregroundRecheckHandler::removeCallbacks)
+      } catch (_: Throwable) {}
+      foregroundRecheck = null
+      lastPackage = ""
+      lastReliableForegroundPackage = null
+      hideGateOverlay()
+    } catch (_: Throwable) {
+    } finally {
+      try {
+        super.onDestroy()
+      } catch (_: Throwable) {}
+    }
   }
 
   private fun windowManager() = getSystemService(WINDOW_SERVICE) as WindowManager
