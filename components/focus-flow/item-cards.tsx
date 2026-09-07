@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
-import { StyleSheet, Text as NativeText, TouchableOpacity, View } from "react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { Animated, LayoutAnimation, Platform, StyleSheet, Text as NativeText, TouchableOpacity, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 import { HabitProgressControl } from "@/components/focus-flow/habit-progress-control";
 import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
-import { COLORS, useFocusPalette } from "@/components/focus-flow/ui";
+import { COLORS, safeHaptic, useFocusPalette } from "@/components/focus-flow/ui";
 import type { Habit, Todo } from "@/lib/focus-flow/types";
 import { dayKey, dayKeyOffset, formatJapaneseDate, getTodoDueStatus, getTodoSubtasks, habitProgressLabel, habitStreak, isHabitCompleteOn, isTodoAchieved, isTodoEffectiveRequired, shortWeekday, weeklyHabitProgress } from "@/lib/focus-flow/utils";
 
@@ -26,19 +26,42 @@ export function TodoItemCard({ todo, showRequired = todo.isRequired, language, t
   const palette = useFocusPalette();
   const due = !todo.dueDate ? undefined : dueStatus === "overdue" ? t("期限切れ", "Overdue") : dueStatus === "today" ? t("今日まで", "Due today") : formatJapaneseDate(todo.dueDate, language);
   const subtasks = getTodoSubtasks(todo);
+  const hasSubtasks = subtasks.length > 0;
   const completedSubtasks = subtasks.filter((subtask) => subtask.completed).length;
   const [subtasksOpen, setSubtasksOpen] = useState(false);
+  const chevronAnim = useRef(new Animated.Value(0)).current;
+
+  const toggleSubtasks = useCallback(() => {
+    if (Platform.OS !== "web") {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    }
+    setSubtasksOpen((prev) => {
+      const next = !prev;
+      Animated.timing(chevronAnim, {
+        toValue: next ? 1 : 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+      return next;
+    });
+  }, [chevronAnim]);
+
+  const chevronRotate = chevronAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "180deg"],
+  });
+
   const doneTitleStyle = achieved ? { color: palette.muted, textDecorationLine: "line-through" as const, textDecorationColor: palette.muted } : undefined;
 
   return (
     <View style={[styles.todoRow, { backgroundColor: achieved ? palette.elevated : palette.surface, borderColor: palette.border }]}>
       <View style={[styles.rail, { backgroundColor: palette.primary }]} />
-      <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: achieved }} accessibilityLabel={achieved ? t(`「${todo.title}」を未完了に戻す`, `Reopen “${todo.title}”`) : t(`「${todo.title}」を完了にする`, `Mark “${todo.title}” complete`)} onPress={(event) => { event.stopPropagation(); onToggle(); }} style={styles.todoCheckTouchTarget}>
+      <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: achieved }} accessibilityLabel={achieved ? t(`「${todo.title}」を未完了に戻す`, `Reopen “${todo.title}”`) : t(`「${todo.title}」を完了にする`, `Mark “${todo.title}” complete`)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={(event) => { event.stopPropagation(); onToggle(); }} style={styles.todoCheckTouchTarget}>
         <View style={[styles.todoCheck, { borderColor: palette.border }, achieved && { backgroundColor: palette.primary, borderColor: palette.primary }]}>
           {achieved ? <MaterialIcons name="check" size={15} color={COLORS.white} /> : null}
         </View>
       </TouchableOpacity>
-      <TouchableOpacity accessibilityRole="button" onPress={onOpen} activeOpacity={0.72} style={styles.copy}>
+      <TouchableOpacity accessibilityRole="button" onPress={hasSubtasks ? toggleSubtasks : onOpen} onLongPress={onOpen} delayLongPress={350} activeOpacity={0.72} style={styles.copy}>
         <View style={styles.todoTitleLine}>
           <Text style={[styles.todoTitle, { color: palette.text }, doneTitleStyle]} numberOfLines={2}>{todo.title}</Text>
           {effectiveRequired ? <RequiredLabel label={t("必須", "Must-do")} color={palette.primary} /> : null}
@@ -54,14 +77,23 @@ export function TodoItemCard({ todo, showRequired = todo.isRequired, language, t
             <View style={[styles.subtaskDivider, { backgroundColor: palette.border }]} />
             <View style={styles.subtaskSummary}>
               <Text style={[styles.todoSubtaskProgress, { color: palette.primary }]}>{t(`サブタスク ${completedSubtasks}/${subtasks.length}`, `Subtasks ${completedSubtasks}/${subtasks.length}`)}</Text>
-              <TouchableOpacity accessibilityRole="button" accessibilityLabel={subtasksOpen ? t("サブタスクを閉じる", "Collapse subtasks") : t("サブタスクを展開する", "Expand subtasks")} hitSlop={8} onPress={(event) => { event.stopPropagation(); setSubtasksOpen((value) => !value); }} style={styles.subtaskExpandButton}>
-                <MaterialIcons name={subtasksOpen ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={18} color={palette.muted} />
-              </TouchableOpacity>
+              <View style={styles.subtaskControls}>
+                {subtasksOpen ? (
+                  <TouchableOpacity accessibilityRole="button" accessibilityLabel={t("詳細を開く", "Open details")} hitSlop={8} onPress={(event) => { event.stopPropagation(); onOpen(); }} style={styles.subtaskDetailButton}>
+                    <MaterialIcons name="edit" size={15} color={palette.muted} />
+                  </TouchableOpacity>
+                ) : null}
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel={subtasksOpen ? t("サブタスクを閉じる", "Collapse subtasks") : t("サブタスクを展開する", "Expand subtasks")} hitSlop={8} onPress={(event) => { event.stopPropagation(); toggleSubtasks(); }} style={styles.subtaskExpandButton}>
+                  <Animated.View style={{ transform: [{ rotate: chevronRotate }] }}>
+                    <MaterialIcons name="keyboard-arrow-down" size={18} color={palette.muted} />
+                  </Animated.View>
+                </TouchableOpacity>
+              </View>
             </View>
             {subtasksOpen && onToggleSubtask ? (
               <View style={styles.subtaskPreview}>
                 {subtasks.map((subtask) => (
-                  <TouchableOpacity key={subtask.id} accessibilityRole="checkbox" accessibilityState={{ checked: subtask.completed }} onPress={(event) => { event.stopPropagation(); onToggleSubtask(subtask.id); }} style={styles.subtaskPreviewRow}>
+                  <TouchableOpacity key={subtask.id} accessibilityRole="checkbox" accessibilityState={{ checked: subtask.completed }} onPress={(event) => { event.stopPropagation(); safeHaptic("light"); onToggleSubtask(subtask.id); }} style={styles.subtaskPreviewRow}>
                     <View style={[styles.miniCheck, { borderColor: palette.border }, subtask.completed && { backgroundColor: palette.primary, borderColor: palette.primary }]}>
                       {subtask.completed ? <MaterialIcons name="check" size={9} color={COLORS.white} /> : null}
                     </View>
@@ -114,7 +146,7 @@ export function HabitItemCard({ habit, showRequired = habit.isRequired, language
             <Text style={[styles.metaText, { color: palette.muted }]}>
               {t(`週 ${weekly.completed}/${weekly.target}`, `${weekly.completed}/${weekly.target} this week`)}
             </Text>
-            <Text style={[styles.metaText, { color: palette.muted }]}>
+            <Text style={[styles.metaText, { color: palette.muted, flexShrink: 0 }]}>
               · {habitStreak(habit)}{t("日連続", "-day streak")}
             </Text>
           </View>
@@ -147,7 +179,7 @@ const styles = StyleSheet.create({
   habitRow: { position: "relative", minHeight: 66, flexDirection: "row", alignItems: "flex-start", borderWidth: 1, borderRadius: 14, paddingVertical: 7, paddingLeft: 12, paddingRight: 6, marginBottom: 5, overflow: "hidden" },
   habitRowExpanded: { minHeight: 98 },
   rail: { position: "absolute", left: 0, top: 0, bottom: 0, width: 4 },
-  todoCheckTouchTarget: { width: 44, height: 44, alignItems: "center", justifyContent: "center", marginLeft: -8, marginTop: -5, marginRight: 2 },
+  todoCheckTouchTarget: { width: 48, height: 48, minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center", marginLeft: -8, marginTop: -5, marginRight: 2 },
   checkTouchTarget: { width: 44, height: 44, alignItems: "center", justifyContent: "center", marginLeft: -8, marginTop: -5, marginRight: 2 },
   todoCheck: { width: 24, height: 24, borderRadius: 6, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
   check: { width: 24, height: 24, borderRadius: 6, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
@@ -171,6 +203,8 @@ const styles = StyleSheet.create({
   subtaskProgress: { fontSize: 10, lineHeight: 14, fontWeight: "800" },
   subtaskDivider: { height: StyleSheet.hairlineWidth, marginTop: 6, marginBottom: 3 },
   subtaskSummary: { minHeight: 28, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  subtaskControls: { flexDirection: "row", alignItems: "center", gap: 2 },
+  subtaskDetailButton: { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
   subtaskExpandButton: { width: 32, height: 28, alignItems: "center", justifyContent: "center", marginRight: -4 },
   subtaskPreview: { marginTop: 1, marginLeft: 4, paddingLeft: 7, borderLeftWidth: 1, gap: 1 },
   subtaskPreviewRow: { minHeight: 24, flexDirection: "row", alignItems: "flex-start", gap: 5 },

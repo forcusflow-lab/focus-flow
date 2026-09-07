@@ -1,0 +1,35 @@
+<resources>
+  <string name="app_name">Focus Flow</string>
+  <string name="expo_system_ui_user_interface_style" translatable="false">automatic</string>
+  <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
+  <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
+
+  <!-- 今日（Today）画面 -->
+  <string name="today_banner_locked">制限中（残り %1$d 件）</string>
+  <string name="today_banner_unlocked">すべての制限を解除中</string>
+  <string name="today_banner_off">集中制限はオフです</string>
+  <string name="today_banner_subtext">今日の必須タスクを完了すると制限が解除されます</string>
+  <string name="today_progress_heading">本日の進捗（残り %1$d 件 / 完了 %2$d/%3$d 件）</string>
+  <string name="today_tasks_heading">今日のタスク</string>
+  <string name="today_completed_heading">完了済み</string>
+
+  <!-- 習慣（Habit）画面 -->
+  <string name="habit_today_progress">今日 %1$d/%2$d 回</string>
+  <string name="habit_streak">%1$d日連続</string>
+  <string name="habit_empty_title">最初の習慣を作りましょう</string>
+  <string name="habit_empty_description">続けたい行動を、回数・時間・記録方法に合わせて作成します。</string>
+
+  <!-- 設定（Settings）画面 -->
+  <string name="settings_step_guide_title">設定は3つの順番で進めます</string>
+  <string name="settings_step_guide_detail">1. 権限許可 → 2. アプリ選択 → 3. 時間帯設定。時間帯を選ばない場合はいつでも有効です。</string>
+  <string name="settings_switch_limit_tasks">タスク完了までアプリを制限</string>
+  <string name="settings_switch_limit_tasks_detail">オンにする前に、Androidのアクセシビリティ許可を確認します。</string>
+  <string name="settings_strict_mode_title">厳格モード</string>
+  <string name="settings_strict_mode_description">制限中の設定変更やアプリ削除を防止し、うっかり解除を防ぎます。</string>
+  <string name="settings_strict_mode_active_description">未完了の必須項目がある間は、ここから集中制限をオフにできません。遮断画面からアプリ情報も開きません。</string>
+
+  <!-- 共通 -->
+  <string name="must_do">必須</string>
+  <string name="action_complete">完了</string>
+  <string name="action_delete">削除</string>
+</resources>
