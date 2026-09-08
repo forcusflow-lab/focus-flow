@@ -136,3 +136,24 @@
 
 1. **完全ローカル保存:** タスク名、メモ、習慣、制限アプリ一覧などのユーザーデータはすべて端末内のローカルストレージ（AsyncStorage / SharedPreferences）に安全に保持され、外部サーバーへ無断送信されません。
 2. **アクセシビリティサービスの目的外利用の禁止:** 画面内容、入力テキスト、通知内容の読み取りは一切行わず、ユーザーが明示的に設定したアプリの前面化検知のみに権限を使用します。
+
+---
+
+## 6. Material 3 操作面 & スクロール耐性仕様 (v26)
+
+### 6.1 回数カウンターのモダン化（アプリ本体＆ウィジェット完全統一）
+- **コンテナデザイン:** 平坦なグレー枠線を廃止し、淡いコンテナカラー（`surfaceVariant` / `elevated`）を背景に適用した角丸カプセル形状（`borderRadius: 999` / `focus_flow_widget_pill_container.xml`）に刷新。
+- **テキストコントラスト:** 現在値を太字（`FontWeight.BOLD` / `Typeface.BOLD`）かつ高コントラスト色、目標値を控えめなミュート色（`mutedColor`）で表示し、視認性を向上。
+- **タップ操作性:** ±ボタンはマージン・ヒットスロップを拡張し、48x48dp以上の有効タッチ領域を確保。軽快な触覚フィードバック（`safeHaptic("light")`）を伴う。
+
+### 6.2 タイマー操作ボタンの統一と視認性保証
+- **ボタンデザイン:** テーマのPrimary塗りつぶしピルボタン（`borderRadius: 999`）に白文字・白アイコン（`#FFFFFF`）を適用。
+- **背景透過対応:** ウィジェットが二層透過設定下にあっても、半透明背景に同化・退色せず、高いコントラストと視認性を維持。
+- **統一ラベル:** 状態に応じて「▶ 開始」「❚❚ 一時停止」「▶ 再開」（英語: `▶ Start` / `❚❚ Pause` / `▶ Resume`）を表示。ウィジェットからのPendingIntentも確実に連動。
+
+### 6.3 詳細編集画面のスクロールフリーズ防止
+- **仮想化クリップ競合の排除:** `task-form.tsx` および `habit-form.tsx` のScrollViewからAndroid特有のフリーズ原因となっていた `removeClippedSubviews` を撤廃。
+- **キーボード回避の適正化:** Androidにおける `KeyboardAvoidingView` の `behavior="height"` によるレイアウト圧縮・タッチ不可問題を解消（`behavior={Platform.OS === "ios" ? "padding" : undefined}`）。
+- **必須トグル連動スクロール:** 「必須」トグルをONにして解除制限時間帯セクションが下部に展開された際、`requestAnimationFrame` を介してスムーズに最下部へ追従スクロール（`scrollToEnd({ animated: true })`）。
+- **ネイティブ保存処理の非同期退避:** `FocusGateModule.kt` の `saveGateState` におけるSharedPreferences書き込みおよびウィジェット全体更新（`refreshAll`）を `Executors.newSingleThreadExecutor` でバックグラウンド実行し、UI/JSスレッドのブロッキングを完全防止。
+

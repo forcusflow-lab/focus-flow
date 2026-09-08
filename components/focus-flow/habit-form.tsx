@@ -151,7 +151,7 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboardAvoider}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboardAvoider}>
         <Pressable style={styles.backdrop} onPress={onClose}>
           <Pressable style={[styles.sheet, { backgroundColor: palette.background }]} onPress={() => undefined}>
             <View style={[styles.handle, { backgroundColor: palette.primarySoft }]} />
@@ -167,8 +167,6 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
-              automaticallyAdjustKeyboardInsets={true}
-              removeClippedSubviews={Platform.OS === "android"}
               nestedScrollEnabled={true}
               scrollEventThrottle={16}
               contentContainerStyle={styles.body}
@@ -387,7 +385,13 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
                   accessibilityState={{ checked: isRequired }}
                   onPress={() => {
                     safeHaptic("light");
-                    setIsRequired((value) => !value);
+                    const next = !isRequired;
+                    setIsRequired(next);
+                    if (next) {
+                      requestAnimationFrame(() => {
+                        scrollRef.current?.scrollToEnd({ animated: true });
+                      });
+                    }
                   }}
                   style={[
                     styles.requiredOption,

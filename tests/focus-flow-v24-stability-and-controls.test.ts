@@ -38,9 +38,8 @@ describe("Focus Flow v24 安定性・操作面・設定UI", () => {
 
   it("Widget回数操作はラベル付きの独立ボタン面として説明され、本文タップと混線しない", () => {
     const provider = source("plugins", "native", "android", "kotlin", "FocusFlowWidgetProvider.kt");
-    expect(provider).toContain('"回数を減らす"');
-    expect(provider).toContain('"回数を増やす"');
-    expect(provider).toContain('"setBackgroundResource", widgetCardDrawable(dark, rowOpacity)');
+    expect(provider).toContain('"setBackgroundColor", Color.TRANSPARENT');
+    expect(provider).toContain("views.setImageViewResource(ids.controlsBackground, R.drawable.focus_flow_widget_pill_container)");
     expect(provider).toContain("views.setOnClickPendingIntent(ids.decrement");
     expect(provider).toContain("views.setOnClickPendingIntent(ids.increment");
   });

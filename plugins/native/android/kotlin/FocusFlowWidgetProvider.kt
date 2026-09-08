@@ -11,6 +11,7 @@ import android.graphics.Color
 import android.net.Uri
 import android.text.SpannableString
 import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.graphics.Typeface
@@ -335,6 +336,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setViewVisibility(ids.meta, View.GONE)
     views.setViewVisibility(ids.controls, View.GONE)
     views.setViewVisibility(ids.timerContainer, View.GONE)
+    views.setViewVisibility(ids.timerBackground, View.GONE)
     views.setViewVisibility(ids.timer, View.GONE)
     views.setViewVisibility(ids.chronometer, View.GONE)
     views.setInt(ids.rail, "setBackgroundColor", Color.TRANSPARENT)
@@ -418,36 +420,57 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     if (supportsControls && unit == "count") {
       views.setViewVisibility(ids.controlsBackground, View.VISIBLE)
       views.setViewVisibility(ids.timerContainer, View.GONE)
-      views.setImageViewResource(ids.controlsBackground, widgetCardDrawable(dark, rowOpacity))
+      views.setImageViewResource(ids.controlsBackground, R.drawable.focus_flow_widget_pill_container)
+      views.setInt(ids.controlsBackground, "setColorFilter", colorWithOpacity(elevated, rowOpacity))
       listOf(ids.decrement, ids.progress, ids.increment).forEach { control -> views.setViewVisibility(control, View.VISIBLE) }
       val value = item.optInt("progressValue", 0)
       val target = item.optInt("targetValue", 1).coerceAtLeast(1)
-      views.setTextViewText(ids.progress, fontText("$value/$target", fontFamily))
-      views.setTextColor(ids.progress, primary)
+      val valueStr = "$value"
+      val targetStr = "/$target"
+      val fullText = "$valueStr$targetStr"
+      val spannable = SpannableString(fullText)
+      spannable.setSpan(StyleSpan(Typeface.BOLD), 0, valueStr.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+      spannable.setSpan(ForegroundColorSpan(titleColor), 0, valueStr.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+      spannable.setSpan(ForegroundColorSpan(mutedColor), valueStr.length, fullText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+      views.setTextViewText(ids.progress, spannable)
+      views.setInt(ids.progress, "setBackgroundColor", Color.TRANSPARENT)
+      views.setTextViewTextSize(ids.progress, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
       views.setTextViewText(ids.decrement, fontText("−", fontFamily))
       views.setTextViewText(ids.increment, fontText("+", fontFamily))
       listOf(ids.decrement, ids.increment).forEach { control ->
         views.setTextColor(control, primary)
-        views.setInt(control, "setBackgroundResource", widgetCardDrawable(dark, rowOpacity))
-        views.setTextViewTextSize(control, android.util.TypedValue.COMPLEX_UNIT_DIP, 14f * scale)
+        views.setInt(control, "setBackgroundColor", Color.TRANSPARENT)
+        views.setTextViewTextSize(control, android.util.TypedValue.COMPLEX_UNIT_DIP, 15f * scale)
       }
       views.setContentDescription(ids.decrement, if (english) "Decrease count" else "回数を減らす")
       views.setContentDescription(ids.increment, if (english) "Increase count" else "回数を増やす")
-      views.setInt(ids.progress, "setBackgroundColor", colorWithOpacity(elevated, rowOpacity))
-      views.setTextViewTextSize(ids.progress, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
       views.setOnClickPendingIntent(ids.decrement, actionIntent(context, widgetId, ids.position, ACTION_DECREMENT, itemId, kind))
       views.setOnClickPendingIntent(ids.increment, actionIntent(context, widgetId, ids.position, ACTION_INCREMENT, itemId, kind))
     } else if (supportsControls) {
       views.setViewVisibility(ids.controlsBackground, View.GONE)
       views.setViewVisibility(ids.timerContainer, View.VISIBLE)
-      views.setViewVisibility(ids.timerBackground, View.GONE)
+      views.setViewVisibility(ids.timerBackground, View.VISIBLE)
+      views.setViewVisibility(ids.timer, View.VISIBLE)
+      views.setImageViewResource(ids.timerBackground, R.drawable.focus_flow_widget_pill_container)
+      views.setInt(ids.timerBackground, "setColorFilter", primary)
       listOf(ids.decrement, ids.progress, ids.increment).forEach { control -> views.setViewVisibility(control, View.GONE) }
       val timerAction = if (timerRunning) ACTION_TIMER_PAUSE else ACTION_TIMER_START
-      views.setTextViewText(ids.timer, fontText(if (timerRunning) if (english) "Pause" else "停止" else if (timerPaused) if (english) "Resume" else "再開" else if (english) "Start" else "開始", fontFamily))
-      views.setTextColor(ids.timer, primary)
-      views.setInt(ids.timer, "setBackgroundResource", widgetCardDrawable(dark, rowOpacity))
-      views.setOnClickPendingIntent(ids.timer, actionIntent(context, widgetId, ids.position, timerAction, itemId, kind))
-      views.setOnClickPendingIntent(ids.controls, actionIntent(context, widgetId, ids.position, timerAction, itemId, kind))
+      val timerLabel = if (timerRunning) {
+        if (english) "❚❚ Pause" else "❚❚ 一時停止"
+      } else if (timerPaused) {
+        if (english) "▶ Resume" else "▶ 再開"
+      } else {
+        if (english) "▶ Start" else "▶ 開始"
+      }
+      views.setTextViewText(ids.timer, fontText(timerLabel, fontFamily))
+      views.setTextColor(ids.timer, Color.WHITE)
+      views.setInt(ids.timer, "setBackgroundColor", Color.TRANSPARENT)
+      views.setTextViewTextSize(ids.timer, android.util.TypedValue.COMPLEX_UNIT_DIP, 10.5f * scale)
+      val timerPendingIntent = actionIntent(context, widgetId, ids.position, timerAction, itemId, kind)
+      views.setOnClickPendingIntent(ids.timer, timerPendingIntent)
+      views.setOnClickPendingIntent(ids.timerBackground, timerPendingIntent)
+      views.setOnClickPendingIntent(ids.timerContainer, timerPendingIntent)
+      views.setOnClickPendingIntent(ids.controls, timerPendingIntent)
     }
   }
 

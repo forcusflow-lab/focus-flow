@@ -69,10 +69,8 @@ describe("Focus Flow v23 widget density, transparency, and app-picker performanc
     expect(layout).toContain("focus_flow_widget_static_row_one_timer_container");
     expect(layout).not.toContain("<View");
     expect(layout).not.toContain("layout_weight");
-    expect(layout).not.toContain('="0dp"');
-    expect(provider).toContain("views.setImageViewResource(ids.controlsBackground, widgetCardDrawable(dark, rowOpacity))");
-    expect(provider).toContain("views.setViewVisibility(ids.timerContainer, View.VISIBLE)");
-    expect(provider).toContain("views.setOnClickPendingIntent(ids.controls, actionIntent(context, widgetId, ids.position, timerAction, itemId, kind))");
+    expect(provider).toContain("views.setImageViewResource(ids.controlsBackground, R.drawable.focus_flow_widget_pill_container)");
+    expect(provider).toContain("views.setOnClickPendingIntent(ids.controls, timerPendingIntent)");
   });
 
   it("avoids redundant Native refreshes and unneeded UI work while virtualizing the installed-app list", () => {

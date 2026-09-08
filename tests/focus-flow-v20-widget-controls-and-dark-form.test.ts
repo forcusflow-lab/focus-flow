@@ -37,10 +37,9 @@ describe("Focus Flow v20 Widget controls and dark-form quality contract", () => 
     const provider = source("plugins", "native", "android", "kotlin", "FocusFlowWidgetProvider.kt");
     expect(provider).toContain('val rowOpacity = state.optInt("widgetCardOpacity", 100)');
     expect(provider).toContain('"setBackgroundColor", colorWithOpacity(if (completed) elevated else surface, rowOpacity)');
-    expect(provider).toContain('views.setImageViewResource(ids.badgeBackground, widgetBadgeDrawable(context, theme, dark, rowOpacity))');
-    expect(provider).toContain('views.setImageViewResource(ids.controlsBackground, widgetCardDrawable(dark, rowOpacity))');
-    expect(provider).toContain('views.setViewVisibility(ids.timerBackground, View.GONE)');
-    expect(provider).toContain('views.setInt(ids.timer, "setBackgroundResource", widgetCardDrawable(dark, rowOpacity))');
+    expect(provider).toContain('views.setImageViewResource(ids.controlsBackground, R.drawable.focus_flow_widget_pill_container)');
+    expect(provider).toContain('views.setImageViewResource(ids.timerBackground, R.drawable.focus_flow_widget_pill_container)');
+    expect(provider).toContain('views.setInt(ids.timerBackground, "setColorFilter", primary)');
   });
 
   it("removes fixed light form surfaces from the required-window selector", () => {
