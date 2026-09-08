@@ -184,9 +184,9 @@ class FocusGateService : AccessibilityService() {
       setPadding(dp(24), dp(24), dp(24), dp(22))
       background = roundedBackground(palette.elevated, 28)
     }
-    panel.addView(View(this).apply { background = roundedBackground(palette.primary, 3) }, LinearLayout.LayoutParams(dp(36), dp(4)).apply { bottomMargin = dp(22) })
+    panel.addView(View(this).apply { background = roundedBackground(palette.primary, 3) }, LinearLayout.LayoutParams(dp(36), dp(4)).apply { bottomMargin = dp(20) })
     panel.addView(TextView(this).apply {
-      text = "Focus Flow"
+      text = if (english) "Focus time" else "集中タイムです"
       textSize = 14f
       setTextColor(palette.primary)
       gravity = Gravity.START
@@ -194,24 +194,100 @@ class FocusGateService : AccessibilityService() {
       letterSpacing = 0.06f
       setPadding(0, 0, 0, dp(10))
     })
+    val statusText = if (rule.isScheduled) {
+      if (english) "Complete the tasks for this time window (${rule.startTime}–${rule.endTime}) to unlock."
+      else "この時間帯（${rule.startTime}〜${rule.endTime}）の対象タスクを完了すると解除されます"
+    } else {
+      if (english) "Complete today's tasks to unlock."
+      else "今日のタスクを達成すると制限が解除されます"
+    }
     panel.addView(TextView(this).apply {
-      text = rule.message
-      textSize = 23f
+      text = statusText
+      textSize = 20f
       setTextColor(palette.text)
       gravity = Gravity.START
       setTypeface(typeface, android.graphics.Typeface.BOLD)
-      setPadding(0, 0, 0, dp(10))
+      setPadding(0, 0, 0, dp(12))
     })
+
+    val remainingTasks = buildList {
+      val items = state.widgetItems
+      if (items != null) {
+        for (i in 0 until items.length()) {
+          val item = items.optJSONObject(i) ?: continue
+          if (!item.optBoolean("completed", false) && item.optBoolean("gateRequired", true)) {
+            val title = item.optString("title").trim()
+            if (title.isNotEmpty()) add(title)
+          }
+        }
+      } else {
+        val todos = state.todoQueue
+        if (todos != null) {
+          for (i in 0 until todos.length()) {
+            val title = todos.optJSONObject(i)?.optString("title")?.trim().orEmpty()
+            if (title.isNotEmpty()) add(title)
+          }
+        }
+        val habits = state.habitQueue
+        if (habits != null) {
+          for (i in 0 until habits.length()) {
+            val title = habits.optJSONObject(i)?.optString("title")?.trim().orEmpty()
+            if (title.isNotEmpty()) add(title)
+          }
+        }
+      }
+    }
+
+    if (remainingTasks.isNotEmpty()) {
+      val taskListContainer = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        background = roundedBackground(palette.primarySoft, 14)
+        setPadding(dp(14), dp(10), dp(14), dp(10))
+      }
+      val displayTasks = remainingTasks.take(3)
+      for (taskTitle in displayTasks) {
+        val row = LinearLayout(this).apply {
+          orientation = LinearLayout.HORIZONTAL
+          gravity = Gravity.CENTER_VERTICAL
+          setPadding(0, dp(3), 0, dp(3))
+        }
+        row.addView(TextView(this).apply {
+          text = "• "
+          textSize = 13f
+          setTextColor(palette.primary)
+          setTypeface(typeface, android.graphics.Typeface.BOLD)
+        })
+        row.addView(TextView(this).apply {
+          text = taskTitle
+          textSize = 13f
+          setTextColor(palette.text)
+          maxLines = 1
+          ellipsize = android.text.TextUtils.TruncateAt.END
+        })
+        taskListContainer.addView(row)
+      }
+      if (remainingTasks.size > 3) {
+        val extra = remainingTasks.size - 3
+        taskListContainer.addView(TextView(this).apply {
+          text = if (english) "+$extra more" else "+ほか${extra}件"
+          textSize = 11f
+          setTextColor(palette.muted)
+          setPadding(dp(12), dp(2), 0, 0)
+        })
+      }
+      panel.addView(taskListContainer, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(16) })
+    }
+
     panel.addView(TextView(this).apply {
       text = if (english) {
         if (state.strictMode) "Strict mode keeps this app limited until the required items are complete." else "Complete the required items in Focus Flow to continue."
       } else {
         if (state.strictMode) "厳格モード中です。必須項目を完了するまで、このアプリは利用できません。" else "Focus Flowで必須項目を完了すると、このアプリを使えるようになります。"
       }
-      textSize = 14f
+      textSize = 13f
       setTextColor(palette.muted)
       gravity = Gravity.START
-      setPadding(0, 0, 0, dp(22))
+      setPadding(0, 0, 0, dp(20))
     })
     panel.addView(Button(this).apply {
       text = if (english) "View today's items" else "今日の項目を確認する"
@@ -367,13 +443,31 @@ class FocusGateService : AccessibilityService() {
   private fun readState(): GateState? = try {
     val saved = preferences().getString(FocusGateModule.GATE_STATE, null) ?: return null
     val json = JSONObject(saved)
-    GateState(json.optBoolean("active"), json.optBoolean("strictMode"), json.optJSONArray("rules"), json.optString("language", "ja"), GatePalette.from(json.optJSONObject("widgetPalette")))
+    GateState(
+      json.optBoolean("active"),
+      json.optBoolean("strictMode"),
+      json.optJSONArray("rules"),
+      json.optString("language", "ja"),
+      GatePalette.from(json.optJSONObject("widgetPalette")),
+      json.optJSONArray("widgetItems"),
+      json.optJSONArray("todoQueue"),
+      json.optJSONArray("habitQueue")
+    )
   } catch (_: Exception) {
     null
   }
 }
 
-private data class GateState(val active: Boolean, val strictMode: Boolean, val rules: org.json.JSONArray?, val language: String, val palette: GatePalette) {
+private data class GateState(
+  val active: Boolean,
+  val strictMode: Boolean,
+  val rules: org.json.JSONArray?,
+  val language: String,
+  val palette: GatePalette,
+  val widgetItems: org.json.JSONArray? = null,
+  val todoQueue: org.json.JSONArray? = null,
+  val habitQueue: org.json.JSONArray? = null
+) {
   fun ruleBlocking(packageName: String): GateRule? {
     if (!active || rules == null) return null
     for (index in 0 until rules.length()) {
@@ -401,6 +495,10 @@ private data class GatePalette(val background: Int, val elevated: Int, val prima
 
 private data class GateRule(val json: JSONObject) {
   val pendingCount: Int get() = json.optInt("pendingCount")
+  val schedule: JSONObject? get() = json.optJSONObject("schedule")
+  val isScheduled: Boolean get() = schedule != null
+  val startTime: String get() = schedule?.optString("startTime", "00:00") ?: "00:00"
+  val endTime: String get() = schedule?.optString("endTime", "00:00") ?: "00:00"
   val effectivePendingCount: Int get() {
     val unlocks = json.optJSONArray("timedUnlocks") ?: return pendingCount
     var elapsed = 0

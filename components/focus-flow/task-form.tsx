@@ -76,7 +76,7 @@ const SubtaskRowItem = React.memo(function SubtaskRowItem({
 });
 
 export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSave, onDelete }: TaskFormProps) {
-  const { displaySettings, gateConfig } = useFocusFlow();
+  const { displaySettings, gateConfig, setGateConfig } = useFocusFlow();
   const palette = useFocusPalette();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
@@ -255,7 +255,22 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
 
             <Text style={[styles.label, styles.requiredLabel, { color: palette.text }]}>{t("アプリの制限", "App limits")}</Text>
             <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: effectiveRequired }} accessibilityLabel={t("必須にする", "Make it a must-do")} onPress={() => { safeHaptic("light"); const next = !isRequired; setIsRequired(next); if (next) { requestAnimationFrame(() => { scrollRef.current?.scrollToEnd({ animated: true }); }); } }} activeOpacity={0.72} style={[styles.requiredOption, { backgroundColor: palette.surface, borderColor: palette.border }, effectiveRequired && { borderColor: palette.primary, backgroundColor: palette.primarySoft }]}><View style={[styles.requiredCheck, { borderColor: palette.border }, effectiveRequired && { borderColor: palette.primary, backgroundColor: palette.primary }]}>{effectiveRequired ? <MaterialIcons name="check" size={15} color={palette.isDark ? palette.background : COLORS.white} /> : null}</View><View style={styles.requiredCopy}><Text style={[styles.requiredTitle, { color: palette.text }]}>{t("必須にする", "Make it a must-do")}</Text><Text style={[styles.requiredDetail, { color: palette.muted }]}>{effectiveRequired ? t("完了まで対象アプリの解除条件に含めます", "Included in selected-app unlock conditions until complete") : t("通常のTodoとして作成します", "Creates a regular task")}</Text></View></TouchableOpacity>
-            <RequiredWindowSelector english={language === "en"} isRequired={isRequired} mode={requiredWindowMode} selectedIds={requiredScheduleIds} schedules={gateConfig.schedules} onChange={(mode, ids) => { setRequiredWindowMode(mode); setRequiredScheduleIds(ids); }} />
+            <RequiredWindowSelector
+              english={language === "en"}
+              isRequired={effectiveRequired}
+              mode={requiredWindowMode}
+              selectedIds={requiredScheduleIds}
+              schedules={gateConfig.schedules}
+              onChange={(mode, ids) => {
+                setRequiredWindowMode(mode);
+                setRequiredScheduleIds(ids);
+              }}
+              onCreateSchedule={(schedule) => {
+                setGateConfig({ schedules: [...gateConfig.schedules, schedule] });
+                setRequiredWindowMode("scheduled");
+                setRequiredScheduleIds((prev) => [...prev, schedule.id]);
+              }}
+            />
           </ScrollView>
           <View style={[styles.footer, { backgroundColor: palette.background, borderTopColor: palette.border, paddingBottom: Math.max(insets.bottom, 12) }]}>
             <View style={styles.footerActions}>

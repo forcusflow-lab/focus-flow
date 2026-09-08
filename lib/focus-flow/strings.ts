@@ -13,7 +13,25 @@ export const R = {
     today_banner_subtext: "today_banner_subtext",
     today_progress_heading: "today_progress_heading",
     today_tasks_heading: "today_tasks_heading",
+    today_scheduled_tasks_heading: "today_scheduled_tasks_heading",
     today_completed_heading: "today_completed_heading",
+    today_banner_locked_window: "today_banner_locked_window",
+    // 遮断オーバーレイ画面
+    gate_overlay_header: "gate_overlay_header",
+    gate_overlay_status_all_day: "gate_overlay_status_all_day",
+    gate_overlay_status_window: "gate_overlay_status_window",
+    // 制限タイミング（Todo / 習慣 共通）
+    timing_section_title: "timing_section_title",
+    timing_all_day_title: "timing_all_day_title",
+    timing_all_day_detail: "timing_all_day_detail",
+    timing_scheduled_title: "timing_scheduled_title",
+    timing_scheduled_detail: "timing_scheduled_detail",
+    timing_add_window: "timing_add_window",
+    // ウィジェット
+    widget_badge_all_day: "widget_badge_all_day",
+    widget_status_all_day: "widget_status_all_day",
+    widget_status_window: "widget_status_window",
+    widget_status_unlocked: "widget_status_unlocked",
     // 習慣（Habit）画面
     habit_today_progress: "habit_today_progress",
     habit_streak: "habit_streak",
@@ -48,8 +66,12 @@ export const STRING_RESOURCES: Record<StringResourceId, LocalizedString> = {
   },
   // 今日画面
   today_banner_locked: {
-    ja: "制限中（残り %d 件）",
+    ja: "アプリ制限中（残り %d 件）",
     en: "App limits active (%d remaining)",
+  },
+  today_banner_locked_window: {
+    ja: "時間帯制限中（%1$s〜%2$s）",
+    en: "Scheduled limit active (%1$s–%2$s)",
   },
   today_banner_unlocked: {
     ja: "すべての制限を解除中",
@@ -71,9 +93,68 @@ export const STRING_RESOURCES: Record<StringResourceId, LocalizedString> = {
     ja: "今日のタスク",
     en: "Today’s tasks",
   },
+  today_scheduled_tasks_heading: {
+    ja: "指定時間帯のタスク",
+    en: "Scheduled tasks",
+  },
   today_completed_heading: {
     ja: "完了済み",
     en: "Completed",
+  },
+  // 遮断オーバーレイ画面
+  gate_overlay_header: {
+    ja: "集中タイムです",
+    en: "Focus time",
+  },
+  gate_overlay_status_all_day: {
+    ja: "今日のタスクを達成すると制限が解除されます",
+    en: "Complete today's tasks to unlock.",
+  },
+  gate_overlay_status_window: {
+    ja: "この時間帯（%1$s〜%2$s）の対象タスクを完了すると解除されます",
+    en: "Complete the tasks for this time window (%1$s–%2$s) to unlock.",
+  },
+  // 制限タイミング（Todo / 習慣 共通）
+  timing_section_title: {
+    ja: "制限するタイミング",
+    en: "When to limit",
+  },
+  timing_all_day_title: {
+    ja: "終日",
+    en: "All day",
+  },
+  timing_all_day_detail: {
+    ja: "今日の達成までアプリを制限",
+    en: "Limit apps until completed today",
+  },
+  timing_scheduled_title: {
+    ja: "指定の時間帯",
+    en: "Specific time window",
+  },
+  timing_scheduled_detail: {
+    ja: "設定した時間帯（朝・夜など）の間だけブロック",
+    en: "Block only during selected time windows (morning, night, etc.)",
+  },
+  timing_add_window: {
+    ja: "+ 新しい時間帯を作成",
+    en: "+ Create new time window",
+  },
+  // ウィジェット
+  widget_badge_all_day: {
+    ja: "終日",
+    en: "ALL-DAY",
+  },
+  widget_status_all_day: {
+    ja: "残り %1$d 件",
+    en: "%1$d remaining",
+  },
+  widget_status_window: {
+    ja: "制限中（%1$s〜%2$s）",
+    en: "Limited (%1$s–%2$s)",
+  },
+  widget_status_unlocked: {
+    ja: "制限解除中",
+    en: "Limits unlocked",
   },
   // 習慣画面
   habit_today_progress: {

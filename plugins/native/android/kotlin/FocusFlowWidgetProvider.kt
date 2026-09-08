@@ -256,7 +256,28 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setTextViewText(R.id.focus_flow_widget_title, fontText(if (english) "TODAY" else "今日の項目", state.optString("fontFamily", "system")))
     val candidates = visibleWidgetItems(context, widgetId, state.optJSONArray("widgetItems") ?: JSONArray()).length()
     val overflow = (candidates - bucket.maxRows).coerceAtLeast(0)
-    val baseStatus = if (!active) if (english) "App limits off" else "集中制限はオフ" else if (pending == 0) if (english) "Must-dos complete" else "必須項目を完了しました" else if (english) "$pending must-do${if (pending == 1) "" else "s"} remaining" else "必須項目 残り${pending}件"
+    var activeSchedule: JSONObject? = null
+    val rules = state.optJSONArray("rules")
+    if (rules != null) {
+      for (i in 0 until rules.length()) {
+        val rule = rules.optJSONObject(i) ?: continue
+        if (rule.optBoolean("isActive", false) && rule.has("schedule") && !rule.isNull("schedule") && rule.optInt("pendingCount", 0) > 0) {
+          activeSchedule = rule.optJSONObject("schedule")
+          break
+        }
+      }
+    }
+    val baseStatus = if (!active) {
+      if (english) "App limits off" else "集中制限はオフ"
+    } else if (pending == 0) {
+      if (english) "Limits unlocked" else "制限解除中"
+    } else if (activeSchedule != null) {
+      val startTime = activeSchedule.optString("startTime", "00:00")
+      val endTime = activeSchedule.optString("endTime", "00:00")
+      if (english) "Limited ($startTime–$endTime)" else "制限中（$startTime〜$endTime）"
+    } else {
+      if (english) "$pending remaining" else "残り ${pending} 件"
+    }
     views.setTextViewText(R.id.focus_flow_widget_status, fontText(if (overflow > 0) "$baseStatus · ${if (english) "$overflow more" else "ほか${overflow}件"}" else baseStatus, state.optString("fontFamily", "system")))
     val completedCount = state.optInt("widgetHiddenCompletedCount", 0)
     val showingCompleted = widgetCompletedVisible(context, widgetId)
@@ -452,7 +473,13 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       views.setViewVisibility(ids.timerBackground, View.VISIBLE)
       views.setViewVisibility(ids.timer, View.VISIBLE)
       views.setImageViewResource(ids.timerBackground, R.drawable.focus_flow_widget_pill_container)
-      views.setInt(ids.timerBackground, "setColorFilter", primary)
+      if (timerRunning) {
+        views.setInt(ids.timerBackground, "setColorFilter", primary)
+        views.setTextColor(ids.timer, Color.WHITE)
+      } else {
+        views.setInt(ids.timerBackground, "setColorFilter", colorWithOpacity(elevated, rowOpacity))
+        views.setTextColor(ids.timer, primary)
+      }
       listOf(ids.decrement, ids.progress, ids.increment).forEach { control -> views.setViewVisibility(control, View.GONE) }
       val timerAction = if (timerRunning) ACTION_TIMER_PAUSE else ACTION_TIMER_START
       val timerLabel = if (timerRunning) {
@@ -463,7 +490,6 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
         if (english) "▶ Start" else "▶ 開始"
       }
       views.setTextViewText(ids.timer, fontText(timerLabel, fontFamily))
-      views.setTextColor(ids.timer, Color.WHITE)
       views.setInt(ids.timer, "setBackgroundColor", Color.TRANSPARENT)
       views.setTextViewTextSize(ids.timer, android.util.TypedValue.COMPLEX_UNIT_DIP, 10.5f * scale)
       val timerPendingIntent = actionIntent(context, widgetId, ids.position, timerAction, itemId, kind)
@@ -475,13 +501,16 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   }
 
   private fun compactBadge(item: JSONObject, english: Boolean): String {
+    val windowLabel = item.optString("windowLabel", "").trim()
+    if (windowLabel.isNotBlank()) {
+      return if (english) windowLabel.replace("〜", "–") else windowLabel
+    }
     val required = item.optBoolean("required", false)
-    val hasWindow = item.optString("windowLabel", "").isNotBlank()
-    return when {
+    val badge = when {
       required -> if (english) "MUST" else "必須"
-      hasWindow -> if (english) "TIME" else "時間帯"
       else -> ""
     }
+    return if (required) (if (english) "ALL-DAY" else "終日") else badge
   }
 
   private fun widgetBadgeDrawable(context: Context, theme: String, dark: Boolean, opacity: Int): Int {

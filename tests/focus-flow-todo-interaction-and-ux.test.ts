@@ -49,7 +49,7 @@ describe("UXライティング刷新とstrings.xml集約", () => {
   it("strings.xmlにアプリ全体の統一文言が集約定義されている", () => {
     const stringsXml = readProjectFile("plugins", "native", "android", "res", "values", "strings.xml");
 
-    expect(stringsXml).toContain('<string name="today_banner_locked">制限中（残り %1$d 件）</string>');
+    expect(stringsXml).toContain('<string name="today_banner_locked">アプリ制限中（残り %1$d 件）</string>');
     expect(stringsXml).toContain('<string name="today_banner_unlocked">すべての制限を解除中</string>');
     expect(stringsXml).toContain('<string name="today_banner_subtext">今日の必須タスクを完了すると制限が解除されます</string>');
     expect(stringsXml).toContain('<string name="today_progress_heading">本日の進捗（残り %1$d 件 / 完了 %2$d/%3$d 件）</string>');
@@ -60,7 +60,7 @@ describe("UXライティング刷新とstrings.xml集約", () => {
 
   it("stringResource関数が位置指定プレースホルダーと多言語展開を正常に行う", () => {
     // 日本語展開
-    expect(stringResource(R.string.today_banner_locked, "ja", 3)).toBe("制限中（残り 3 件）");
+    expect(stringResource(R.string.today_banner_locked, "ja", 3)).toBe("アプリ制限中（残り 3 件）");
     expect(stringResource(R.string.today_banner_unlocked, "ja")).toBe("すべての制限を解除中");
     expect(stringResource(R.string.today_progress_heading, "ja", 2, 1, 3)).toBe("本日の進捗（残り 2 件 / 完了 1/3 件）");
     expect(stringResource(R.string.settings_switch_limit_tasks, "ja")).toBe("タスク完了までアプリを制限");

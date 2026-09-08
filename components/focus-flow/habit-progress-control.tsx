@@ -110,14 +110,31 @@ export function HabitProgressControl({ habit, date, language, onAdjust, onStartT
           }
         }}
         activeOpacity={0.8}
-        style={[styles.timerButton, { backgroundColor: palette.primary }]}
+        style={[
+          styles.timerButton,
+          {
+            backgroundColor: palette.primary,
+          },
+          !timer.running && {
+            backgroundColor: palette.elevated,
+          },
+        ]}
       >
         <MaterialIcons
           name={timer.running ? "pause" : "play-arrow"}
           size={18}
-          color="#FFFFFF"
+          color={timer.running ? "#FFFFFF" : palette.primary}
         />
-        <Text style={styles.timerButtonText}>{action}</Text>
+        {/* color="#FFFFFF" */}
+        <Text
+          style={[
+            styles.timerButtonText,
+            { color: palette.primary },
+            timer.running && { color: "#FFFFFF" },
+          ]}
+        >
+          {action}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -189,6 +206,7 @@ const styles = StyleSheet.create({
   timerButton: {
     minWidth: 84,
     minHeight: 38,
+    height: 36,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -197,7 +215,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   timerButtonText: {
-    color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "900",
   },

@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScaledText } from "@/components/focus-flow/scaled-text";
 import { COLORS, LoadingScreen, ScreenHeading, useFocusPalette } from "@/components/focus-flow/ui";
 import { ScreenContainer } from "@/components/screen-container";
-import { getAccessibilityStatus, getGateDiagnostics, getLaunchableApps, isNativeGateAvailable, openAccessibilitySettings, openAppDetailsSettings, requestIgnoreBatteryOptimizations, type GateDiagnostics, type LaunchableApp } from "@/lib/focus-flow/android-gate";
+import { getAccessibilityStatus, getGateDiagnostics, getLaunchableApps, isNativeGateAvailable, openAccessibilitySettings, openAppDetailsSettings, openTimePicker, requestIgnoreBatteryOptimizations, type GateDiagnostics, type LaunchableApp } from "@/lib/focus-flow/android-gate";
 import { APP_FONT_OPTIONS, getAppFontStyle } from "@/lib/focus-flow/app-fonts";
 import { APPEARANCE_OPTIONS, APP_THEMES, resolvedAppTheme, type AppPalette } from "@/lib/focus-flow/app-themes";
 import { isEnglish } from "@/lib/focus-flow/i18n";
@@ -427,7 +427,32 @@ function ThemeChoice({ theme, selected, english, palette, onPress }: { theme: Ap
 function AppearancePreview({ english, displaySettings }: { english: boolean; displaySettings: DisplaySettings }) { const palette = useFocusPalette(); return <View style={[appearanceStyles.appearancePreview, { backgroundColor: palette.elevated, borderColor: palette.border }]}><View style={appearanceStyles.previewTop}><View style={[appearanceStyles.previewIcon, { backgroundColor: palette.primarySoft }]}><MaterialIcons name="check" size={17} color={palette.primary} /></View><View><Text style={[appearanceStyles.previewTitle, { color: palette.text }]}>{english ? "Today" : "今日"}</Text><Text style={[appearanceStyles.previewDetail, { color: palette.muted }]}>{english ? "Theme preview" : "テーマの見本"}</Text></View></View><View style={[appearanceStyles.previewCard, { backgroundColor: palette.surface }]}><View style={[appearanceStyles.previewCheck, { borderColor: palette.primary }]} /><View style={[appearanceStyles.previewLine, { backgroundColor: palette.elevated }]} /></View></View>; }
 function FontChoice({ item, selected, english, palette, onPress }: { item: (typeof APP_FONT_OPTIONS)[number]; selected: boolean; english: boolean; palette: AppPalette; onPress: () => void }) { return <TouchableOpacity onPress={onPress} style={[appearanceStyles.fontChoice, { backgroundColor: selected ? palette.primarySoft : palette.surface, borderColor: selected ? palette.primary : palette.border }]}><View style={appearanceStyles.fontChoiceCopy}><Text style={[styles.fontSample, { color: palette.text }, getAppFontStyle(item.id)]}>{english ? item.sample.en : item.sample.ja}</Text><Text style={[styles.choiceLabel, { color: palette.text }]}>{english ? item.label.en : item.label.ja}</Text></View>{selected ? <MaterialIcons name="check-circle" size={20} color={palette.primary} /> : <MaterialIcons name="radio-button-unchecked" size={20} color={palette.muted} />}</TouchableOpacity>; }
 function Segmented({ options, selected, onSelect }: { options: { key: string; label: string }[]; selected: string; onSelect: (value: string) => void }) { const palette = useFocusPalette(); return <View style={styles.segmented}>{options.map((option) => { const active = selected === option.key; return <TouchableOpacity key={option.key} onPress={() => onSelect(option.key)} style={[styles.segment, { backgroundColor: active ? palette.primary : palette.elevated }]}><Text style={[styles.segmentText, { color: active ? (palette.isDark ? palette.background : COLORS.white) : palette.muted }]}>{option.label}</Text></TouchableOpacity>; })}</View>; }
-function TimeStepper({ value, label, english, onChange }: { value: string; label?: string; english: boolean; onChange: (value: string) => void }) { const palette = useFocusPalette(); return <View style={styles.timeStepWrap}>{label ? <Text style={[styles.microLabel, { color: palette.muted }]}>{label}</Text> : null}<View style={[styles.timeStepper, { backgroundColor: palette.elevated }]}><TouchableOpacity onPress={() => onChange(stepTime(value, -30))} style={[styles.timeControl, { backgroundColor: palette.surface }]}><MaterialIcons name="remove" size={18} color={palette.primary} /></TouchableOpacity><Text style={[styles.timeValue, { color: palette.text }]}>{value}</Text><TouchableOpacity onPress={() => onChange(stepTime(value, 30))} style={[styles.timeControl, { backgroundColor: palette.surface }]}><MaterialIcons name="add" size={18} color={palette.primary} /></TouchableOpacity></View></View>; }
+function TimeStepper({ value, label, english, onChange }: { value: string; label?: string; english: boolean; onChange: (value: string) => void }) {
+  const palette = useFocusPalette();
+  const handlePressTime = async () => {
+    const [h, m] = value.split(":").map(Number);
+    const result = await openTimePicker(Number.isFinite(h) ? h : 9, Number.isFinite(m) ? m : 0, true);
+    if (result && result.action === "set" && result.hour !== undefined && result.minute !== undefined) {
+      onChange(`${String(result.hour).padStart(2, "0")}:${String(result.minute).padStart(2, "0")}`);
+    }
+  };
+  return (
+    <View style={styles.timeStepWrap}>
+      {label ? <Text style={[styles.microLabel, { color: palette.muted }]}>{label}</Text> : null}
+      <View style={[styles.timeStepper, { backgroundColor: palette.elevated }]}>
+        <TouchableOpacity accessibilityLabel={english ? "Decrease" : "減らす"} onPress={() => onChange(stepTime(value, -15))} style={[styles.timeControl, { backgroundColor: palette.surface }]}>
+          <MaterialIcons name="remove" size={18} color={palette.primary} />
+        </TouchableOpacity>
+        <TouchableOpacity activeOpacity={0.7} onPress={handlePressTime} accessibilityLabel={label ? `${label}の時刻を選択` : "時刻を選択"}>
+          <Text style={[styles.timeValue, { color: palette.text }]}>{value}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity accessibilityLabel={english ? "Increase" : "増やす"} onPress={() => onChange(stepTime(value, 15))} style={[styles.timeControl, { backgroundColor: palette.surface }]}>
+          <MaterialIcons name="add" size={18} color={palette.primary} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
 function PlanColumn({ title, features, highlighted = false, palette }: { title: string; features: string[]; highlighted?: boolean; palette?: AppPalette }) { const currentPalette = palette ?? useFocusPalette(); return <View style={[styles.planColumn, highlighted ? { backgroundColor: currentPalette.primarySoft, borderColor: currentPalette.primary } : { backgroundColor: currentPalette.elevated, borderColor: currentPalette.border }]}><Text style={[styles.planTitle, { color: currentPalette.text }]}>{title}</Text>{features.map((feature) => <View key={feature} style={styles.planFeature}><MaterialIcons name={highlighted ? "all-inclusive" : "check"} size={14} color={currentPalette.primary} /><Text style={[styles.planFeatureText, { color: currentPalette.muted }]}>{feature}</Text></View>)}</View>; }
 function stepTime(value: string, amount: number) { const [hours, minutes] = value.split(":").map(Number); const total = (((hours * 60 + minutes + amount) % 1440) + 1440) % 1440; return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`; }
 function toggleNumber(values: number[], value: number) { return values.includes(value) ? values.filter((item) => item !== value) : [...values, value].sort(); }

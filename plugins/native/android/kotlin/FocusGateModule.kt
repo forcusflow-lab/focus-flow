@@ -40,5 +40,39 @@ class FocusGateModule(private val context: ReactApplicationContext) : ReactConte
   @ReactMethod fun requestIgnoreBatteryOptimizations(promise: Promise) { try { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) { val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager; if (powerManager.isIgnoringBatteryOptimizations(context.packageName)) { promise.resolve(true); return }; try { val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply { data = android.net.Uri.parse("package:${context.packageName}"); addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }; context.startActivity(intent); promise.resolve(false) } catch (_: Exception) { val fallbackIntent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }; context.startActivity(fallbackIntent); promise.resolve(false) } } else { promise.resolve(true) } } catch (error: Exception) { promise.reject("BATTERY_OPTIMIZATION_UNAVAILABLE", error) } }
   @ReactMethod fun getGateDiagnostics(promise: Promise) { try { val preferences = context.getSharedPreferences(GATE_PREFS, Context.MODE_PRIVATE); val enabled = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES).orEmpty().contains("${context.packageName}/${FocusGateService::class.java.name}"); val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager; val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager; val gateState = preferences.getString(GATE_STATE, null)?.let { saved -> JSONObject(saved) }; val rules = gateState?.optJSONArray("rules"); var packageCount = 0; if (rules != null) for (index in 0 until rules.length()) packageCount += rules.optJSONObject(index)?.optJSONArray("blockedPackages")?.length() ?: 0; promise.resolve(Arguments.makeNativeMap(mapOf("accessibilityEnabled" to enabled, "batteryOptimizationIgnored" to if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) powerManager.isIgnoringBatteryOptimizations(context.packageName) else null, "backgroundRestricted" to if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) activityManager.isBackgroundRestricted else false, "apiLevel" to Build.VERSION.SDK_INT, "manufacturer" to Build.MANUFACTURER, "model" to Build.MODEL, "lastGateStateUpdatedAt" to preferences.getLong(GATE_STATE_UPDATED_AT, 0L), "lastGateEventAt" to preferences.getLong(GATE_LAST_EVENT_AT, 0L), "lastGateEventPackage" to preferences.getString(GATE_LAST_EVENT_PACKAGE, ""), "lastBlockedAt" to preferences.getLong(GATE_LAST_BLOCKED_AT, 0L), "lastBlockedPackage" to preferences.getString(GATE_LAST_BLOCKED_PACKAGE, ""), "gateStateActive" to (gateState?.optBoolean("active") ?: false), "configuredRuleCount" to (rules?.length() ?: 0), "configuredBlockedPackageCount" to packageCount))); } catch (error: Exception) { promise.reject("DIAGNOSTICS_UNAVAILABLE", error) } }
   @ReactMethod fun getLaunchableApps(promise: Promise) { try { val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER); val apps = context.packageManager.queryIntentActivities(intent, 0).filter { it.activityInfo.packageName != context.packageName }.map { mapOf("packageName" to it.activityInfo.packageName, "label" to it.loadLabel(context.packageManager).toString()) }.distinctBy { it["packageName"] }.sortedBy { it["label"]?.lowercase() }; val result = Arguments.createArray(); apps.forEach { app -> result.pushMap(Arguments.makeNativeMap(app)) }; promise.resolve(result) } catch (error: Exception) { promise.reject("APP_LIST_UNAVAILABLE", error) } }
+  @ReactMethod fun openTimePicker(initialHour: Int, initialMinute: Int, is24Hour: Boolean, promise: Promise) {
+    val activity = currentActivity
+    if (activity == null) {
+      promise.reject("ACTIVITY_UNAVAILABLE", "Current activity is null")
+      return
+    }
+    activity.runOnUiThread {
+      try {
+        val dialog = android.app.TimePickerDialog(
+          activity,
+          { _, hourOfDay, minute ->
+            val result = Arguments.createMap().apply {
+              putString("action", "set")
+              putInt("hour", hourOfDay)
+              putInt("minute", minute)
+            }
+            promise.resolve(result)
+          },
+          initialHour.coerceIn(0, 23),
+          initialMinute.coerceIn(0, 59),
+          is24Hour
+        )
+        dialog.setOnCancelListener {
+          val result = Arguments.createMap().apply {
+            putString("action", "dismissed")
+          }
+          promise.resolve(result)
+        }
+        dialog.show()
+      } catch (error: Exception) {
+        promise.reject("TIME_PICKER_ERROR", error)
+      }
+    }
+  }
   companion object { const val GATE_PREFS = "FocusFlowGate"; const val GATE_STATE = "gateState"; const val GATE_STATE_UPDATED_AT = "gateStateUpdatedAt"; const val GATE_LAST_EVENT_AT = "gateLastEventAt"; const val GATE_LAST_EVENT_PACKAGE = "gateLastEventPackage"; const val GATE_LAST_BLOCKED_AT = "gateLastBlockedAt"; const val GATE_LAST_BLOCKED_PACKAGE = "gateLastBlockedPackage"; const val WIDGET_ACTIONS = "widgetActions"; const val WIDGET_UNDO = "widgetUndo" }
 }

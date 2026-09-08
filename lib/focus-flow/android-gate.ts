@@ -19,6 +19,7 @@ type FocusGateNativeModule = {
   requestIgnoreBatteryOptimizations: () => Promise<boolean>;
   getGateDiagnostics: () => Promise<GateDiagnostics>;
   getLaunchableApps: () => Promise<LaunchableApp[]>;
+  openTimePicker: (initialHour: number, initialMinute: number, is24Hour: boolean) => Promise<{ action: "set" | "dismissed"; hour?: number; minute?: number }>;
 };
 
 function nativeModule() { return Platform.OS === "android" ? (NativeModules.FocusGate as FocusGateNativeModule | undefined) : undefined; }
@@ -57,7 +58,7 @@ export async function syncAndroidGate(data: FocusFlowData) {
   const widgetCompletedDisplay = "local";
   const completedTodoItems = effectiveRequiredTodos.filter((todo) => isTodoAchieved(todo));
   const completedHabitItems = effectiveRequiredHabits.filter((habit) => isHabitCompleteOn(habit, today));
-  const windowLabelFor = (item: { requiredScheduleIds?: string[] }) => data.gateConfig.schedules.filter((schedule) => item.requiredScheduleIds?.includes(schedule.id)).map((schedule) => `${schedule.label} ${schedule.startTime}–${schedule.endTime}`).join(" · ");
+  const windowLabelFor = (item: { requiredScheduleIds?: string[] }) => data.gateConfig.schedules.filter((schedule) => item.requiredScheduleIds?.includes(schedule.id)).map((schedule) => `${schedule.startTime}〜${schedule.endTime}`).join(" · ");
   const todoWidgetMeta = (todo: (typeof data.todos)[number]) => { const dueStatus = getTodoDueStatus(todo); const subtasks = getTodoSubtasks(todo); return { hasMemo: Boolean(todo.memo?.trim()), dueLabel: !todo.dueDate ? "" : dueStatus === "overdue" ? (language === "en" ? "Overdue" : "期限切れ") : dueStatus === "today" ? (language === "en" ? "Due today" : "今日まで") : formatJapaneseDate(todo.dueDate, language), subtaskCount: subtasks.length, completedSubtaskCount: subtasks.filter((subtask) => subtask.completed).length }; };
   const habitWidgetMeta = (habit: (typeof data.habits)[number]) => { const weekly = weeklyHabitProgress(habit); return { habitMeta: language === "en" ? `${weekly.completed}/${weekly.target} this week · ${habitStreak(habit)}-day streak` : `週 ${weekly.completed}/${weekly.target} · ${habitStreak(habit)}日連続` }; };
   const widgetItems = uniqueWidgetItems([
@@ -80,4 +81,5 @@ export async function requestIgnoreBatteryOptimizations() { return (await native
 export async function getGateDiagnostics() { return await nativeModule()?.getGateDiagnostics(); }
 export async function getLaunchableApps() { return (await nativeModule()?.getLaunchableApps()) ?? [] as LaunchableApp[]; }
 export async function consumeWidgetActions() { return (await nativeModule()?.consumeWidgetActions()) ?? [] as WidgetAction[]; }
+export async function openTimePicker(initialHour: number, initialMinute: number, is24Hour = true) { return (await nativeModule()?.openTimePicker(initialHour, initialMinute, is24Hour)) ?? null; }
 export type { LaunchableApp };

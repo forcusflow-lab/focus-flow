@@ -5,13 +5,34 @@
   <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
 
   <!-- 今日（Today）画面 -->
-  <string name="today_banner_locked">制限中（残り %1$d 件）</string>
+  <string name="today_banner_locked">アプリ制限中（残り %1$d 件）</string>
+  <string name="today_banner_locked_window">時間帯制限中（%1$s〜%2$s）</string>
   <string name="today_banner_unlocked">すべての制限を解除中</string>
   <string name="today_banner_off">集中制限はオフです</string>
   <string name="today_banner_subtext">今日の必須タスクを完了すると制限が解除されます</string>
   <string name="today_progress_heading">本日の進捗（残り %1$d 件 / 完了 %2$d/%3$d 件）</string>
   <string name="today_tasks_heading">今日のタスク</string>
+  <string name="today_scheduled_tasks_heading">指定時間帯のタスク</string>
   <string name="today_completed_heading">完了済み</string>
+
+  <!-- 遮断オーバーレイ画面 -->
+  <string name="gate_overlay_header">集中タイムです</string>
+  <string name="gate_overlay_status_all_day">今日のタスクを達成すると制限が解除されます</string>
+  <string name="gate_overlay_status_window">この時間帯（%1$s〜%2$s）の対象タスクを完了すると解除されます</string>
+
+  <!-- 制限タイミング（Todo / 習慣 共通） -->
+  <string name="timing_section_title">制限するタイミング</string>
+  <string name="timing_all_day_title">終日</string>
+  <string name="timing_all_day_detail">今日の達成までアプリを制限</string>
+  <string name="timing_scheduled_title">指定の時間帯</string>
+  <string name="timing_scheduled_detail">設定した時間帯（朝・夜など）の間だけブロック</string>
+  <string name="timing_add_window">+ 新しい時間帯を作成</string>
+
+  <!-- ウィジェット -->
+  <string name="widget_badge_all_day">終日</string>
+  <string name="widget_status_all_day">残り %1$d 件</string>
+  <string name="widget_status_window">制限中（%1$s〜%2$s）</string>
+  <string name="widget_status_unlocked">制限解除中</string>
 
   <!-- 習慣（Habit）画面 -->
   <string name="habit_today_progress">今日 %1$d/%2$d 回</string>

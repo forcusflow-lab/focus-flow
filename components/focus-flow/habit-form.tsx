@@ -41,7 +41,7 @@ const WEEKEND_ONLY = [6, 0];
 const MINUTE_PRESETS = [10, 15, 30, 60] as const;
 
 export function HabitForm({ visible, habit, defaultRequired = false, onClose, onSave, onDelete }: HabitFormProps) {
-  const { displaySettings, gateConfig } = useFocusFlow();
+  const { displaySettings, gateConfig, setGateConfig } = useFocusFlow();
   const palette = useFocusPalette();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
@@ -422,6 +422,11 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
                       onChange={(mode, ids) => {
                         setRequiredWindowMode(mode);
                         setRequiredScheduleIds(ids);
+                      }}
+                      onCreateSchedule={(schedule) => {
+                        setGateConfig({ schedules: [...gateConfig.schedules, schedule] });
+                        setRequiredWindowMode("scheduled");
+                        setRequiredScheduleIds((prev) => [...prev, schedule.id]);
                       }}
                     />
                   </View>
