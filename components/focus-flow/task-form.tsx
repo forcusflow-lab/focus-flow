@@ -102,8 +102,8 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
   const [editingSubtaskId, setEditingSubtaskId] = useState<string | undefined>();
   const [memoOpen, setMemoOpen] = useState(false);
   const [subtasksOpen, setSubtasksOpen] = useState(false);
-  const dueAutoRequired = useMemo(() => Boolean(dueDate && dueDate <= dayKey()), [dueDate]);
-  const effectiveRequired = isRequired || dueAutoRequired;
+  const dueAutoRequired = false;
+  const effectiveRequired = isRequired;
   const completedSubtasks = subtasks.filter((subtask) => subtask.completed).length;
 
   useLayoutEffect(() => {
@@ -256,8 +256,8 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
             </> : null}
 
             <Text style={[styles.label, styles.requiredLabel, { color: palette.text }]}>{t("アプリの制限", "App limits")}</Text>
-            <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: effectiveRequired, disabled: dueAutoRequired }} accessibilityLabel={dueAutoRequired ? t("期限により必須です", "Required because of due date") : t("必須にする", "Make it a must-do")} onPress={() => { if (!dueAutoRequired) setIsRequired((value) => !value); }} activeOpacity={dueAutoRequired ? 1 : 0.72} style={[styles.requiredOption, { backgroundColor: palette.surface, borderColor: palette.border }, effectiveRequired && { borderColor: palette.primary, backgroundColor: palette.primarySoft }]}><View style={[styles.requiredCheck, { borderColor: palette.border }, effectiveRequired && { borderColor: palette.primary, backgroundColor: palette.primary }]}>{effectiveRequired ? <MaterialIcons name="check" size={15} color={palette.isDark ? palette.background : COLORS.white} /> : null}</View><View style={styles.requiredCopy}><Text style={[styles.requiredTitle, { color: palette.text }]}>{t("必須にする", "Make it a must-do")}</Text><Text style={[styles.requiredDetail, { color: palette.muted }]}>{dueAutoRequired ? t("今日までのTodoは必須として自動適用されます", "Tasks due today or earlier are automatically required") : effectiveRequired ? t("完了まで対象アプリの解除条件に含めます", "Included in selected-app unlock conditions until complete") : t("通常のTodoとして作成します", "Creates a regular task")}</Text></View></TouchableOpacity>
-            <RequiredWindowSelector english={language === "en"} isRequired={isRequired && !dueAutoRequired} mode={requiredWindowMode} selectedIds={requiredScheduleIds} schedules={gateConfig.schedules} onChange={(mode, ids) => { setRequiredWindowMode(mode); setRequiredScheduleIds(ids); }} />
+            <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: effectiveRequired }} accessibilityLabel={t("必須にする", "Make it a must-do")} onPress={() => { safeHaptic("light"); setIsRequired((value) => !value); }} activeOpacity={0.72} style={[styles.requiredOption, { backgroundColor: palette.surface, borderColor: palette.border }, effectiveRequired && { borderColor: palette.primary, backgroundColor: palette.primarySoft }]}><View style={[styles.requiredCheck, { borderColor: palette.border }, effectiveRequired && { borderColor: palette.primary, backgroundColor: palette.primary }]}>{effectiveRequired ? <MaterialIcons name="check" size={15} color={palette.isDark ? palette.background : COLORS.white} /> : null}</View><View style={styles.requiredCopy}><Text style={[styles.requiredTitle, { color: palette.text }]}>{t("必須にする", "Make it a must-do")}</Text><Text style={[styles.requiredDetail, { color: palette.muted }]}>{effectiveRequired ? t("完了まで対象アプリの解除条件に含めます", "Included in selected-app unlock conditions until complete") : t("通常のTodoとして作成します", "Creates a regular task")}</Text></View></TouchableOpacity>
+            <RequiredWindowSelector english={language === "en"} isRequired={isRequired} mode={requiredWindowMode} selectedIds={requiredScheduleIds} schedules={gateConfig.schedules} onChange={(mode, ids) => { setRequiredWindowMode(mode); setRequiredScheduleIds(ids); }} />
           </ScrollView>
           <View style={[styles.footer, { backgroundColor: palette.background, borderTopColor: palette.border, paddingBottom: Math.max(insets.bottom, 12) }]}>
             <View style={styles.footerActions}>

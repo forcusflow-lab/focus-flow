@@ -53,6 +53,8 @@ export type Habit = {
   title: string;
   color: string;
   goalPerWeek: number;
+  /** 習慣を実行する曜日（0: 日, 1: 月, 2: 火, 3: 水, 4: 木, 5: 金, 6: 土）。未指定または空配列の場合は毎日実行扱い。 */
+  targetDays?: number[];
   isRequired: boolean;
   /** 必須項目を常時扱うか、選択した集中時間帯だけ扱うか。 */
   requiredWindowMode?: RequiredWindowMode;

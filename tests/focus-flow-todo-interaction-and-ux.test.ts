@@ -90,4 +90,88 @@ describe("UXライティング刷新とstrings.xml集約", () => {
     expect(settings).toContain("制限中の設定変更やアプリ削除を防止");
     expect(settings).toContain("1. 権限許可 → 2. アプリ選択 → 3. 時間帯設定");
   });
+
+  it("Todo解除判定ロジック（案2）: 通常Todoは期限超過でもゲート解除ブロッカーにならない", async () => {
+    const { isTodoEffectiveRequired, isTodoRequiredForGate } = await import("../lib/focus-flow/utils");
+    const testDate = new Date(2026, 7, 27, 12, 0, 0); // 2026-08-27
+
+    // 通常タスク（isRequired: false）
+    const normalOverdue = { id: "t-1", title: "通常期限切れ", isRequired: false, dueDate: "2026-08-20", completed: false, createdAt: "2026-08-15T00:00:00.000Z", priority: "medium" as const };
+    const normalDueToday = { id: "t-2", title: "通常今日まで", isRequired: false, dueDate: "2026-08-27", completed: false, createdAt: "2026-08-27T00:00:00.000Z", priority: "medium" as const };
+    expect(isTodoEffectiveRequired(normalOverdue, testDate)).toBe(false);
+    expect(isTodoEffectiveRequired(normalDueToday, testDate)).toBe(false);
+    expect(isTodoRequiredForGate(normalOverdue, true, testDate)).toBe(false);
+    expect(isTodoRequiredForGate(normalDueToday, true, testDate)).toBe(false);
+
+    // 必須タスク（isRequired: true）
+    const requiredOverdue = { id: "t-3", title: "必須期限切れ", isRequired: true, dueDate: "2026-08-20", completed: false, createdAt: "2026-08-15T00:00:00.000Z", priority: "high" as const };
+    const requiredDueToday = { id: "t-4", title: "必須今日まで", isRequired: true, dueDate: "2026-08-27", completed: false, createdAt: "2026-08-27T00:00:00.000Z", priority: "high" as const };
+    const requiredFuture = { id: "t-5", title: "必須明日以降", isRequired: true, dueDate: "2026-08-30", completed: false, createdAt: "2026-08-27T00:00:00.000Z", priority: "high" as const };
+    const requiredNoDueToday = { id: "t-6", title: "必須期限なし今日作成", isRequired: true, completed: false, createdAt: "2026-08-27T08:00:00.000Z", priority: "medium" as const };
+    const requiredNoDuePast = { id: "t-7", title: "必須期限なし過去作成", isRequired: true, completed: false, createdAt: "2026-08-25T08:00:00.000Z", priority: "medium" as const };
+
+    expect(isTodoEffectiveRequired(requiredOverdue, testDate)).toBe(true);
+    expect(isTodoEffectiveRequired(requiredDueToday, testDate)).toBe(true);
+    expect(isTodoEffectiveRequired(requiredFuture, testDate)).toBe(false);
+    expect(isTodoEffectiveRequired(requiredNoDueToday, testDate)).toBe(true);
+    expect(isTodoEffectiveRequired(requiredNoDuePast, testDate)).toBe(false);
+
+    expect(isTodoRequiredForGate(requiredOverdue, true, testDate)).toBe(true);
+    expect(isTodoRequiredForGate(requiredDueToday, true, testDate)).toBe(true);
+    expect(isTodoRequiredForGate(requiredFuture, true, testDate)).toBe(false);
+  });
+
+  it("習慣の曜日スケジュール判定: 非対象曜日の習慣はゲート解除判定から除外される", async () => {
+    const { isHabitScheduledOn, isHabitRequiredForGate } = await import("../lib/focus-flow/utils");
+    // 2026-08-27 は 木曜日（getDay() === 4）
+    const thursday = new Date(2026, 7, 27, 12, 0, 0);
+    // 2026-08-29 は 土曜日（getDay() === 6）
+    const saturday = new Date(2026, 7, 29, 12, 0, 0);
+
+    const weekdayHabit = { id: "h-wd", title: "平日読書", color: "#123456", goalPerWeek: 5, targetDays: [1, 2, 3, 4, 5], isRequired: true, completedDates: [], createdAt: "2026-08-01T00:00:00.000Z" };
+    const weekendHabit = { id: "h-we", title: "週末運動", color: "#654321", goalPerWeek: 2, targetDays: [6, 0], isRequired: true, completedDates: [], createdAt: "2026-08-01T00:00:00.000Z" };
+
+    // 木曜日の判定
+    expect(isHabitScheduledOn(weekdayHabit, thursday)).toBe(true);
+    expect(isHabitScheduledOn(weekendHabit, thursday)).toBe(false);
+    expect(isHabitRequiredForGate(weekdayHabit, undefined, thursday)).toBe(true);
+    expect(isHabitRequiredForGate(weekendHabit, undefined, thursday)).toBe(false);
+
+    // 土曜日の判定
+    expect(isHabitScheduledOn(weekdayHabit, saturday)).toBe(false);
+    expect(isHabitScheduledOn(weekendHabit, saturday)).toBe(true);
+    expect(isHabitRequiredForGate(weekdayHabit, undefined, saturday)).toBe(false);
+    expect(isHabitRequiredForGate(weekendHabit, undefined, saturday)).toBe(true);
+  });
+
+  it("習慣入力フォームとタスク入力フォームが刷新されたUI契約を満たす", () => {
+    const habitForm = readProjectFile("components", "focus-flow", "habit-form.tsx");
+    const taskForm = readProjectFile("components", "focus-flow", "task-form.tsx");
+
+    // 習慣フォーム: 曜日トグルとプリセットチップ
+    expect(habitForm).toContain("targetDays");
+    expect(habitForm).toContain("selectPreset");
+    expect(habitForm).toContain("toggleDay");
+    expect(habitForm).toContain("dayCircle");
+    expect(habitForm).toContain("EVERYDAY");
+    expect(habitForm).toContain("WEEKDAYS_ONLY");
+    expect(habitForm).toContain("WEEKEND_ONLY");
+
+    // 習慣フォーム: 分目標クイックチップ
+    expect(habitForm).toContain("MINUTE_PRESETS");
+    expect(habitForm).toContain("customMinutesMode");
+    expect(habitForm).toContain("minuteChip");
+
+    // 習慣フォーム: カラー詳細設定アコーディオン
+    expect(habitForm).toContain("colorSectionOpen");
+    expect(habitForm).toContain("colorDisclosure");
+
+    // CTAボタンと制限文言の統一（「作る」の廃止と「アプリの制限」）
+    expect(habitForm).toContain('t("習慣を作成", "Create habit")');
+    expect(habitForm).toContain('t("アプリの制限", "App limits")');
+    expect(habitForm).not.toContain("習慣を作る");
+
+    expect(taskForm).toContain('t("Todoを作成", "Create task")');
+    expect(taskForm).toContain('t("アプリの制限", "App limits")');
+  });
 });

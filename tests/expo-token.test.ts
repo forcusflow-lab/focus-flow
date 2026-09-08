@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+const token = process.env.EXPO_TOKEN;
+const itWithExpoToken = token ? it : it.skip;
+
 describe("Expoアクセストークン", () => {
-  it("Expo GraphQL APIで有効な認証として検証できる", async () => {
-    const token = process.env.EXPO_TOKEN;
+  itWithExpoToken("Expo GraphQL APIで有効な認証として検証できる", async () => {
 
     expect(token).toBeTruthy();
 

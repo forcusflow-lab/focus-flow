@@ -8,7 +8,7 @@ import type { FocusFlowData } from "../lib/focus-flow/types";
 
 function dataForStrictMode(strictMode: boolean, enabled = true): FocusFlowData {
   return {
-    todos: [{ id: "required", title: "必須", priority: "high", isRequired: true, completed: false, createdAt: "2026-08-20T00:00:00.000Z" }],
+    todos: [{ id: "required", title: "必須", priority: "high", isRequired: true, completed: false, createdAt: new Date().toISOString() }],
     habits: [], memos: [], focusSessions: [],
     gateConfig: { enabled, strictMode, blockedPackages: ["com.example.video"], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, schedules: [] },
     displaySettings: { fontScale: "standard", theme: "mist", cardOpacity: "solid" },

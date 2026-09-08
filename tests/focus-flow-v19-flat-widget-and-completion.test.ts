@@ -5,15 +5,13 @@ import { describe, expect, it } from "vitest";
 const projectFile = (...parts: string[]) => fs.readFileSync(path.join(process.cwd(), ...parts), "utf8");
 
 describe("Focus Flow v19 flat Widget and completion quality contract", () => {
-  it("auto-selects due-today-or-earlier Todo requirements while keeping manual requirements independent", () => {
+  it("keeps manual Todo requirements explicit and evaluates effective requirements under Option 2", () => {
     const form = projectFile("components", "focus-flow", "task-form.tsx");
     const utils = projectFile("lib", "focus-flow", "utils.ts");
-    expect(form).toContain('const dueAutoRequired = useMemo(() => Boolean(dueDate && dueDate <= dayKey()), [dueDate])');
-    expect(form).toContain('const effectiveRequired = isRequired || dueAutoRequired');
-    expect(form).toContain('disabled: dueAutoRequired');
-    expect(form).toContain('今日までのTodoは必須として自動適用されます');
-    expect(utils).toContain('const dueTodayOrEarlierIsAlwaysRequired = Boolean(todo.dueDate && todo.dueDate <= today)');
-    expect(utils).not.toContain('autoRequireDueToday && Boolean(todo.dueDate');
+    expect(form).toContain('const effectiveRequired = isRequired');
+    expect(form).toContain('t("アプリの制限", "App limits")');
+    expect(utils).toContain('if (!todo.isRequired) return false');
+    expect(utils).toContain('todo.dueDate <= today');
   });
 
   it("treats a Todo as a one-tap completion rather than a Habit-style progress workflow", () => {

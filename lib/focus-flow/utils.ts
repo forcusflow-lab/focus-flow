@@ -121,25 +121,48 @@ export function isItemRequiredDuringActiveGate(item: RequiredWindowItem, config:
   return config.schedules.some((schedule) => item.requiredScheduleIds?.includes(schedule.id) && isScheduleActive(schedule, base));
 }
 
-export function isTodoRequiredForGate(todo: Todo, autoRequireDueToday: boolean, base = new Date(), schedule?: GateSchedule) {
-  const today = dayKey(base);
-  const repeatRule = todo.repeatRule ?? "none";
-  const repeatingInstanceIsDue = repeatRule === "none" || !todo.dueDate || todo.dueDate <= today;
-  // v19では期限当日以前の未完了Todoを、手動必須と同じ解除条件として常に扱う。
-  // legacy設定autoRequireDueTodayは後方互換のため受け取るが、必須性を弱めない。
-  void autoRequireDueToday;
-  const dueTodayOrEarlierIsAlwaysRequired = Boolean(todo.dueDate && todo.dueDate <= today) && !isTodoAchieved(todo, base);
-  if (dueTodayOrEarlierIsAlwaysRequired) return schedule === undefined;
-  return Boolean(repeatingInstanceIsDue && isItemRequiredForGate(todo, schedule));
+/**
+ * 習慣が指定日に実行予定かを判定する。
+ * targetDays が指定されている場合、baseの日付の曜日（0: 日 〜 6: 土）が含まれているかを確認する。
+ * 未設定または空配列の場合は毎日実行扱い。
+ */
+export function isHabitScheduledOn(habit: Habit, base = new Date()): boolean {
+  if (!habit.targetDays || habit.targetDays.length === 0) return true;
+  return habit.targetDays.includes(base.getDay());
 }
 
-/** TodayとWidgetでは、手動必須または期限が当日以前のTodoを常に必須として扱う。完了済みかは呼び出し側の表示設定で判定する。 */
-export function isTodoEffectiveRequired(todo: Pick<Todo, "isRequired" | "dueDate">, base = new Date()) {
-  return Boolean(todo.isRequired || (todo.dueDate && todo.dueDate <= dayKey(base)));
-}
-
-export function isHabitRequiredForGate(habit: Habit, schedule?: GateSchedule) {
+export function isHabitRequiredForGate(habit: Habit, schedule?: GateSchedule, base = new Date()) {
+  if (!isHabitScheduledOn(habit, base)) return false;
   return isItemRequiredForGate(habit, schedule);
+}
+
+/**
+ * 解除対象 = 【重要度が「必須」】かつ【期限が「今日まで（期限切れ含む）」または「期限なしで今日作成」】
+ * 通常/任意（!todo.isRequired）のタスクは、期限が切れても「必須（制限解除ブロッカー）」には昇格させない。
+ * Todoに繰り返し機能は追加せず、単発完了型タスクに特化する。
+ */
+export function isTodoEffectiveRequired(
+  todo: Pick<Todo, "isRequired" | "dueDate"> & { createdAt?: string },
+  base = new Date()
+) {
+  if (!todo.isRequired) return false;
+  const today = dayKey(base);
+  if (todo.dueDate) {
+    return todo.dueDate <= today;
+  }
+  if (!todo.createdAt) return true;
+  return dayKey(new Date(todo.createdAt)) === today;
+}
+
+export function isTodoRequiredForGate(
+  todo: Todo,
+  autoRequireDueToday: boolean,
+  base = new Date(),
+  schedule?: GateSchedule
+) {
+  void autoRequireDueToday;
+  if (!isTodoEffectiveRequired(todo, base)) return false;
+  return isItemRequiredForGate(todo, schedule);
 }
 
 export function isHabitCompleteOn(habit: Habit, value: string, base = new Date()) {
@@ -267,7 +290,7 @@ export type GateRuleSummary = GateSummary & { id: string; label: string; isActiv
 
 function getRuleSummary(data: FocusFlowData, schedule: GateSchedule | undefined, base: Date, language: ContentLanguage): GateRuleSummary {
   const requiredTodos = data.todos.filter((todo) => isTodoRequiredForGate(todo, data.gateConfig.autoRequireDueToday, base, schedule));
-  const requiredHabits = data.habits.filter((habit) => isHabitRequiredForGate(habit, schedule));
+  const requiredHabits = data.habits.filter((habit) => isHabitRequiredForGate(habit, schedule, base));
   const pendingTodoIds = requiredTodos.filter((todo) => !isTodoAchieved(todo)).map((todo) => todo.id);
   const pendingHabitIds = requiredHabits.filter((habit) => !isHabitCompleteOn(habit, dayKey(base))).map((habit) => habit.id);
   const pendingTodos = pendingTodoIds.length;

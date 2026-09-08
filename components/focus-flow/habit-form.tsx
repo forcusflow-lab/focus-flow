@@ -11,8 +11,34 @@ import { RequiredWindowSelector } from "./required-window-selector";
 import { ScaledText as Text } from "./scaled-text";
 import { COLORS, HABIT_COLORS, safeHaptic, useFocusPalette } from "./ui";
 
-type HabitInput = { title: string; color: string; goalPerWeek: number; isRequired: boolean; requiredWindowMode: "always" | "scheduled"; requiredScheduleIds: string[]; progressUnit: ProgressUnit; targetValue: number };
+type HabitInput = {
+  title: string;
+  color: string;
+  goalPerWeek: number;
+  targetDays?: number[];
+  isRequired: boolean;
+  requiredWindowMode: "always" | "scheduled";
+  requiredScheduleIds: string[];
+  progressUnit: ProgressUnit;
+  targetValue: number;
+};
 type HabitFormProps = { visible: boolean; habit?: Habit; defaultRequired?: boolean; onClose: () => void; onSave: (input: HabitInput) => { ok: boolean }; onDelete?: () => void };
+
+const WEEKDAYS = [
+  { day: 1, label: "月", en: "M" },
+  { day: 2, label: "火", en: "T" },
+  { day: 3, label: "水", en: "W" },
+  { day: 4, label: "木", en: "T" },
+  { day: 5, label: "金", en: "F" },
+  { day: 6, label: "土", en: "S" },
+  { day: 0, label: "日", en: "S" },
+] as const;
+
+const EVERYDAY = [1, 2, 3, 4, 5, 6, 0];
+const WEEKDAYS_ONLY = [1, 2, 3, 4, 5];
+const WEEKEND_ONLY = [6, 0];
+
+const MINUTE_PRESETS = [10, 15, 30, 60] as const;
 
 export function HabitForm({ visible, habit, defaultRequired = false, onClose, onSave, onDelete }: HabitFormProps) {
   const { displaySettings, gateConfig } = useFocusFlow();
@@ -26,12 +52,14 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
   const units: { key: ProgressUnit; label: string }[] = [{ key: "check", label: t("完了チェック", "Check off") }, { key: "count", label: t("回数", "Count") }, { key: "minutes", label: t("分", "Minutes") }];
   const [title, setTitle] = useState("");
   const [color, setColor] = useState(HABIT_COLORS[0]);
-  const [goal, setGoal] = useState(5);
+  const [targetDays, setTargetDays] = useState<number[]>(EVERYDAY);
   const [isRequired, setIsRequired] = useState(false);
   const [requiredWindowMode, setRequiredWindowMode] = useState<"always" | "scheduled">("always");
   const [requiredScheduleIds, setRequiredScheduleIds] = useState<string[]>([]);
   const [progressUnit, setProgressUnit] = useState<ProgressUnit>("check");
-  const [targetValue, setTargetValue] = useState("1");
+  const [targetValue, setTargetValue] = useState("15");
+  const [customMinutesMode, setCustomMinutesMode] = useState(false);
+  const [colorSectionOpen, setColorSectionOpen] = useState(false);
 
   useLayoutEffect(() => {
     if (visible) {
@@ -40,14 +68,39 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
       const required = habit?.isRequired ?? defaultRequired;
       setTitle(habit?.title ?? "");
       setColor(habit?.color ?? HABIT_COLORS[0]);
-      setGoal(habit?.goalPerWeek ?? 5);
+      setTargetDays(habit?.targetDays && habit.targetDays.length > 0 ? habit.targetDays : EVERYDAY);
       setIsRequired(required);
       setRequiredWindowMode(habit?.requiredWindowMode === "scheduled" && (habit.requiredScheduleIds?.length ?? 0) ? "scheduled" : "always");
       setRequiredScheduleIds(habit?.requiredScheduleIds ?? []);
-      setProgressUnit(habit?.progressUnit ?? "check");
-      setTargetValue(String(habit?.targetValue ?? 1));
+      const unit = habit?.progressUnit ?? "check";
+      setProgressUnit(unit);
+      const initialTarget = habit?.targetValue ?? (unit === "minutes" ? 15 : 1);
+      setTargetValue(String(initialTarget));
+      setCustomMinutesMode(unit === "minutes" && !MINUTE_PRESETS.includes(initialTarget as any));
+      setColorSectionOpen(false);
     }
   }, [defaultRequired, habit, visible]);
+
+  const isEveryday = targetDays.length === 7;
+  const isWeekdays = targetDays.length === 5 && WEEKDAYS_ONLY.every((d) => targetDays.includes(d));
+  const isWeekend = targetDays.length === 2 && WEEKEND_ONLY.every((d) => targetDays.includes(d));
+
+  const toggleDay = (day: number) => {
+    safeHaptic("light");
+    setTargetDays((prev) => {
+      if (prev.includes(day)) {
+        if (prev.length <= 1) return prev;
+        return prev.filter((d) => d !== day);
+      } else {
+        return [...prev, day].sort((a, b) => ((a === 0 ? 7 : a) - (b === 0 ? 7 : b)));
+      }
+    });
+  };
+
+  const selectPreset = (preset: readonly number[]) => {
+    safeHaptic("light");
+    setTargetDays([...preset]);
+  };
 
   const save = () => {
     if (isSubmitting.current || !title.trim()) return;
@@ -58,7 +111,8 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
       const result = onSave({
         title: title.trim(),
         color,
-        goalPerWeek: goal,
+        goalPerWeek: targetDays.length,
+        targetDays,
         isRequired,
         requiredWindowMode,
         requiredScheduleIds,
@@ -102,7 +156,7 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
           <Pressable style={[styles.sheet, { backgroundColor: palette.background }]} onPress={() => undefined}>
             <View style={[styles.handle, { backgroundColor: palette.primarySoft }]} />
             <View style={styles.header}>
-              <Text style={[styles.title, { color: palette.text }]}>{habit ? t("習慣を編集", "Edit habit") : t("習慣を作る", "Create habit")}</Text>
+              <Text style={[styles.title, { color: palette.text }]}>{habit ? t("習慣を編集", "Edit habit") : t("習慣を作成", "Create habit")}</Text>
               <TouchableOpacity accessibilityLabel={t("閉じる", "Close")} onPress={onClose} style={[styles.closeButton, { backgroundColor: palette.elevated }]}>
                 <MaterialIcons name="close" size={21} color={palette.muted} />
               </TouchableOpacity>
@@ -134,49 +188,80 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
                 />
               </View>
 
-              {/* Basic Settings */}
+              {/* Frequency Setting (Day-of-Week Toggle) */}
               <View style={[styles.cardSection, { backgroundColor: palette.surface, borderColor: palette.border }]}>
                 <View style={styles.cardHeader}>
-                  <MaterialIcons name="tune" size={16} color={palette.primary} />
-                  <Text style={[styles.cardTitle, { color: palette.text }]}>{t("基本設定", "Basic settings")}</Text>
+                  <MaterialIcons name="event-repeat" size={16} color={palette.primary} />
+                  <Text style={[styles.cardTitle, { color: palette.text }]}>{t("頻度・実行曜日", "Frequency & Days")}</Text>
+                  <Text style={[styles.cardHeaderHint, { color: palette.primary }]}>{t(`週${targetDays.length}日`, `${targetDays.length} days/week`)}</Text>
                 </View>
-                <View style={styles.subField}>
-                  <View style={styles.subFieldHeader}>
-                    <Text style={[styles.fieldLabel, { color: palette.muted }]}>{t("週の目標", "Weekly goal")}</Text>
-                    <Text style={[styles.fieldValue, { color: palette.primary }]}>{t(`${goal}日`, `${goal} days`)}</Text>
-                  </View>
-                  <View style={styles.optionRow}>
-                    {[3, 5, 7].map((value) => (
+
+                {/* Preset Chips */}
+                <View style={styles.presetRow}>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    onPress={() => selectPreset(EVERYDAY)}
+                    style={[
+                      styles.presetChip,
+                      { backgroundColor: palette.elevated, borderColor: palette.border },
+                      isEveryday && { backgroundColor: palette.primarySoft, borderColor: palette.primary },
+                    ]}
+                  >
+                    <Text style={[styles.presetChipText, { color: palette.muted }, isEveryday && { color: palette.primary, fontWeight: "800" }]}>
+                      {t("毎日", "Every day")}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    onPress={() => selectPreset(WEEKDAYS_ONLY)}
+                    style={[
+                      styles.presetChip,
+                      { backgroundColor: palette.elevated, borderColor: palette.border },
+                      isWeekdays && { backgroundColor: palette.primarySoft, borderColor: palette.primary },
+                    ]}
+                  >
+                    <Text style={[styles.presetChipText, { color: palette.muted }, isWeekdays && { color: palette.primary, fontWeight: "800" }]}>
+                      {t("平日のみ", "Weekdays")}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    onPress={() => selectPreset(WEEKEND_ONLY)}
+                    style={[
+                      styles.presetChip,
+                      { backgroundColor: palette.elevated, borderColor: palette.border },
+                      isWeekend && { backgroundColor: palette.primarySoft, borderColor: palette.primary },
+                    ]}
+                  >
+                    <Text style={[styles.presetChipText, { color: palette.muted }, isWeekend && { color: palette.primary, fontWeight: "800" }]}>
+                      {t("週末のみ", "Weekends")}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Circular Day Toggles */}
+                <View style={styles.dayToggleRow}>
+                  {WEEKDAYS.map((item) => {
+                    const isSelected = targetDays.includes(item.day);
+                    return (
                       <TouchableOpacity
-                        key={value}
-                        onPress={() => setGoal(value)}
+                        key={item.day}
+                        accessibilityRole="button"
+                        accessibilityLabel={t(`${item.label}曜日`, item.en)}
+                        accessibilityState={{ selected: isSelected }}
+                        onPress={() => toggleDay(item.day)}
                         style={[
-                          styles.smallOption,
+                          styles.dayCircle,
                           { backgroundColor: palette.elevated, borderColor: palette.border },
-                          goal === value && { borderColor: palette.primary, backgroundColor: palette.primarySoft },
+                          isSelected && { backgroundColor: palette.primary, borderColor: palette.primary },
                         ]}
                       >
-                        <Text style={[styles.smallOptionText, { color: palette.muted }, goal === value && { color: palette.primary }]}>
-                          {t(`${value}日`, `${value} days`)}
+                        <Text style={[styles.dayCircleText, { color: palette.muted }, isSelected && { color: palette.isDark ? palette.background : COLORS.white }]}>
+                          {language === "en" ? item.en : item.label}
                         </Text>
                       </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-                <View style={styles.subField}>
-                  <Text style={[styles.fieldLabel, { color: palette.muted }]}>{t("色", "Color")}</Text>
-                  <View style={styles.colorRow}>
-                    {HABIT_COLORS.map((item) => (
-                      <TouchableOpacity
-                        key={item}
-                        accessibilityLabel={t("習慣の色を選択", "Choose habit color")}
-                        onPress={() => setColor(item)}
-                        style={[styles.colorButton, { backgroundColor: item, borderColor: item }, color === item && { borderColor: palette.text }]}
-                      >
-                        {color === item ? <MaterialIcons name="check" size={14} color={COLORS.white} /> : null}
-                      </TouchableOpacity>
-                    ))}
-                  </View>
+                    );
+                  })}
                 </View>
               </View>
 
@@ -190,7 +275,13 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
                   {units.map((item) => (
                     <TouchableOpacity
                       key={item.key}
-                      onPress={() => setProgressUnit(item.key)}
+                      onPress={() => {
+                        safeHaptic("light");
+                        setProgressUnit(item.key);
+                        if (item.key === "minutes" && (!targetValue || Number(targetValue) <= 1)) {
+                          setTargetValue("15");
+                        }
+                      }}
                       style={[
                         styles.segment,
                         { backgroundColor: palette.elevated, borderColor: palette.border },
@@ -203,9 +294,74 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
                     </TouchableOpacity>
                   ))}
                 </View>
-                {progressUnit !== "check" ? (
+
+                {/* Minutes Quick Chips & Custom Input */}
+                {progressUnit === "minutes" ? (
+                  <View style={styles.minuteGoalSection}>
+                    <Text style={[styles.fieldLabel, { color: palette.muted }]}>{t("1日の目標時間", "Daily target time")}</Text>
+                    <View style={styles.minuteChipsRow}>
+                      {MINUTE_PRESETS.map((minutes) => {
+                        const isSelected = !customMinutesMode && Number(targetValue) === minutes;
+                        return (
+                          <TouchableOpacity
+                            key={minutes}
+                            accessibilityRole="button"
+                            onPress={() => {
+                              safeHaptic("light");
+                              setTargetValue(String(minutes));
+                              setCustomMinutesMode(false);
+                            }}
+                            style={[
+                              styles.minuteChip,
+                              { backgroundColor: palette.elevated, borderColor: palette.border },
+                              isSelected && { backgroundColor: palette.primarySoft, borderColor: palette.primary },
+                            ]}
+                          >
+                            <Text style={[styles.minuteChipText, { color: palette.muted }, isSelected && { color: palette.primary, fontWeight: "800" }]}>
+                              {t(`${minutes}分`, `${minutes}m`)}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                      <TouchableOpacity
+                        accessibilityRole="button"
+                        onPress={() => {
+                          safeHaptic("light");
+                          setCustomMinutesMode(true);
+                        }}
+                        style={[
+                          styles.minuteChip,
+                          { backgroundColor: palette.elevated, borderColor: palette.border },
+                          (customMinutesMode || !MINUTE_PRESETS.includes(Number(targetValue) as any)) && { backgroundColor: palette.primarySoft, borderColor: palette.primary },
+                        ]}
+                      >
+                        <Text style={[styles.minuteChipText, { color: palette.muted }, (customMinutesMode || !MINUTE_PRESETS.includes(Number(targetValue) as any)) && { color: palette.primary, fontWeight: "800" }]}>
+                          {t("カスタム", "Custom")}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    {customMinutesMode || !MINUTE_PRESETS.includes(Number(targetValue) as any) ? (
+                      <View style={[styles.targetRow, { backgroundColor: palette.elevated, borderColor: palette.border }]}>
+                        <Text style={[styles.targetText, { color: palette.text }]}>{t("手動入力", "Custom minutes")}</Text>
+                        <View style={styles.targetInputWrapper}>
+                          <TextInput
+                            value={targetValue}
+                            onChangeText={setTargetValue}
+                            onFocus={() => { setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150); }}
+                            keyboardType="number-pad"
+                            style={[styles.targetInput, { backgroundColor: palette.surface, borderColor: palette.border, color: palette.text }]}
+                          />
+                          <Text style={[styles.targetUnit, { color: palette.muted }]}>{t("分", "min")}</Text>
+                        </View>
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
+
+                {/* Count Input */}
+                {progressUnit === "count" ? (
                   <View style={[styles.targetRow, { backgroundColor: palette.elevated, borderColor: palette.border }]}>
-                    <Text style={[styles.targetText, { color: palette.text }]}>{t("1日の目標", "Daily target")}</Text>
+                    <Text style={[styles.targetText, { color: palette.text }]}>{t("1日の目標回数", "Daily target count")}</Text>
                     <View style={styles.targetInputWrapper}>
                       <TextInput
                         value={targetValue}
@@ -214,7 +370,7 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
                         keyboardType="number-pad"
                         style={[styles.targetInput, { backgroundColor: palette.surface, borderColor: palette.border, color: palette.text }]}
                       />
-                      <Text style={[styles.targetUnit, { color: palette.muted }]}>{progressUnit === "minutes" ? t("分", "min") : t("回", "times")}</Text>
+                      <Text style={[styles.targetUnit, { color: palette.muted }]}>{t("回", "times")}</Text>
                     </View>
                   </View>
                 ) : null}
@@ -224,12 +380,15 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
               <View style={[styles.cardSection, { backgroundColor: palette.surface, borderColor: palette.border }]}>
                 <View style={styles.cardHeader}>
                   <MaterialIcons name="shield" size={16} color={palette.primary} />
-                  <Text style={[styles.cardTitle, { color: palette.text }]}>{t("実行条件（アプリ制限）", "Execution & App limits")}</Text>
+                  <Text style={[styles.cardTitle, { color: palette.text }]}>{t("アプリの制限", "App limits")}</Text>
                 </View>
                 <TouchableOpacity
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: isRequired }}
-                  onPress={() => setIsRequired((value) => !value)}
+                  onPress={() => {
+                    safeHaptic("light");
+                    setIsRequired((value) => !value);
+                  }}
                   style={[
                     styles.requiredOption,
                     { backgroundColor: palette.elevated, borderColor: palette.border },
@@ -264,6 +423,39 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
                   </View>
                 ) : null}
               </View>
+
+              {/* Color Selection Accordion */}
+              <View style={[styles.cardSection, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: colorSectionOpen }}
+                  onPress={() => setColorSectionOpen((v) => !v)}
+                  style={styles.colorDisclosure}
+                >
+                  <View style={styles.colorDisclosureLeft}>
+                    <View style={[styles.colorPreviewDot, { backgroundColor: color }]} />
+                    <Text style={[styles.cardTitle, { color: palette.text }]}>{t("テーマカラー", "Color theme")}</Text>
+                  </View>
+                  <MaterialIcons name={colorSectionOpen ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={20} color={palette.muted} />
+                </TouchableOpacity>
+                {colorSectionOpen ? (
+                  <View style={styles.colorRow}>
+                    {HABIT_COLORS.map((item) => (
+                      <TouchableOpacity
+                        key={item}
+                        accessibilityLabel={t("習慣の色を選択", "Choose habit color")}
+                        onPress={() => {
+                          safeHaptic("light");
+                          setColor(item);
+                        }}
+                        style={[styles.colorButton, { backgroundColor: item, borderColor: item }, color === item && { borderColor: palette.text }]}
+                      >
+                        {color === item ? <MaterialIcons name="check" size={14} color={COLORS.white} /> : null}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                ) : null}
+              </View>
             </ScrollView>
             <View style={[styles.footer, { backgroundColor: palette.background, borderTopColor: palette.border, paddingBottom: Math.max(insets.bottom, 12) }]}>
               {habit && onDelete ? (
@@ -280,7 +472,7 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
                 disabled={!title.trim() || isSaving}
               >
                 <Text style={[styles.saveText, { color: !title.trim() || isSaving ? palette.muted : palette.isDark ? palette.background : COLORS.white }]}>
-                  {isSaving ? (habit ? t("保存中...", "Saving...") : t("作成中...", "Creating...")) : habit ? t("変更を保存", "Save changes") : t("習慣を作る", "Create habit")}
+                  {isSaving ? (habit ? t("保存中...", "Saving...") : t("作成中...", "Creating...")) : habit ? t("変更を保存", "Save changes") : t("習慣を作成", "Create habit")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -307,19 +499,27 @@ const styles = StyleSheet.create({
   input: { minHeight: 46, borderRadius: 13, borderWidth: 1, fontSize: 15, paddingHorizontal: 13 },
   cardSection: { borderRadius: 16, borderWidth: 1, padding: 12, gap: 8 },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
+  cardHeaderHint: { marginLeft: "auto", fontSize: 11, fontWeight: "800" },
   cardTitle: { fontSize: 13, fontWeight: "800" },
-  subField: { gap: 4 },
-  subFieldHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  fieldLabel: { fontSize: 11, fontWeight: "700" },
-  fieldValue: { fontSize: 11, fontWeight: "800" },
-  optionRow: { flexDirection: "row", gap: 6 },
-  smallOption: { flex: 1, minHeight: 38, alignItems: "center", justifyContent: "center", borderRadius: 10, borderWidth: 1, paddingHorizontal: 3 },
-  smallOptionText: { fontSize: 11, fontWeight: "800" },
-  colorRow: { flexDirection: "row", alignItems: "center", gap: 9, marginTop: 2 },
+  fieldLabel: { fontSize: 11, fontWeight: "700", marginBottom: 4 },
+  presetRow: { flexDirection: "row", gap: 6, marginBottom: 2 },
+  presetChip: { flex: 1, minHeight: 34, alignItems: "center", justifyContent: "center", borderRadius: 9, borderWidth: 1, paddingHorizontal: 4 },
+  presetChipText: { fontSize: 11, fontWeight: "700" },
+  dayToggleRow: { flexDirection: "row", justifyContent: "space-between", gap: 4, marginTop: 4 },
+  dayCircle: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  dayCircleText: { fontSize: 12, fontWeight: "800" },
+  colorDisclosure: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 2 },
+  colorDisclosureLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
+  colorPreviewDot: { width: 14, height: 14, borderRadius: 7 },
+  colorRow: { flexDirection: "row", alignItems: "center", gap: 9, marginTop: 4 },
   colorButton: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center", borderWidth: 2 },
   segmentRow: { flexDirection: "row", gap: 5 },
   segment: { flex: 1, minHeight: 38, alignItems: "center", justifyContent: "center", borderRadius: 10, borderWidth: 1, paddingHorizontal: 3 },
   segmentText: { fontSize: 11, textAlign: "center", fontWeight: "800" },
+  minuteGoalSection: { gap: 6, marginTop: 2 },
+  minuteChipsRow: { flexDirection: "row", gap: 5, flexWrap: "wrap" },
+  minuteChip: { minWidth: 48, flex: 1, minHeight: 34, alignItems: "center", justifyContent: "center", borderRadius: 8, borderWidth: 1, paddingHorizontal: 6 },
+  minuteChipText: { fontSize: 11, fontWeight: "700" },
   targetRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6, marginTop: 2 },
   targetText: { fontSize: 12, fontWeight: "800" },
   targetInputWrapper: { flexDirection: "row", alignItems: "center", gap: 6 },

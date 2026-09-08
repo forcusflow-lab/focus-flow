@@ -103,7 +103,7 @@ describe("Focus Flowの日付・習慣計算", () => {
   });
 
   it("時間帯を追加しても常時に選んだアプリは終日有効なルールとして残す", () => {
-    const data: FocusFlowData = { todos: [{ id: "t-core", title: "必須", priority: "high", isRequired: true, completed: false, createdAt: "2026-08-13T00:00:00.000Z" }], habits: [], memos: [], focusSessions: [], gateConfig: { enabled: true, blockedPackages: ["com.example.always"], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, schedules: [{ id: "morning", label: "朝", enabled: true, days: [1], startTime: "06:00", endTime: "09:00", blockedPackages: ["com.example.news"] }] }, displaySettings: { fontScale: "standard", theme: "mist", cardOpacity: "solid" } };
+    const data: FocusFlowData = { todos: [{ id: "t-core", title: "必須", priority: "high", isRequired: true, completed: false, createdAt: "2026-08-10T00:00:00.000Z" }], habits: [], memos: [], focusSessions: [], gateConfig: { enabled: true, blockedPackages: ["com.example.always"], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, schedules: [{ id: "morning", label: "朝", enabled: true, days: [1], startTime: "06:00", endTime: "09:00", blockedPackages: ["com.example.news"] }] }, displaySettings: { fontScale: "standard", theme: "mist", cardOpacity: "solid" } };
     const outsideSchedule = new Date(2026, 7, 10, 22, 0, 0);
     const alwaysRule = getGateRuleSummaries(data, outsideSchedule).find((rule) => rule.id === "always");
     expect(alwaysRule).toMatchObject({ isActive: true, blockedPackages: ["com.example.always"], pendingCount: 1 });
@@ -121,7 +121,7 @@ describe("Focus Flowの日付・習慣計算", () => {
     expect(getGateSummary(data, base)).toMatchObject({ pendingTodos: 1, pendingHabits: 0, pendingCount: 1 });
   });
 
-  it("期限当日以前の未完了Todoを常に自動必須にし、期限翌日・完了済みを混同しない", () => {
+  it("期限当日以前でも通常のTodoはゲート解除条件に入らず、必須Todoのみが条件に入る（案2）", () => {
     const data: FocusFlowData = {
       todos: [
         { id: "t-today", title: "今日が期限", priority: "high", dueDate: "2026-08-13", isRequired: false, completed: false, createdAt: "2026-08-10T00:00:00.000Z" },
@@ -133,8 +133,12 @@ describe("Focus Flowの日付・習慣計算", () => {
       gateConfig: { enabled: true, blockedPackages: ["com.example.video"], requiredTodoIds: [], requiredHabitIds: [], autoRequireDueToday: true, schedules: [] },
       displaySettings: { fontScale: "standard", theme: "mist", cardOpacity: "solid" },
     };
-    expect(getGateSummary(data, base)).toMatchObject({ pendingTodos: 2, pendingHabits: 0, pendingCount: 2 });
-    data.gateConfig.autoRequireDueToday = false;
+    // 通常Todoは期限切れ・当日であってもブロッカーにならない
+    expect(getGateSummary(data, base)).toMatchObject({ pendingTodos: 0, pendingHabits: 0, pendingCount: 0 });
+
+    // 必須に設定されたTodoのみがブロッカーになる
+    data.todos[0].isRequired = true; // t-today
+    data.todos[2].isRequired = true; // t-overdue
     expect(getGateSummary(data, base)).toMatchObject({ pendingTodos: 2, pendingHabits: 0, pendingCount: 2 });
   });
 

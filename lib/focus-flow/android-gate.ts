@@ -1,5 +1,5 @@
 import { Appearance, NativeModules, Platform } from "react-native";
-import { dayKey, formatJapaneseDate, getGateRuleSummaries, getGateSummary, weeklyHabitProgress, getHabitTimerProgress, getTodoDueStatus, getTodoSubtasks, habitStreak, habitTimerEndsAt, isHabitCompleteOn, isHabitTimeReady, isTimedTodo, isTodoAchieved, isTodoEffectiveRequired, isTodoTimeReady, todoTimerEndsAt } from "./utils";
+import { dayKey, formatJapaneseDate, getGateRuleSummaries, getGateSummary, weeklyHabitProgress, getHabitTimerProgress, getTodoDueStatus, getTodoSubtasks, habitStreak, habitTimerEndsAt, isHabitCompleteOn, isHabitScheduledOn, isHabitTimeReady, isTimedTodo, isTodoAchieved, isTodoEffectiveRequired, isTodoTimeReady, todoTimerEndsAt } from "./utils";
 import type { FocusFlowData } from "./types";
 import { getAppLanguage } from "./i18n";
 import { getAppPalette } from "./app-themes";
@@ -36,7 +36,7 @@ export async function syncAndroidGate(data: FocusFlowData) {
   const requiredTodoIds = new Set(activeRules.flatMap((rule) => rule.requiredTodoIds));
   const requiredHabitIds = new Set(activeRules.flatMap((rule) => rule.requiredHabitIds));
   const effectiveRequiredTodos = data.todos.filter((todo) => isTodoEffectiveRequired(todo));
-  const effectiveRequiredHabits = data.habits.filter((habit) => habit.isRequired);
+  const effectiveRequiredHabits = data.habits.filter((habit) => habit.isRequired && isHabitScheduledOn(habit));
   const gateRequiredTodos = data.todos.filter((todo) => requiredTodoIds.has(todo.id));
   const gateRequiredHabits = data.habits.filter((habit) => requiredHabitIds.has(habit.id));
   const pendingTodoItems = effectiveRequiredTodos.filter((todo) => !isTodoAchieved(todo));
