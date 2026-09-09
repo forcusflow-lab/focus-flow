@@ -1,4 +1,4 @@
-import type { FocusFlowData, FocusSession, GateConfig, GateSchedule, Habit, RepeatRule, RequiredWindowMode, Todo, TodoSubtask } from "./types";
+import type { FocusFlowData, FocusSession, GateConfig, GateSchedule, Habit, Priority, RepeatRule, RequiredWindowMode, Todo, TodoSubtask } from "./types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 export type ContentLanguage = "ja" | "en";
@@ -356,3 +356,13 @@ export function reorderSubtasks(items: TodoSubtask[], from: number, to: number) 
   next.splice(to, 0, moved);
   return next;
 }
+
+export function getTodoAccentColor(todo: { color?: string; priority: Priority }): string {
+  if (todo.color) return todo.color;
+  switch (todo.priority) {
+    case "high": return "#C05746";
+    case "medium": return "#BA7238";
+    case "low": default: return "#3D6E9B";
+  }
+}
+

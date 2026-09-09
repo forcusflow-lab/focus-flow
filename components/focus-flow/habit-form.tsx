@@ -443,7 +443,10 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
                 >
                   <View style={styles.colorDisclosureLeft}>
                     <View style={[styles.colorPreviewDot, { backgroundColor: color }]} />
-                    <Text style={[styles.cardTitle, { color: palette.text }]}>{t("テーマカラー", "Color theme")}</Text>
+                    <View style={styles.colorDisclosureCopy}>
+                      <Text style={[styles.cardTitle, { color: palette.text }]}>{t("テーマカラー", "Color theme")}</Text>
+                      <Text style={[styles.cardSubtext, { color: palette.muted }]}>{t("カード左端の識別カラーとして表示されます", "Shown as the indicator bar on the left edge of the card")}</Text>
+                    </View>
                   </View>
                   <MaterialIcons name={colorSectionOpen ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={20} color={palette.muted} />
                 </TouchableOpacity>
@@ -452,14 +455,14 @@ export function HabitForm({ visible, habit, defaultRequired = false, onClose, on
                     {HABIT_COLORS.map((item) => (
                       <TouchableOpacity
                         key={item}
-                        accessibilityLabel={t("習慣の色を選択", "Choose habit color")}
+                        accessibilityLabel={t("色を選択", "Choose color")}
                         onPress={() => {
                           safeHaptic("light");
                           setColor(item);
                         }}
                         style={[styles.colorButton, { backgroundColor: item, borderColor: item }, color === item && { borderColor: palette.text }]}
                       >
-                        {color === item ? <MaterialIcons name="check" size={14} color={COLORS.white} /> : null}
+                        {color === item ? <MaterialIcons name="check" size={16} color={COLORS.white} /> : null}
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -517,11 +520,13 @@ const styles = StyleSheet.create({
   dayToggleRow: { flexDirection: "row", justifyContent: "space-between", gap: 4, marginTop: 4 },
   dayCircle: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   dayCircleText: { fontSize: 12, fontWeight: "800" },
-  colorDisclosure: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 2 },
-  colorDisclosureLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
-  colorPreviewDot: { width: 14, height: 14, borderRadius: 7 },
-  colorRow: { flexDirection: "row", alignItems: "center", gap: 9, marginTop: 4 },
-  colorButton: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center", borderWidth: 2 },
+  colorDisclosure: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 4 },
+  colorDisclosureLeft: { flexDirection: "row", alignItems: "center", gap: 9, flex: 1, minWidth: 0 },
+  colorDisclosureCopy: { flex: 1, minWidth: 0 },
+  cardSubtext: { fontSize: 10.5, lineHeight: 14, marginTop: 1 },
+  colorPreviewDot: { width: 16, height: 16, borderRadius: 8 },
+  colorRow: { flexDirection: "row", alignItems: "center", gap: 11, marginTop: 10, paddingVertical: 2, paddingHorizontal: 2 },
+  colorButton: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", borderWidth: 2.5 },
   segmentRow: { flexDirection: "row", gap: 5 },
   segment: { flex: 1, minHeight: 38, alignItems: "center", justifyContent: "center", borderRadius: 10, borderWidth: 1, paddingHorizontal: 3 },
   segmentText: { fontSize: 11, textAlign: "center", fontWeight: "800" },

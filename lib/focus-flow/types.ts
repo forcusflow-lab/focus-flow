@@ -26,6 +26,8 @@ export type Todo = {
   title: string;
   /** Todoに紐づく補足メモ。メモから移植した本文もここへ保存する。 */
   memo?: string;
+  /** カード左端の識別カラー。未指定時は優先度に応じたカラーを自動適用。 */
+  color?: string;
   priority: Priority;
   dueDate?: string;
   isRequired: boolean;

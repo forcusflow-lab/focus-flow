@@ -11,7 +11,7 @@ import { createId, dayKey, formatJapaneseDate, getTodoSubtasks } from "@/lib/foc
 import { DatePicker } from "./date-picker";
 import { RequiredWindowSelector } from "./required-window-selector";
 import { ScaledText as Text } from "./scaled-text";
-import { COLORS, safeHaptic, useFocusPalette } from "./ui";
+import { COLORS, HABIT_COLORS, safeHaptic, useFocusPalette } from "./ui";
 
 export type TaskInput = {
   title: string;
@@ -22,6 +22,7 @@ export type TaskInput = {
   requiredScheduleIds: string[];
   memo?: string;
   subtasks: TodoSubtask[];
+  color?: string;
 };
 
 type TaskFormProps = {
@@ -91,6 +92,8 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
   ], [language]);
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<Priority>("medium");
+  const [color, setColor] = useState<string | undefined>(todo?.color);
+  const [colorSectionOpen, setColorSectionOpen] = useState(false);
   const [dueDate, setDueDate] = useState("");
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [isRequired, setIsRequired] = useState(false);
@@ -113,6 +116,8 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
     const initialSubtasks = todo ? getTodoSubtasks(todo) : [];
     setTitle(todo?.title ?? "");
     setPriority(todo?.priority ?? "medium");
+    setColor(todo?.color);
+    setColorSectionOpen(false);
     setDueDate(todo?.dueDate ?? "");
     setIsRequired(todo?.isRequired ?? defaultRequired);
     setRequiredWindowMode(todo?.requiredWindowMode === "scheduled" && (todo.requiredScheduleIds?.length ?? 0) ? "scheduled" : "always");
@@ -151,7 +156,7 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
     setIsSaving(true);
     safeHaptic("light");
     try {
-      const result = onSave({ title: title.trim(), memo: memo.trim() || undefined, priority, dueDate: dueDate || undefined, isRequired, requiredWindowMode, requiredScheduleIds, subtasks });
+      const result = onSave({ title: title.trim(), memo: memo.trim() || undefined, color, priority, dueDate: dueDate || undefined, isRequired, requiredWindowMode, requiredScheduleIds, subtasks });
       if (result.ok) {
         onClose();
       } else {
@@ -271,6 +276,42 @@ export function TaskForm({ visible, todo, defaultRequired = false, onClose, onSa
                 setRequiredScheduleIds((prev) => [...prev, schedule.id]);
               }}
             />
+
+            {/* Color Selection Accordion */}
+            <View style={[styles.cardSection, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ expanded: colorSectionOpen }}
+                onPress={() => setColorSectionOpen((v) => !v)}
+                style={styles.colorDisclosure}
+              >
+                <View style={styles.colorDisclosureLeft}>
+                  <View style={[styles.colorPreviewDot, { backgroundColor: color ?? (priority === "high" ? "#C05746" : priority === "medium" ? "#BA7238" : "#3D6E9B") }]} />
+                  <View style={styles.colorDisclosureCopy}>
+                    <Text style={[styles.cardTitle, { color: palette.text }]}>{t("テーマカラー", "Color theme")}</Text>
+                    <Text style={[styles.cardSubtext, { color: palette.muted }]}>{t("カード左端の識別カラーとして表示されます", "Shown as the indicator bar on the left edge of the card")}</Text>
+                  </View>
+                </View>
+                <MaterialIcons name={colorSectionOpen ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={20} color={palette.muted} />
+              </TouchableOpacity>
+              {colorSectionOpen ? (
+                <View style={styles.colorRow}>
+                  {HABIT_COLORS.map((item) => (
+                    <TouchableOpacity
+                      key={item}
+                      accessibilityLabel={t("色を選択", "Choose color")}
+                      onPress={() => {
+                        safeHaptic("light");
+                        setColor(item);
+                      }}
+                      style={[styles.colorButton, { backgroundColor: item, borderColor: item }, (color ?? (priority === "high" ? "#C05746" : priority === "medium" ? "#BA7238" : "#3D6E9B")) === item && { borderColor: palette.text }]}
+                    >
+                      {(color ?? (priority === "high" ? "#C05746" : priority === "medium" ? "#BA7238" : "#3D6E9B")) === item ? <MaterialIcons name="check" size={16} color={COLORS.white} /> : null}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : null}
+            </View>
           </ScrollView>
           <View style={[styles.footer, { backgroundColor: palette.background, borderTopColor: palette.border, paddingBottom: Math.max(insets.bottom, 12) }]}>
             <View style={styles.footerActions}>
@@ -333,4 +374,13 @@ const styles = StyleSheet.create({
   deleteText: { fontSize: 13, fontWeight: "800" },
   saveButton: { minHeight: 50, flex: 1, alignItems: "center", justifyContent: "center", borderRadius: 15 },
   saveText: { color: COLORS.white, fontSize: 15, fontWeight: "800" },
+  cardSection: { borderRadius: 13, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10, marginTop: 10, marginBottom: 6 },
+  colorDisclosure: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 4 },
+  colorDisclosureLeft: { flexDirection: "row", alignItems: "center", gap: 9, flex: 1, minWidth: 0 },
+  colorDisclosureCopy: { flex: 1, minWidth: 0 },
+  cardTitle: { fontSize: 13, fontWeight: "800" },
+  cardSubtext: { fontSize: 10.5, lineHeight: 14, marginTop: 1 },
+  colorPreviewDot: { width: 16, height: 16, borderRadius: 8 },
+  colorRow: { flexDirection: "row", alignItems: "center", gap: 11, marginTop: 10, paddingVertical: 2, paddingHorizontal: 2 },
+  colorButton: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", borderWidth: 2.5 },
 });

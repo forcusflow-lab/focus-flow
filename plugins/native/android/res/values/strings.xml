@@ -30,6 +30,11 @@
   <string name="timing_scheduled_detail">設定した時間帯（朝・夜など）の間だけブロック</string>
   <string name="timing_add_window">+ 新しい時間帯を作成</string>
 
+  <!-- カラーテーマ（Todo / 習慣 共通） -->
+  <string name="color_theme_title">テーマカラー</string>
+  <string name="color_theme_guide">カード左端の識別カラーとして表示されます</string>
+  <string name="color_choose_label">色を選択</string>
+
   <!-- ウィジェット -->
   <string name="widget_title">今日の目標</string>
   <string name="widget_badge_all_day">終日</string>

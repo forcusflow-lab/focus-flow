@@ -29,6 +29,10 @@ export const R = {
     timing_scheduled_title: "timing_scheduled_title",
     timing_scheduled_detail: "timing_scheduled_detail",
     timing_add_window: "timing_add_window",
+    // カラーテーマ（Todo / 習慣 共通）
+    color_theme_title: "color_theme_title",
+    color_theme_guide: "color_theme_guide",
+    color_choose_label: "color_choose_label",
     // ウィジェット
     widget_title: "widget_title",
     widget_badge_all_day: "widget_badge_all_day",
@@ -151,6 +155,19 @@ export const STRING_RESOURCES: Record<StringResourceId, LocalizedString> = {
   timing_add_window: {
     ja: "+ 新しい時間帯を作成",
     en: "+ Create new time window",
+  },
+  // カラーテーマ（Todo / 習慣 共通）
+  color_theme_title: {
+    ja: "テーマカラー",
+    en: "Color theme",
+  },
+  color_theme_guide: {
+    ja: "カード左端の識別カラーとして表示されます",
+    en: "Shown as the indicator bar on the left edge of the card",
+  },
+  color_choose_label: {
+    ja: "色を選択",
+    en: "Choose color",
   },
   // ウィジェット
   widget_title: {

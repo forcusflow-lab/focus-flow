@@ -9,18 +9,18 @@ type IconName = React.ComponentProps<typeof MaterialIcons>["name"];
 
 export const COLORS = {
   forest: "#1B6B62",
-  blue: "#3566B7",
+  blue: "#3D6E9B",
   background: "#F2F6FC",
   text: "#15233B",
   muted: "#617089",
   border: "#D7E1F0",
   success: "#198A68",
-  warning: "#B96B13",
-  error: "#C24756",
+  warning: "#BA7238",
+  error: "#C05746",
   white: "#FFFFFF",
 };
 
-export const HABIT_COLORS = ["#246B5A", "#315B8C", "#A76439", "#76569B", "#4B9B72"];
+export const HABIT_COLORS = ["#388E77", "#3D6E9B", "#BA7238", "#7E5E94", "#A65E68"];
 
 export function useFocusPalette() {
   const { displaySettings } = useFocusFlow();

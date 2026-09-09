@@ -6,14 +6,15 @@ import { HabitProgressControl } from "@/components/focus-flow/habit-progress-con
 import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
 import { COLORS, safeHaptic, useFocusPalette } from "@/components/focus-flow/ui";
 import type { Habit, Todo } from "@/lib/focus-flow/types";
-import { dayKey, dayKeyOffset, formatJapaneseDate, getTodoDueStatus, getTodoSubtasks, habitProgressLabel, habitStreak, isHabitCompleteOn, isTodoAchieved, isTodoEffectiveRequired, shortWeekday, weeklyHabitProgress } from "@/lib/focus-flow/utils";
+import { dayKey, dayKeyOffset, formatJapaneseDate, getTodoAccentColor, getTodoDueStatus, getTodoSubtasks, habitProgressLabel, habitStreak, isHabitCompleteOn, isTodoAchieved, isTodoEffectiveRequired, shortWeekday, weeklyHabitProgress } from "@/lib/focus-flow/utils";
 
 type Translate = (ja: string, en: string) => string;
 
 function RequiredLabel({ label, color }: { label: string; color: string }) {
   const displayLabel = label === "Must-do" ? label : "必須";
   return (
-    <View style={[styles.requiredLabel, displayLabel === "必須" ? styles.requiredLabelJapanese : styles.requiredLabelEnglish, { backgroundColor: `${color}20` }]}>
+    <View style={[styles.requiredLabel, displayLabel === "必須" ? styles.requiredLabelJapanese : styles.requiredLabelEnglish, { backgroundColor: `${color}14` }]}>
+      <View style={[styles.requiredDot, { backgroundColor: color }]} />
       <NativeText allowFontScaling={false} numberOfLines={1} style={[styles.requiredLabelText, { color }]}>{displayLabel}</NativeText>
     </View>
   );
@@ -52,10 +53,11 @@ export function TodoItemCard({ todo, showRequired = todo.isRequired, language, t
   });
 
   const doneTitleStyle = achieved ? { color: palette.muted, textDecorationLine: "line-through" as const, textDecorationColor: palette.muted } : undefined;
+  const railColor = getTodoAccentColor(todo);
 
   return (
     <View style={[styles.todoRow, { backgroundColor: achieved ? palette.elevated : palette.surface, borderColor: palette.border }]}>
-      <View style={[styles.rail, { backgroundColor: palette.primary }]} />
+      <View style={[styles.rail, { backgroundColor: railColor }]} />
       <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: achieved }} accessibilityLabel={achieved ? t(`「${todo.title}」を未完了に戻す`, `Reopen “${todo.title}”`) : t(`「${todo.title}」を完了にする`, `Mark “${todo.title}” complete`)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={(event) => { event.stopPropagation(); onToggle(); }} style={styles.todoCheckTouchTarget}>
         <View style={[styles.todoCheck, { borderColor: palette.border }, achieved && { backgroundColor: palette.primary, borderColor: palette.primary }]}>
           {achieved ? <MaterialIcons name="check" size={15} color={COLORS.white} /> : null}
@@ -143,17 +145,19 @@ export function HabitItemCard({ habit, showRequired = habit.isRequired, language
                 <Text style={[styles.habitProgressPillText, { color: habit.color }]}>{t(`今日 ${progressText}`, `Today ${progressText}`)}</Text>
               </View>
             ) : null}
-            <Text style={[styles.metaText, { color: palette.muted }]}>
-              {t(`週 ${weekly.completed}/${weekly.target}`, `${weekly.completed}/${weekly.target} this week`)}
-            </Text>
-            <Text style={[styles.metaText, { color: palette.muted, flexShrink: 0 }]}>
-              · {habitStreak(habit)}{t("日連続", "-day streak")}
-            </Text>
           </View>
         </TouchableOpacity>
         {expanded ? (
           <View style={styles.detailSurface}>
             <View style={[styles.subtaskDivider, { backgroundColor: palette.border }]} />
+            <View style={styles.expandedStatsRow}>
+              <Text style={[styles.metaText, { color: palette.muted }]}>
+                {t(`週 ${weekly.completed}/${weekly.target}`, `${weekly.completed}/${weekly.target} this week`)}
+              </Text>
+              <Text style={[styles.metaText, { color: palette.muted, flexShrink: 0 }]}>
+                · {habitStreak(habit)}{t("日連続", "-day streak")}
+              </Text>
+            </View>
             <Text style={[styles.detailLabel, { color: palette.muted }]}>{t("曜日", "Days")}</Text>
             <View style={styles.weekRow}>
               {week.map((key) => {
@@ -188,10 +192,12 @@ const styles = StyleSheet.create({
   habitTitleLine: { flexDirection: "row", alignItems: "center", gap: 3, paddingRight: 4 },
   expandButton: { width: 30, height: 32, alignItems: "center", justifyContent: "center", marginRight: -4 },
   detailSurface: { marginTop: 1, paddingVertical: 1 },
-  requiredLabel: { height: 20, flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: 999, marginTop: 1, marginRight: 8 },
+  expandedStatsRow: { flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 5 },
+  requiredLabel: { height: 16, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 3, flexShrink: 0, borderRadius: 999, marginTop: 1, marginRight: 6, paddingHorizontal: 4 },
   requiredLabelJapanese: { width: 44 },
-  requiredLabelEnglish: { minWidth: 62, paddingHorizontal: 7 },
-  requiredLabelText: { fontSize: 10, lineHeight: 14, fontWeight: "900", textAlign: "center", includeFontPadding: false },
+  requiredLabelEnglish: { minWidth: 62, paddingHorizontal: 5 },
+  requiredDot: { width: 4, height: 4, borderRadius: 2 },
+  requiredLabelText: { fontSize: 9.5, lineHeight: 13, fontWeight: "700", textAlign: "center", includeFontPadding: false },
   detailLabel: { fontSize: 9, lineHeight: 12, fontWeight: "800", marginBottom: 3 },
   todoTitleLine: { flexDirection: "row", alignItems: "flex-start", gap: 6, paddingRight: 4 },
   todoTitle: { flex: 1, minWidth: 0, flexShrink: 1, fontSize: 14, lineHeight: 19, fontWeight: "800" },
