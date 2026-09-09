@@ -42,7 +42,7 @@ class FocusGateModule(private val context: ReactApplicationContext) : ReactConte
   @ReactMethod fun getGateDiagnostics(promise: Promise) { try { val preferences = context.getSharedPreferences(GATE_PREFS, Context.MODE_PRIVATE); val enabled = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES).orEmpty().contains("${context.packageName}/${FocusGateService::class.java.name}"); val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager; val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager; val gateState = preferences.getString(GATE_STATE, null)?.let { saved -> JSONObject(saved) }; val rules = gateState?.optJSONArray("rules"); var packageCount = 0; if (rules != null) for (index in 0 until rules.length()) packageCount += rules.optJSONObject(index)?.optJSONArray("blockedPackages")?.length() ?: 0; promise.resolve(Arguments.makeNativeMap(mapOf("accessibilityEnabled" to enabled, "batteryOptimizationIgnored" to if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) powerManager.isIgnoringBatteryOptimizations(context.packageName) else null, "backgroundRestricted" to if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) activityManager.isBackgroundRestricted else false, "apiLevel" to Build.VERSION.SDK_INT, "manufacturer" to Build.MANUFACTURER, "model" to Build.MODEL, "lastGateStateUpdatedAt" to preferences.getLong(GATE_STATE_UPDATED_AT, 0L), "lastGateEventAt" to preferences.getLong(GATE_LAST_EVENT_AT, 0L), "lastGateEventPackage" to preferences.getString(GATE_LAST_EVENT_PACKAGE, ""), "lastBlockedAt" to preferences.getLong(GATE_LAST_BLOCKED_AT, 0L), "lastBlockedPackage" to preferences.getString(GATE_LAST_BLOCKED_PACKAGE, ""), "gateStateActive" to (gateState?.optBoolean("active") ?: false), "configuredRuleCount" to (rules?.length() ?: 0), "configuredBlockedPackageCount" to packageCount))); } catch (error: Exception) { promise.reject("DIAGNOSTICS_UNAVAILABLE", error) } }
   @ReactMethod fun getLaunchableApps(promise: Promise) { try { val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER); val apps = context.packageManager.queryIntentActivities(intent, 0).filter { it.activityInfo.packageName != context.packageName }.map { mapOf("packageName" to it.activityInfo.packageName, "label" to it.loadLabel(context.packageManager).toString()) }.distinctBy { it["packageName"] }.sortedBy { it["label"]?.lowercase() }; val result = Arguments.createArray(); apps.forEach { app -> result.pushMap(Arguments.makeNativeMap(app)) }; promise.resolve(result) } catch (error: Exception) { promise.reject("APP_LIST_UNAVAILABLE", error) } }
   @ReactMethod fun openTimePicker(initialHour: Int, initialMinute: Int, is24Hour: Boolean, promise: Promise) {
-    val activity = currentActivity
+    val activity = context.currentActivity
     if (activity == null) {
       promise.reject("ACTIVITY_UNAVAILABLE", "Current activity is null")
       return
@@ -51,7 +51,7 @@ class FocusGateModule(private val context: ReactApplicationContext) : ReactConte
       try {
         val dialog = android.app.TimePickerDialog(
           activity,
-          { _, hourOfDay, minute ->
+          android.app.TimePickerDialog.OnTimeSetListener { _, hourOfDay, minute ->
             val result = Arguments.createMap().apply {
               putString("action", "set")
               putInt("hour", hourOfDay)

@@ -15,5 +15,6 @@ describe("Focus Flow Androidネイティブプラグイン", () => {
     expect(service).toContain("import android.graphics.Typeface");
     expect(service).toContain("typeface = Typeface.DEFAULT_BOLD");
     expect(module).toContain("import android.app.TimePickerDialog");
+    expect(module).toContain("context.currentActivity");
   });
 });
