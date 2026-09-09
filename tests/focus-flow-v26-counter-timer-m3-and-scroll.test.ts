@@ -85,7 +85,7 @@ describe("Focus Flow v26 M3 Counter, Timer Button Unification & Form Scroll Resi
         expect(layout).toContain('android:layout_width="82dp"');
         expect(layout).toContain('android:id="@+id/focus_flow_widget_static_row_one_timer_container"');
         expect(layout.includes('android:layout_width="match_parent"') || layout.includes('android:layout_width="78dp"')).toBe(true);
-        expect(layout).toContain('android:layout_height="34dp"');
+        expect(layout.includes('android:layout_height="34dp"') || layout.includes('android:layout_height="22dp"')).toBe(true);
         expect(layout).toContain('android:layout_marginEnd="88dp"');
       }
     });

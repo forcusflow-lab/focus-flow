@@ -30,16 +30,19 @@ export const R = {
     timing_scheduled_detail: "timing_scheduled_detail",
     timing_add_window: "timing_add_window",
     // ウィジェット
+    widget_title: "widget_title",
     widget_badge_all_day: "widget_badge_all_day",
     widget_status_all_day: "widget_status_all_day",
     widget_status_window: "widget_status_window",
     widget_status_unlocked: "widget_status_unlocked",
+    widget_status_off: "widget_status_off",
     // 習慣（Habit）画面
     habit_today_progress: "habit_today_progress",
     habit_streak: "habit_streak",
     habit_empty_title: "habit_empty_title",
     habit_empty_description: "habit_empty_description",
     // 設定（Settings）画面
+    settings_schedule_section_title: "settings_schedule_section_title",
     settings_step_guide_title: "settings_step_guide_title",
     settings_step_guide_detail: "settings_step_guide_detail",
     settings_switch_limit_tasks: "settings_switch_limit_tasks",
@@ -150,6 +153,10 @@ export const STRING_RESOURCES: Record<StringResourceId, LocalizedString> = {
     en: "+ Create new time window",
   },
   // ウィジェット
+  widget_title: {
+    ja: "今日の目標",
+    en: "TODAY'S GOALS",
+  },
   widget_badge_all_day: {
     ja: "終日",
     en: "ALL-DAY",
@@ -165,6 +172,10 @@ export const STRING_RESOURCES: Record<StringResourceId, LocalizedString> = {
   widget_status_unlocked: {
     ja: "制限解除中",
     en: "Limits unlocked",
+  },
+  widget_status_off: {
+    ja: "集中制限はオフです",
+    en: "App limits off",
   },
   // 習慣画面
   habit_today_progress: {
@@ -184,6 +195,10 @@ export const STRING_RESOURCES: Record<StringResourceId, LocalizedString> = {
     en: "Create a recurring action with the right count, timing, and record method.",
   },
   // 設定画面
+  settings_schedule_section_title: {
+    ja: "時間帯制限の設定",
+    en: "Time window limit settings",
+  },
   settings_step_guide_title: {
     ja: "設定は3つの順番で進めます",
     en: "Set up in three steps",

@@ -151,17 +151,25 @@ export default function TodayScreen() {
       (habit) => habit.requiredWindowMode === "scheduled" && (habit.requiredScheduleIds?.length ?? 0) > 0
     );
 
-    // 今日の対象: フラットなテキスト見出し
+    // 今日の対象: フラットなテキスト見出し (today_tasks_heading / today_scheduled_tasks_heading 集約)
     if (allDayTodos.length || allDayHabits.length) {
       result.push(
-        { type: "heading", id: "today-open", title: t("今日のタスク", "Today’s tasks") },
+        {
+          type: "heading",
+          id: "today-open",
+          title: t("今日のタスク", "Today’s tasks"),
+        },
         ...allDayTodos.map((todo) => ({ type: "todo" as const, id: `todo-${todo.id}`, todo })),
         ...allDayHabits.map((habit) => ({ type: "habit" as const, id: `habit-${habit.id}`, habit }))
       );
     }
     if (scheduledTodos.length || scheduledHabits.length) {
       result.push(
-        { type: "heading", id: "today-scheduled", title: t("指定時間帯のタスク", "Scheduled tasks") },
+        {
+          type: "heading",
+          id: "today-scheduled",
+          title: t("指定時間帯のタスク", "Scheduled tasks"),
+        },
         ...scheduledTodos.map((todo) => ({ type: "todo" as const, id: `todo-${todo.id}`, todo })),
         ...scheduledHabits.map((habit) => ({ type: "habit" as const, id: `habit-${habit.id}`, habit }))
       );
@@ -178,7 +186,7 @@ export default function TodayScreen() {
       );
     }
     return result;
-  }, [doneHabits, doneTodos, english, hiddenCompletedCount, openHabits, openTodos, showCompleted, t]);
+  }, [doneHabits, doneTodos, english, hiddenCompletedCount, openHabits, openTodos, showCompleted]);
 
   const openTaskForm = (defaultRequired = false) => {
     setNewTaskDefaultRequired(defaultRequired);
@@ -205,7 +213,7 @@ export default function TodayScreen() {
           activeScheduledRule.schedule.startTime,
           activeScheduledRule.schedule.endTime
         )
-      : t("アプリ制限中", "App limits active")
+      : stringResource(R.string.today_banner_locked, english ? "en" : "ja", pendingRequired)
     : stringResource(R.string.today_banner_unlocked, english ? "en" : "ja");
 
   return (

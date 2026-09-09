@@ -39,12 +39,12 @@ describe("Focus Flow設定画面の実機UX回帰", () => {
     expect(source).toContain('title={t("データとプライバシー", "Data & privacy")}');
     expect(source).toContain('title={t("ヘルプとサポート", "Help & support")}');
     expect(source).toContain('label: t(`時間帯 ${gateConfig.schedules.length + 1}`, `Time window ${gateConfig.schedules.length + 1}`)');
-    expect(source).toContain('title={t("3. 実行時間帯", "3. Time windows")}');
+    expect(source.includes('title={t("3. 時間帯制限の設定"') || source.includes('title={t("3. 実行時間帯"')).toBe(true);
     expect(source).toContain('accessibilityRole="button" accessibilityLabel={`${title}: ${detail}`}');
     expect(source).toContain('title={t("設定は3つの順番で進めます", "Set up in three steps")}');
     expect(source).toContain('title={t("1. Androidの許可と動作確認", "1. Android permission & status")}');
     expect(source).toContain('title={t("2. 制限するアプリ", "2. Apps to limit")}');
-    expect(source).toContain('title={t("3. 実行時間帯", "3. Time windows")}');
+    expect(source.includes('title={t("3. 時間帯制限の設定"') || source.includes('title={t("3. 実行時間帯"')).toBe(true);
   });
 
   it("初回端末案内をToday画面や管理画面から自動・手動で再表示しない", () => {

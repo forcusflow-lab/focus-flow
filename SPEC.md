@@ -108,7 +108,7 @@
 | | 状態バナー（解除中） | `すべての制限を解除中` | `All app limits unlocked` |
 | | 状態バナー（オフ） | `集中制限はオフです` | `App limits are off` |
 | | 状態バナー説明 | `今日の必須タスクを完了すると制限が解除されます` | `Limits unlock when all must-dos for today are complete.` |
-| | 進捗見出し | `本日の進捗（残り %d 件 / 完了 %1$d/%2$d 件）` | `Today’s Progress (%d remaining / %1$d/%2$d complete)` |
+| | 進捗見出し | `進捗` | `Progress` |
 | | リスト見出し（終日タスク） | `今日のタスク` | `Today’s tasks` |
 | | リスト見出し（指定時間帯タスク） | `指定時間帯のタスク` | `Scheduled tasks` |
 | **遮断オーバーレイ** | ヘッダータイトル | `集中タイムです` | `Focus time` |
@@ -118,13 +118,17 @@
 | | 終日 | `終日`（今日の達成までアプリを制限） | `All day` (Limit apps until completed today) |
 | | 指定の時間帯 | `指定の時間帯`（設定した時間帯の間だけブロック） | `Specific time window` (Block only during selected time windows) |
 | | 時間帯追加 | `+ 新しい時間帯を作成` | `+ Create new time window` |
-| **ウィジェット** | ヘッダー状態（終日） | `残り %d 件` | `%d remaining` |
+| **ウィジェット** | ヘッダー大見出し | `今日の目標` | `TODAY'S GOALS` |
+| | ヘッダー状態（終日） | `残り %d 件` | `%d remaining` |
 | | ヘッダー状態（時間帯） | `制限中（%s〜%s）` | `Limited (%s–%s)` |
 | | ヘッダー状態（解除中） | `制限解除中` | `Limits unlocked` |
-| | アイテムバッジ | `必須` または `06:00〜09:00` | `MUST` or `06:00–09:00` |
+| | ヘッダー状態（オフ） | `集中制限はオフです` | `App limits off` |
+| | アイテムバッジ（右上固定） | `必須` または `06:00〜09:00` | `MUST` or `06:00–09:00` |
 | **習慣画面** | 習慣カード回数表記 | `今日 %1$d/%2$d 回` | `Today %1$d/%2$d times` |
 | | 習慣カードストリーク | `%d日連続` | `%d-day streak` |
-| **設定画面** | ステップ案内 | `1. 権限許可 → 2. アプリ選択 → 3. 時間帯設定。時間帯を選ばない場合はいつでも有効です。` | `1. Permission → 2. Choose apps → 3. Time windows. Without a window, limits apply anytime.` |
+| **設定画面** | セクション見出し | `3. 時間帯制限の設定` | `3. Time window limit settings` |
+| | 一覧導線タイトル | `集中制限と時間帯制限` | `Focus limits & time windows` |
+| | ステップ案内 | `1. 権限許可 → 2. アプリ選択 → 3. 時間帯設定。時間帯を選ばない場合はいつでも有効です。` | `1. Permission → 2. Choose apps → 3. Time windows. Without a window, limits apply anytime.` |
 | | スイッチ名 | `タスク完了までアプリを制限` | `Limit apps until tasks are done` |
 | | 厳格モード説明 | `制限中の設定変更やアプリ削除を防止し、うっかり解除を防ぎます。` | `Prevents changing settings or deleting apps while limits are active.` |
 
@@ -237,5 +241,44 @@
 ### 8.4 リソース集約
 - `today_date_format`（`%1$d月%2$d日 (%3$s)` / `%3$s, %1$s %2$d`）および `today_progress_label`（`進捗` / `Progress`）を `res/values/strings.xml` および `lib/focus-flow/strings.ts` に集約・管理。
 
+---
 
+## 9. ウィジェット パターンA（右端固定バッジ & 2行目右側コントロール）およびUXライティング完全統一仕様 (v30)
 
+### 9.1 全画面のUXライティング＆概念統一
+- **終日枠の統一:**
+  - 過去の「常時」「いつでも」「ノルマ」等の表記バラつきを完全撤廃。
+  - 設定の選択肢は「**終日**」（補足: 「今日の達成までアプリを制限」）、目標管理の文脈は「**今日の目標**」（ウィジェット英語: `TODAY'S GOALS`）に統一。
+- **時間帯枠の統一:**
+  - 「特定の時間」「時間帯」等の表記を「**指定の時間帯**」（設定項目・タイミング選択）および「**時間帯制限**」（ステータスバナー・セクション見出し「3. 時間帯制限の設定」）に完全統一。
+- **今日画面:**
+  - 動的日付ヘッダー（例: `9月9日 (水)`）と1枚に統合されたダッシュボードカード。
+  - バナー状態表示: `集中制限はオフです` / `アプリ制限中（残り %d 件）` / `時間帯制限中（%s〜%s）` / `すべての制限を解除中`。
+  - カード内見出し: `進捗`（`today_progress_label`）。
+  - リスト見出し: `今日のタスク`（フラットテキスト）。
+- **タスク・習慣作成・編集フォーム:**
+  - タイミング選択セクション: `制限するタイミング`
+  - 選択肢1: `終日`（説明: `今日の達成までアプリを制限`）
+  - 選択肢2: `指定の時間帯`（説明: `設定した時間帯（朝・夜など）の間だけブロック`）
+  - インライン作成導線: `+ 新しい時間帯を作成`
+- **遮断オーバーレイ:**
+  - ヘッダー: `集中タイムです`（`Focus time`）
+  - 終日条件: `今日のタスクを達成すると制限が解除されます`
+  - 時間帯条件: `この時間帯（%s〜%s）の対象タスクを完了すると解除されます`
+
+### 9.2 ホーム画面ウィジェット パターンA配置（右上固定バッジ & 2行目右側コントロール）
+- **パターンA レイアウト構造:**
+  - **1行目右端固定バッジ（Row 1 Right）:**
+    - タイトル行インラインでのバッジ配置（パターンB）を廃止し、アイテム枠の右上端に独立したバッジコンテナ（`focus_flow_widget_item_badge_container`）を配置。
+    - `layout_gravity="top|end"`, `layout_width="wrap_content"`, `layout_height="18dp"`, `layout_marginTop="3dp"`, `layout_marginEnd="6dp"`, `minWidth="32dp"`。
+    - バッジ文字（`必須` / `06:00〜09:00`）は `singleLine="true"`、`ellipsize="none"`、`paddingStart="5dp"`, `paddingEnd="5dp"` により、「...」などの省略欠損なく確実に1行で全文表示。
+  - **タイトル行（Row 1 Left〜Center）:**
+    - コンテンツコンテナに `layout_marginStart="50dp"`, `layout_marginEnd="88dp"` を設定。
+    - タイトルテキスト（`focus_flow_widget_item_title`）は `layout_width="match_parent"` を確保し、右側のバッジや操作コントロールと物理的に絶対に衝突・重なり合わない安全設計。
+  - **2行目右側操作コントロール（Row 2 Right）:**
+    - 習慣カウンター（`[- 1/5 +]`）および習慣タイマー（`▶ 開始` / `❚❚ 一時停止`）を、右上の必須バッジの直下となる2行目右端に配置。
+    - `layout_gravity="bottom|end"`, `layout_width="82dp"`, `layout_height="22dp"`, `layout_marginBottom="3dp"`, `layout_marginEnd="6dp"`。
+    - 右上のバッジ領域と縦のグリッドラインが完璧に揃い、視覚的に極めて整然としたUIを実現。
+- **タイマー操作ボタンのトーン調和:**
+  - ウィジェット待機中のタイマーボタンに角丸カプセルコンテナ（`@drawable/focus_flow_widget_pill_container`）を適用。
+  - 左右対称パディング（`paddingStart="4dp"`, `paddingEnd="4dp"`）、中央揃え（`gravity="center"`, `textAlignment="center"`）により、テキスト「▶ 開始」が中央にバランス良く配置され、回数カウンターと同一の視覚的トーン・ウェイトを実現。

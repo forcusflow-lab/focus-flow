@@ -31,10 +31,12 @@
   <string name="timing_add_window">+ 新しい時間帯を作成</string>
 
   <!-- ウィジェット -->
+  <string name="widget_title">今日の目標</string>
   <string name="widget_badge_all_day">終日</string>
   <string name="widget_status_all_day">残り %1$d 件</string>
   <string name="widget_status_window">制限中（%1$s〜%2$s）</string>
   <string name="widget_status_unlocked">制限解除中</string>
+  <string name="widget_status_off">集中制限はオフです</string>
 
   <!-- 習慣（Habit）画面 -->
   <string name="habit_today_progress">今日 %1$d/%2$d 回</string>
@@ -43,6 +45,7 @@
   <string name="habit_empty_description">続けたい行動を、回数・時間・記録方法に合わせて作成します。</string>
 
   <!-- 設定（Settings）画面 -->
+  <string name="settings_schedule_section_title">時間帯制限の設定</string>
   <string name="settings_step_guide_title">設定は3つの順番で進めます</string>
   <string name="settings_step_guide_detail">1. 権限許可 → 2. アプリ選択 → 3. 時間帯設定。時間帯を選ばない場合はいつでも有効です。</string>
   <string name="settings_switch_limit_tasks">タスク完了までアプリを制限</string>

@@ -85,10 +85,10 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val views = RemoteViews(context.packageName, R.layout.focus_flow_widget_initial)
     val english = state(context).optString("language", "ja") == "en"
     val fontFamily = state(context).optString("fontFamily", "system")
-    views.setTextViewText(R.id.focus_flow_widget_title, fontText(if (english) "TODAY" else "今日の項目", fontFamily))
-    views.setTextViewText(R.id.focus_flow_widget_status, fontText(if (english) "Open Focus Flow to refresh your list" else "Focus Flowを開くと項目を更新します", fontFamily))
+    views.setTextViewText(R.id.focus_flow_widget_title, fontText(if (english) "TODAY'S GOALS" else "今日の目標", fontFamily))
+    views.setTextViewText(R.id.focus_flow_widget_status, fontText(if (english) "App limits off" else "集中制限はオフです", fontFamily))
     views.setViewVisibility(R.id.focus_flow_widget_empty, View.VISIBLE)
-    views.setTextViewText(R.id.focus_flow_widget_empty, fontText(if (english) "Open Focus Flow to add today’s items" else "今日の項目はありません", fontFamily))
+    views.setTextViewText(R.id.focus_flow_widget_empty, fontText(if (english) "Open Focus Flow to add today’s goals" else "今日の目標はありません", fontFamily))
     views.setOnClickPendingIntent(R.id.focus_flow_widget_header, todayIntent(context, id, false))
     views.setOnClickPendingIntent(R.id.focus_flow_widget_root, todayIntent(context, id, false))
     manager.updateAppWidget(id, views)
@@ -253,7 +253,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     views.setTextViewTextSize(R.id.focus_flow_widget_title, android.util.TypedValue.COMPLEX_UNIT_DIP, 12f * scale)
     views.setTextViewTextSize(R.id.focus_flow_widget_status, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
     views.setTextViewTextSize(R.id.focus_flow_widget_empty, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
-    views.setTextViewText(R.id.focus_flow_widget_title, fontText(if (english) "TODAY" else "今日の項目", state.optString("fontFamily", "system")))
+    views.setTextViewText(R.id.focus_flow_widget_title, fontText(if (english) "TODAY'S GOALS" else "今日の目標", state.optString("fontFamily", "system")))
     val candidates = visibleWidgetItems(context, widgetId, state.optJSONArray("widgetItems") ?: JSONArray()).length()
     val overflow = (candidates - bucket.maxRows).coerceAtLeast(0)
     var activeSchedule: JSONObject? = null
@@ -268,7 +268,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       }
     }
     val baseStatus = if (!active) {
-      if (english) "App limits off" else "集中制限はオフ"
+      if (english) "App limits off" else "集中制限はオフです"
     } else if (pending == 0) {
       if (english) "Limits unlocked" else "制限解除中"
     } else if (activeSchedule != null) {
@@ -316,7 +316,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val rowOpacity = state.optInt("widgetCardOpacity", 100).coerceIn(0, 100)
     val scale = when (state.optString("widgetTextScale", "standard")) { "compact" -> 0.92f; "large" -> 1.14f; else -> 1f }
     views.setViewVisibility(R.id.focus_flow_widget_empty, if (rows.isEmpty()) View.VISIBLE else View.GONE)
-    if (rows.isEmpty()) views.setTextViewText(R.id.focus_flow_widget_empty, fontText(if (english) "Open Focus Flow to add today’s items" else "今日の項目はありません", state.optString("fontFamily", "system")))
+    if (rows.isEmpty()) views.setTextViewText(R.id.focus_flow_widget_empty, fontText(if (english) "Open Focus Flow to add today’s goals" else "今日の目標はありません", state.optString("fontFamily", "system")))
     val border = paletteColor(palette, "border", if (dark) "#2A4038" else "#DCE5E0")
     val dividers = listOf(R.id.focus_flow_widget_static_divider_one, R.id.focus_flow_widget_static_divider_two, R.id.focus_flow_widget_static_divider_three, R.id.focus_flow_widget_static_divider_four)
     for (index in 0..4) {
@@ -384,7 +384,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     if (badge.isNotBlank()) views.setImageViewResource(ids.badgeBackground, widgetBadgeDrawable(context, theme, dark, rowOpacity))
     views.setTextViewText(ids.badge, fontText(badge, fontFamily))
     views.setTextColor(ids.badge, primary)
-    views.setTextViewTextSize(ids.badge, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
+    views.setTextViewTextSize(ids.badge, android.util.TypedValue.COMPLEX_UNIT_DIP, 9.5f * scale)
     val unit = item.optString("progressUnit", "check")
     val timerRunning = item.optBoolean("timerRunning", false)
     val timerPaused = item.optBoolean("timerPaused", false)
@@ -458,13 +458,13 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       spannable.setSpan(ForegroundColorSpan(mutedColor), valueStr.length, fullText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
       views.setTextViewText(ids.progress, spannable)
       views.setInt(ids.progress, "setBackgroundColor", Color.TRANSPARENT)
-      views.setTextViewTextSize(ids.progress, android.util.TypedValue.COMPLEX_UNIT_DIP, 11f * scale)
+      views.setTextViewTextSize(ids.progress, android.util.TypedValue.COMPLEX_UNIT_DIP, 10.5f * scale)
       views.setTextViewText(ids.decrement, fontText("−", fontFamily))
       views.setTextViewText(ids.increment, fontText("+", fontFamily))
       listOf(ids.decrement, ids.increment).forEach { control ->
         views.setTextColor(control, primary)
         views.setInt(control, "setBackgroundColor", Color.TRANSPARENT)
-        views.setTextViewTextSize(control, android.util.TypedValue.COMPLEX_UNIT_DIP, 15f * scale)
+        views.setTextViewTextSize(control, android.util.TypedValue.COMPLEX_UNIT_DIP, 14f * scale)
       }
       views.setContentDescription(ids.decrement, if (english) "Decrease count" else "回数を減らす")
       views.setContentDescription(ids.increment, if (english) "Increase count" else "回数を増やす")
@@ -494,7 +494,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       }
       views.setTextViewText(ids.timer, fontText(timerLabel, fontFamily))
       views.setInt(ids.timer, "setBackgroundColor", Color.TRANSPARENT)
-      views.setTextViewTextSize(ids.timer, android.util.TypedValue.COMPLEX_UNIT_DIP, 10.5f * scale)
+      views.setTextViewTextSize(ids.timer, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
       val timerPendingIntent = actionIntent(context, widgetId, ids.position, timerAction, itemId, kind)
       views.setOnClickPendingIntent(ids.timer, timerPendingIntent)
       views.setOnClickPendingIntent(ids.timerBackground, timerPendingIntent)

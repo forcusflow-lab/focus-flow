@@ -210,7 +210,7 @@ function SettingsHome({ scrollRef, english, gateEnabled, pendingCount, accessibi
     <ScreenHeading eyebrow={t("自分に合わせる", "Make it yours")} title={t("設定", "Settings")} />
     <Text style={styles.homeLead}>{t("変更はすぐに保存されます。目的に合わせて選んでください。", "Changes are saved right away. Choose what you want to adjust.")}</Text>
     <SectionTitle title={t("集中を整える", "Focus")} detail={t("制限するアプリと、必須項目を取り組む時間帯を設定します。", "Set the apps to limit and when must-dos become active.")} />
-    <SettingsEntry icon="lock-outline" tint={palette.isDark ? palette.elevated : "#FFF4E3"} color="#A56812" title={t("集中制限と実行時間帯", "App limits & time windows")} detail={limitDetail} badge={!accessibilityEnabled && gateEnabled ? t("許可が必要", "Permission needed") : undefined} onPress={() => onOpen("limits")} />
+    <SettingsEntry icon="lock-outline" tint={palette.isDark ? palette.elevated : "#FFF4E3"} color="#A56812" title={t("集中制限と時間帯制限", "App limits & scheduled limits")} detail={limitDetail} badge={!accessibilityEnabled && gateEnabled ? t("許可が必要", "Permission needed") : undefined} onPress={() => onOpen("limits")} />
     <SectionTitle title={t("見やすさと通知", "Display & reminders")} detail={t("外観、文字、言語、Widget、毎日の確認を調整します。", "Adjust appearance, type, language, widgets, and a daily check-in.")} />
     <SettingsEntry icon="palette" tint="#E4F3EF" color={COLORS.forest} title={t("表示・文字・Widget", "Appearance, type & widget")} detail={`${themeLabel} · ${languageLabel}`} onPress={() => onOpen("appearance")} />
     <SettingsEntry icon="notifications-none" tint="#E9F3FA" color={COLORS.blue} title={t("毎日のリマインダー", "Daily reminder")} detail={reminderEnabled ? t("オン", "On") : t("オフ", "Off")} onPress={() => onOpen("reminders")} />
@@ -279,7 +279,7 @@ function LimitsPanel({ english, isIOS, nativeReady, loadingApps, apps, appPicker
       {appPickerOpen ? <AppPicker apps={apps} loading={loadingApps} selected={selectedApps} onSelect={onSelectApp} canSelect={canSelectBlockedApp} english={english} /> : null}
     </View>
     {selectedApps.length ? <SelectedApps apps={apps} selected={selectedApps} english={english} /> : null}
-    <SectionTitle title={t("3. 実行時間帯", "3. Time windows")} detail={t("Todo・習慣で選んだ時間帯に、必須項目とアプリ制限を有効にします。時間帯を設定しない場合は常時適用です。", "A selected time window activates must-dos and app limits. Without one, limits apply anytime.")} />
+    <SectionTitle title={t("3. 時間帯制限の設定", "3. Time window limit settings")} detail={t("Todo・習慣で選んだ時間帯に、必須項目とアプリ制限を有効にします。時間帯を設定しない場合は終日（常時適用）です。", "A selected time window activates must-dos and app limits. Without one, limits apply all day.")} />
     <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
       {schedules.map((schedule) => <RoutineEditor key={schedule.id} schedule={schedule} expanded={routineOpenId === schedule.id} apps={apps} loading={loadingApps} english={english} onToggle={() => onToggleRoutine(routineOpenId === schedule.id ? undefined : schedule.id)} onChange={(input) => onUpdateSchedule(schedule.id, input)} onRemove={() => onRemoveSchedule(schedule.id)} />)}
       <TouchableOpacity onPress={onAddSchedule} style={styles.addButton}><MaterialIcons name="add" size={18} color={palette.primary} /><Text style={[styles.addButtonText, { color: palette.primary }]}>{t("時間帯を追加", "Add a schedule")}</Text></TouchableOpacity>
