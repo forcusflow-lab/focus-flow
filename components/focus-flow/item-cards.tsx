@@ -13,9 +13,13 @@ type Translate = (ja: string, en: string) => string;
 function RequiredLabel({ label, color }: { label: string; color: string }) {
   const displayLabel = label === "Must-do" ? label : "必須";
   return (
-    <View style={[styles.requiredLabel, displayLabel === "必須" ? styles.requiredLabelJapanese : styles.requiredLabelEnglish, { backgroundColor: `${color}14` }]}>
-      <View style={[styles.requiredDot, { backgroundColor: color }]} />
-      <NativeText allowFontScaling={false} numberOfLines={1} style={[styles.requiredLabelText, { color }]}>{displayLabel}</NativeText>
+    <View
+      accessibilityRole="image"
+      accessibilityLabel={displayLabel}
+      style={[styles.requiredLabel, styles.requiredLock]}
+    >
+      <MaterialIcons name="lock" size={14} color={color} />
+      <NativeText allowFontScaling={false} numberOfLines={1} style={styles.requiredLabelHidden}>{displayLabel}</NativeText>
     </View>
   );
 }
@@ -66,7 +70,7 @@ export function TodoItemCard({ todo, showRequired = todo.isRequired, language, t
       <TouchableOpacity accessibilityRole="button" onPress={hasSubtasks ? toggleSubtasks : onOpen} onLongPress={onOpen} delayLongPress={350} activeOpacity={0.72} style={styles.copy}>
         <View style={styles.todoTitleLine}>
           <Text style={[styles.todoTitle, { color: palette.text }, doneTitleStyle]} numberOfLines={2}>{todo.title}</Text>
-          {effectiveRequired ? <RequiredLabel label={t("必須", "Must-do")} color={palette.primary} /> : null}
+          {effectiveRequired ? <RequiredLabel label={t("必須", "Must-do")} color={palette.muted} /> : null}
         </View>
         {todo.memo || due ? (
           <View style={styles.todoMetaLine}>
@@ -133,7 +137,7 @@ export function HabitItemCard({ habit, showRequired = habit.isRequired, language
         <TouchableOpacity accessibilityRole="button" onPress={onOpen} style={styles.habitSummary}>
           <View style={styles.habitTitleLine}>
             <Text style={[styles.title, { color: palette.text }, doneTitleStyle]} numberOfLines={1}>{habit.title}</Text>
-            {showRequired ? <RequiredLabel label={t("必須", "Must-do")} color={palette.primary} /> : null}
+            {showRequired ? <RequiredLabel label={t("必須", "Must-do")} color={palette.muted} /> : null}
             <TouchableOpacity accessibilityRole="button" accessibilityLabel={expanded ? t("習慣の詳細を閉じる", "Collapse habit details") : t("習慣の詳細を展開する", "Expand habit details")} hitSlop={8} onPress={(event) => { event.stopPropagation(); setExpanded((value) => !value); }} style={styles.expandButton}>
               <MaterialIcons name={expanded ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={19} color={palette.muted} />
             </TouchableOpacity>
@@ -193,11 +197,13 @@ const styles = StyleSheet.create({
   expandButton: { width: 30, height: 32, alignItems: "center", justifyContent: "center", marginRight: -4 },
   detailSurface: { marginTop: 1, paddingVertical: 1 },
   expandedStatsRow: { flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 5 },
-  requiredLabel: { height: 16, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 3, flexShrink: 0, borderRadius: 999, marginTop: 1, marginRight: 6, paddingHorizontal: 4 },
+  requiredLock: { width: 16, height: 16, alignItems: "center", justifyContent: "center", marginTop: 1, marginRight: 2 },
+  requiredLabel: { height: 16, flexDirection: "row", alignItems: "center", justifyContent: "center", flexShrink: 0 },
   requiredLabelJapanese: { width: 44 },
   requiredLabelEnglish: { minWidth: 62, paddingHorizontal: 5 },
   requiredDot: { width: 4, height: 4, borderRadius: 2 },
   requiredLabelText: { fontSize: 9.5, lineHeight: 13, fontWeight: "700", textAlign: "center", includeFontPadding: false },
+  requiredLabelHidden: { display: "none" },
   detailLabel: { fontSize: 9, lineHeight: 12, fontWeight: "800", marginBottom: 3 },
   todoTitleLine: { flexDirection: "row", alignItems: "flex-start", gap: 6, paddingRight: 4 },
   todoTitle: { flex: 1, minWidth: 0, flexShrink: 1, fontSize: 14, lineHeight: 19, fontWeight: "800" },

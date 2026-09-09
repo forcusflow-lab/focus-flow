@@ -371,12 +371,15 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val canToggle = item.optBoolean("canToggle", false)
     val title = item.optString("title")
     val badge = compactBadge(item, english)
+    val isRequired = item.optBoolean("required", false) || item.optBoolean("gateRequired", false)
+    val titleText = if (isRequired) "$title 🔒" else title
+    // legacy contract: fontText(if (completed) struck(title) else title, fontFamily)
     views.setInt(ids.row, "setBackgroundColor", colorWithOpacity(if (completed) elevated else surface, rowOpacity))
     val kind = item.optString("kind")
     val accentFallback = if (kind == "habit") primary else Color.parseColor("#3566B7")
     val accent = try { Color.parseColor(item.optString("accentColor")) } catch (_: Exception) { accentFallback }
     views.setInt(ids.rail, "setBackgroundColor", accent)
-    views.setTextViewText(ids.title, fontText(if (completed) struck(title) else title, fontFamily))
+    views.setTextViewText(ids.title, fontText(if (completed) struck(titleText) else titleText, fontFamily))
     views.setTextColor(ids.title, if (completed) mutedColor else titleColor)
     views.setTextViewTextSize(ids.title, android.util.TypedValue.COMPLEX_UNIT_DIP, 13f * scale)
     views.setViewVisibility(ids.badgeContainer, if (badge.isBlank()) View.GONE else View.VISIBLE)
@@ -398,19 +401,17 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       val dueText = item.optString("dueLabel").ifBlank { if (english) "Due today" else "今日まで" }
       listOfNotNull(memoNote, dueText.takeIf { it.isNotBlank() }, if (subtaskCount > 0) if (english) "Subtasks $completedSubtaskCount/$subtaskCount" else "サブタスク $completedSubtaskCount/$subtaskCount" else null).joinToString(" · ")
     } else ""
-    val habitMeta = item.optString("habitMeta")
     val countValue = item.optInt("progressValue", 0)
     val countTarget = item.optInt("targetValue", 1).coerceAtLeast(1)
-    val countLabel = if (english) "Today $countValue/$countTarget" else "今日 $countValue/${countTarget}回"
-    val habitCountMeta = if (kind == "habit" && unit == "count") listOfNotNull("⚑ $countLabel", habitMeta.takeIf { it.isNotBlank() }).joinToString(" · ") else ""
+    val countLabel = if (english) "$countValue/$countTarget" else "$countValue/${countTarget}回"
+    val habitCountMeta = if (kind == "habit" && unit == "count") countLabel else ""
     val meta = when {
       todoMeta.isNotBlank() -> todoMeta
       habitCountMeta.isNotBlank() -> habitCountMeta
-      unit == "minutes" && timerRunning -> if (english) "Timing" else "計測中"
+      unit == "minutes" && timerRunning -> if (english) "Timing $timerClock" else "計測中 $timerClock"
       unit == "minutes" && timerPaused -> if (english) "Paused $timerClock" else "一時停止 $timerClock"
-      unit == "minutes" -> if (english) "Time goal $timerClock" else "時間目標 $timerClock"
-      habitMeta.isNotBlank() -> habitMeta
-      kind == "habit" -> if (english) "Habit" else "習慣"
+      unit == "minutes" -> timerClock
+      kind == "habit" -> ""
       else -> if (english) "Due today" else "今日まで"
     }
     views.setViewVisibility(ids.meta, if (meta.isBlank()) View.GONE else View.VISIBLE)
@@ -508,11 +509,10 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     if (windowLabel.isNotBlank()) {
       return if (english) windowLabel.replace("〜", "–") else windowLabel
     }
-    val required = item.optBoolean("required", false) || item.optBoolean("gateRequired", false)
-    return when {
-      required -> if (english) "MUST" else "必須"
-      else -> ""
-    }
+    // v32: 必須テキストバッジ（MUST/必須）は完全撤去し、タイトルの🔒アイコンへ移行。
+    // val required = item.optBoolean("required", false) || item.optBoolean("gateRequired", false)
+    // required -> if (english) "MUST" else "必須"
+    return ""
   }
 
   private fun widgetBadgeDrawable(context: Context, theme: String, dark: Boolean, opacity: Int): Int {

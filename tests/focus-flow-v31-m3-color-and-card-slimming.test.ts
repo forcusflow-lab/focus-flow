@@ -55,10 +55,9 @@ describe("Focus Flow v31 M3 Color Palette, Card Slimming & Top 3 Screens Dashboa
   });
 
   describe("3. タスク・習慣カードの情報スリム化", () => {
-    it("RequiredLabelが極小マイクロドットと16dpのフェザーウェイトインジケーターを採用している", () => {
-      expect(itemCards).toContain("requiredLabel: { height: 16");
-      expect(itemCards).toContain("requiredDot: { width: 4, height: 4");
-      expect(itemCards).toContain("<View style={[styles.requiredDot, { backgroundColor: color }]} />");
+    it("RequiredLabelが極小ロックアイコン（14dp）を採用し、テキストピルを撤去している", () => {
+      expect(itemCards).toContain("requiredLock: { width: 16, height: 16");
+      expect(itemCards).toContain('<MaterialIcons name="lock" size={14} color={color} />');
     });
 
     it("習慣カードの折りたたみ状態ではタイトルと本日の進捗のみ表示し、週次・ストリークは展開領域へ移動している", () => {
