@@ -5,6 +5,8 @@
   <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
 
   <!-- 今日（Today）画面 -->
+  <string name="today_date_format">%1$d月%2$d日 (%3$s)</string>
+  <string name="today_progress_label">進捗</string>
   <string name="today_banner_locked">アプリ制限中（残り %1$d 件）</string>
   <string name="today_banner_locked_window">時間帯制限中（%1$s〜%2$s）</string>
   <string name="today_banner_unlocked">すべての制限を解除中</string>

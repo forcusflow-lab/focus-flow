@@ -63,6 +63,32 @@ export default function TodayScreen() {
   const today = dayKey();
   const t = useCallback((ja: string, en: string) => (english ? en : ja), [english]);
 
+  const dateHeaderLabel = useMemo(() => {
+    const current = new Date();
+    const month = current.getMonth() + 1;
+    const day = current.getDate();
+    const JA_WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
+    const EN_WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const EN_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    if (english) {
+      return stringResource(
+        R.string.today_date_format,
+        "en",
+        EN_MONTHS[current.getMonth()],
+        day,
+        EN_WEEKDAYS[current.getDay()]
+      );
+    }
+    return stringResource(
+      R.string.today_date_format,
+      "ja",
+      month,
+      day,
+      JA_WEEKDAYS[current.getDay()]
+    );
+  }, [english, today]);
+
   useEffect(() => {
     const reveal = Array.isArray(params.completed) ? params.completed[0] : params.completed;
     if (reveal === "1") setShowCompleted(true);
@@ -192,10 +218,9 @@ export default function TodayScreen() {
         ListHeaderComponent={
           <>
             <View style={styles.topline}>
-              <View>
-                <Text style={[styles.date, { color: palette.primary }]}>{t("今日", "TODAY")}</Text>
-                <Text style={[styles.greeting, { color: palette.text }]}>{t("今日の予定", "Today")}</Text>
-              </View>
+              <Text style={[styles.dateHeading, { color: palette.text }]}>
+                {dateHeaderLabel}
+              </Text>
               <IconButton icon="add" label={t("Todoを追加", "Add task")} onPress={() => openTaskForm()} variant="filled" />
             </View>
 
@@ -244,11 +269,11 @@ export default function TodayScreen() {
               {/* 区切り線 */}
               <View style={[styles.dashboardDivider, { backgroundColor: palette.border }]} />
 
-              {/* カード中央: 本日のタスク & 完了数 & フル幅プログレスバー */}
+              {/* カード中央: 進捗 & 完了数 & フル幅プログレスバー */}
               <View style={styles.progressSection}>
                 <View style={styles.progressHeaderRow}>
                   <Text style={[styles.progressTitleText, { color: palette.text }]}>
-                    {t("本日のタスク", "Today’s tasks")}
+                    {stringResource(R.string.today_progress_label, english ? "en" : "ja")}
                   </Text>
                   <Text style={styles.progressCountText}>
                     <Text style={[styles.progressCountCurrent, { color: palette.primary }]}>
@@ -415,17 +440,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 10,
   },
-  date: {
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 0.4,
-  },
-  greeting: {
+  dateHeading: {
     fontSize: 22,
     lineHeight: 28,
-    fontWeight: "800",
+    fontWeight: "900",
     letterSpacing: -0.4,
-    marginTop: 1,
   },
   dashboardCard: {
     borderRadius: 18,
@@ -520,15 +539,16 @@ const styles = StyleSheet.create({
     borderRadius: 1.5,
   },
   sectionHeaderFlat: {
-    paddingTop: 8,
+    paddingTop: 10,
     paddingBottom: 4,
-    marginTop: 2,
+    marginTop: 4,
     marginBottom: 4,
   },
   sectionTitleFlat: {
-    fontSize: 15,
-    lineHeight: 20,
+    fontSize: 16,
+    lineHeight: 22,
     fontWeight: "800",
+    letterSpacing: -0.2,
   },
   emptyPanel: {
     flexDirection: "row",

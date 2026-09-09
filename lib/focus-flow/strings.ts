@@ -7,6 +7,8 @@ export const R = {
   string: {
     app_name: "app_name",
     // 今日（Today）画面
+    today_date_format: "today_date_format",
+    today_progress_label: "today_progress_label",
     today_banner_locked: "today_banner_locked",
     today_banner_unlocked: "today_banner_unlocked",
     today_banner_off: "today_banner_off",
@@ -65,6 +67,14 @@ export const STRING_RESOURCES: Record<StringResourceId, LocalizedString> = {
     en: "Focus Flow",
   },
   // 今日画面
+  today_date_format: {
+    ja: "%1$d月%2$d日 (%3$s)",
+    en: "%3$s, %1$s %2$d",
+  },
+  today_progress_label: {
+    ja: "進捗",
+    en: "Progress",
+  },
   today_banner_locked: {
     ja: "アプリ制限中（残り %d 件）",
     en: "App limits active (%d remaining)",
