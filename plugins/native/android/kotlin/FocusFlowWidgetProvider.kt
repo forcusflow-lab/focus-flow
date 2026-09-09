@@ -394,7 +394,10 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val subtaskCount = item.optInt("subtaskCount", 0)
     val completedSubtaskCount = item.optInt("completedSubtaskCount", 0)
     val memoNote = if (item.optBoolean("hasMemo", false)) "📝" else null
-    val todoMeta = if (kind == "todo") listOfNotNull(memoNote, item.optString("dueLabel").takeIf { it.isNotBlank() }, if (subtaskCount > 0) if (english) "Subtasks $completedSubtaskCount/$subtaskCount" else "サブタスク $completedSubtaskCount/$subtaskCount" else null).joinToString(" · ") else ""
+    val todoMeta = if (kind == "todo") {
+      val dueText = item.optString("dueLabel").ifBlank { if (english) "Due today" else "今日まで" }
+      listOfNotNull(memoNote, dueText.takeIf { it.isNotBlank() }, if (subtaskCount > 0) if (english) "Subtasks $completedSubtaskCount/$subtaskCount" else "サブタスク $completedSubtaskCount/$subtaskCount" else null).joinToString(" · ")
+    } else ""
     val habitMeta = item.optString("habitMeta")
     val countValue = item.optInt("progressValue", 0)
     val countTarget = item.optInt("targetValue", 1).coerceAtLeast(1)
@@ -408,7 +411,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       unit == "minutes" -> if (english) "Time goal $timerClock" else "時間目標 $timerClock"
       habitMeta.isNotBlank() -> habitMeta
       kind == "habit" -> if (english) "Habit" else "習慣"
-      else -> if (english) "Todo" else "Todo"
+      else -> if (english) "Due today" else "今日まで"
     }
     views.setViewVisibility(ids.meta, if (meta.isBlank()) View.GONE else View.VISIBLE)
     views.setTextViewText(ids.meta, fontText(meta, fontFamily))
@@ -505,12 +508,11 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     if (windowLabel.isNotBlank()) {
       return if (english) windowLabel.replace("〜", "–") else windowLabel
     }
-    val required = item.optBoolean("required", false)
-    val badge = when {
+    val required = item.optBoolean("required", false) || item.optBoolean("gateRequired", false)
+    return when {
       required -> if (english) "MUST" else "必須"
       else -> ""
     }
-    return if (required) (if (english) "ALL-DAY" else "終日") else badge
   }
 
   private fun widgetBadgeDrawable(context: Context, theme: String, dark: Boolean, opacity: Int): Int {

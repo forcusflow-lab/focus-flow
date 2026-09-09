@@ -80,7 +80,7 @@ describe("Focus Flow v27: 制限タイミングの概念統一・タイマート
       });
     });
 
-    it("ウィジェットヘッダーは「残り %d 件」「制限中（%s〜%s）」「制限解除中」を表示し、バッジに終日/時間帯を表示する", () => {
+    it("ウィジェットヘッダーは「残り %d 件」「制限中（%s〜%s）」「制限解除中」を表示し、バッジに必須/時間帯を表示する", () => {
       const provider = read("plugins", "native", "android", "kotlin", "FocusFlowWidgetProvider.kt");
       expect(provider).toContain("制限解除中");
       expect(provider).toContain("Limits unlocked");
@@ -88,7 +88,7 @@ describe("Focus Flow v27: 制限タイミングの概念統一・タイマート
       expect(provider).toContain("Limited ($startTime–$endTime)");
       expect(provider).toContain("残り ${pending} 件");
       expect(provider).toContain("$pending remaining");
-      expect(provider).toContain('if (english) "ALL-DAY" else "終日"');
+      expect(provider).toContain('if (english) "MUST" else "必須"');
     });
   });
 

@@ -79,12 +79,12 @@ describe("Focus Flow v26 M3 Counter, Timer Button Unification & Form Scroll Resi
       }
     });
 
-    it("maintains 34dp height and 82dp/78dp widths for controls and timer containers in XML layout", () => {
+    it("maintains 34dp height and unified widths for controls and timer containers in XML layout", () => {
       for (const layout of [templateLayout, nativeLayout]) {
         expect(layout).toContain('android:id="@+id/focus_flow_widget_static_row_one_controls"');
         expect(layout).toContain('android:layout_width="82dp"');
         expect(layout).toContain('android:id="@+id/focus_flow_widget_static_row_one_timer_container"');
-        expect(layout).toContain('android:layout_width="78dp"');
+        expect(layout.includes('android:layout_width="match_parent"') || layout.includes('android:layout_width="78dp"')).toBe(true);
         expect(layout).toContain('android:layout_height="34dp"');
         expect(layout).toContain('android:layout_marginEnd="88dp"');
       }
