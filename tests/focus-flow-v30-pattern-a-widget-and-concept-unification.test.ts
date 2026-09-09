@@ -21,13 +21,13 @@ describe("Focus Flow v30 Pattern A Widget & 全画面UXライティング・概�
   const nativeStrings = source("android", "app", "src", "main", "res", "values", "strings.xml");
 
   describe("1. ホーム画面ウィジェット: パターンA（右端固定バッジ & 2行目右側コントロール）", () => {
-    it("全行でバッジが1行目右上(top|end)、コントロールが2行目右下(bottom|end)に配置されている", () => {
+    it("全行でバッジが1行目右上(top|end)、コントロールが右側上下中央(center_vertical|end)に配置されている", () => {
       for (const layout of [pluginLayout, nativeLayout]) {
         for (const row of ["one", "two", "three", "four", "five"]) {
           // Row 1 right: Badge
           expect(layout).toContain(`focus_flow_widget_static_row_${row}_badge_container" android:layout_width="wrap_content" android:layout_height="18dp" android:layout_gravity="top|end"`);
-          // Row 2 right: Controls
-          expect(layout).toContain(`focus_flow_widget_static_row_${row}_controls" android:layout_width="82dp" android:layout_height="22dp" android:layout_gravity="bottom|end"`);
+          // Row right: Controls (centered vertically)
+          expect(layout).toContain(`focus_flow_widget_static_row_${row}_controls" android:layout_width="82dp" android:layout_height="22dp" android:layout_gravity="center_vertical|end"`);
           // Content marginEnd reserved for right column
           expect(layout).toContain(`focus_flow_widget_static_row_${row}_content" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginStart="50dp" android:layout_marginEnd="88dp"`);
           // Title uses full width without colliding with badge

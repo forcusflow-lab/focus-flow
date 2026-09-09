@@ -22,7 +22,8 @@ describe("Focus Flow v25 回数Habit Widget表示", () => {
     const provider = source("plugins", "native", "android", "kotlin", "FocusFlowWidgetProvider.kt");
     expect(provider).toContain("height < 149f -> WidgetBucket(1, false, true)");
     expect(provider).toContain("height < 198f -> WidgetBucket(2, true, false)");
-    expect(provider).toContain("height < 296f -> WidgetBucket(3, true, false)");
+    expect(provider).toContain("height < 247f -> WidgetBucket(3, true, false)");
+    expect(provider).toContain("height < 296f -> WidgetBucket(4, true, false)");
     expect(provider).toContain("else -> WidgetBucket(5, true, false)");
   });
 });

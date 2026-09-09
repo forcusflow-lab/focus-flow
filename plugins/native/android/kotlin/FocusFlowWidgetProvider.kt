@@ -160,6 +160,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     1 -> WidgetBucket(1, false, true)
     2 -> WidgetBucket(2, true, false)
     3 -> WidgetBucket(3, true, false)
+    4 -> WidgetBucket(4, true, false)
     5 -> WidgetBucket(5, true, false)
     else -> null
   }
@@ -168,9 +169,15 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     return when {
       // Header is 52dp. Each static row is 48dp with a 1dp separator, so
       // a larger bucket must never claim rows that would be clipped.
+      // 1 row: 52 + 48 = 100dp
+      // 2 rows: 52 + 48*2 + 1 = 149dp
+      // 3 rows: 52 + 48*3 + 2 = 198dp
+      // 4 rows: 52 + 48*4 + 3 = 247dp
+      // 5 rows: 52 + 48*5 + 4 = 296dp
       height < 149f -> WidgetBucket(1, false, true)
       height < 198f -> WidgetBucket(2, true, false)
-      height < 296f -> WidgetBucket(3, true, false)
+      height < 247f -> WidgetBucket(3, true, false)
+      height < 296f -> WidgetBucket(4, true, false)
       else -> WidgetBucket(5, true, false)
     }
   }
@@ -282,11 +289,15 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val completedCount = state.optInt("widgetHiddenCompletedCount", 0)
     val showingCompleted = widgetCompletedVisible(context, widgetId)
     views.setViewVisibility(R.id.focus_flow_widget_completed_toggle, if (completedCount > 0) View.VISIBLE else View.GONE)
+    val density = context.resources.displayMetrics.density
     if (completedCount > 0) {
       views.setTextViewText(R.id.focus_flow_widget_completed_toggle, fontText(if (showingCompleted) if (english) "Open only" else "未完了のみ" else if (english) "Show all ($completedCount)" else "すべて表示（$completedCount）", state.optString("fontFamily", "system")))
       views.setTextColor(R.id.focus_flow_widget_completed_toggle, primary)
       views.setTextViewTextSize(R.id.focus_flow_widget_completed_toggle, android.util.TypedValue.COMPLEX_UNIT_DIP, 10f * scale)
       views.setOnClickPendingIntent(R.id.focus_flow_widget_completed_toggle, completedToggleIntent(context, widgetId))
+      views.setViewPadding(R.id.focus_flow_widget_header_text, (14f * density).toInt(), 0, (120f * density).toInt(), 0)
+    } else {
+      views.setViewPadding(R.id.focus_flow_widget_header_text, (14f * density).toInt(), 0, (48f * density).toInt(), 0)
     }
   }
 

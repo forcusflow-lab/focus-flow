@@ -372,4 +372,43 @@
 - **自動単体・契約テスト (`tests/focus-flow-v32-lock-icon-and-widget-slimming.test.ts`):**
   - ダミーデータ（Todo、回数習慣、タイマー習慣）を用いた今日画面およびウィジェットのレンダリングデータ整合性を網羅的に検証。
 
+---
+
+## 12. ホーム画面ウィジェット レイアウト再調整（余白解消・文字切れ防止・上下センタリング）(v33)
+
+### 12.1 下部の過剰な空白の解消 ＆ 表示件数最適化
+- **WidgetBucket階層の拡充 (1〜5行):**
+  - `WidgetBucket` に4行表示（`WidgetBucket(4, true, false)`）を追加し、1行から5行までの全スロットを細かくサポート。
+  - 高さ閾値の数学的再設計:
+    - `height < 149f`: 1行バケット (`WidgetBucket(1, false, true)`)
+    - `height < 198f`: 2行バケット (`WidgetBucket(2, true, false)`)
+    - `height < 247f`: 3行バケット (`WidgetBucket(3, true, false)`)
+    - `height < 296f`: 4行バケット (`WidgetBucket(4, true, false)`)
+    - `else`: 5行バケット (`WidgetBucket(5, true, false)`)
+  - 247dp〜295dpの中小ウィジェットサイズでも余白を残さず4件が収まり、296dp以上で5件フル表示。
+
+### 12.2 ヘッダー文字切れの解消（動的パディング制御）
+- **デフォルトXMLパディング最適化:**
+  - ヘッダーテキスト領域（`LinearLayout`）に `android:id="@+id/focus_flow_widget_header_text"` を付与。
+  - XML上のデフォルト `android:paddingEnd` を `160dp` から `48dp`（Todo追加ボタン分の最小余白）に削減。
+- **Provider動的パディング制御:**
+  - `bindHeader` において、完了トグル（`completedToggle`）が非表示（`completedCount == 0`）の場合は `48dp`、表示時のみ `120dp` のパディングを動的設定。
+  - これにより、「集中制限はオフです」等のステータステキストが不必要に途中で省略（`…`）されることなく、フル幅で鮮明に表示される。
+
+### 12.3 回数カウンターおよびタイマー操作領域の上下センタリング
+- **垂直中央揃えへの変更:**
+  - ウィジェット全行（row 1〜5）のコントロールコンテナ（`focus_flow_widget_static_row_*_controls`）の `android:layout_gravity` を `bottom|end` から `center_vertical|end` に統一。
+  - 以前の下部寄せ用 `android:layout_marginBottom="3dp"` を撤去し、`android:layout_marginEnd="6dp"` を維持。
+  - 回数習慣の `[-] 0/5 [+]` ピルおよびタイマー習慣の `00:00 / 15:00` ボタンが、行の高さに対して完全な上下中央に配置される。
+
+### 12.4 ネイティブ・プラグインの完全同期 & 契約テスト
+- **同期対象:**
+  - `plugins/native/android/res/layout/focus_flow_widget_initial.xml` と `android/app/src/main/res/layout/focus_flow_widget_initial.xml`
+  - `plugins/native/android/kotlin/FocusFlowWidgetProvider.kt` と `android/app/src/main/java/com/app/focusflow/focusflow/FocusFlowWidgetProvider.kt`
+- **契約テスト (`tests/focus-flow-v33-widget-layout-and-centering.test.ts`):**
+  - ヘッダーパディング最適化（48dp/120dp）
+  - コントロール上下センタリング（`center_vertical|end`）
+  - 1〜5行のWidgetBucket閾値
+  - プラグインとAndroidネイティブ実装の完全一致
+
 
