@@ -5,8 +5,9 @@ import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.graphics.PixelFormat
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -190,7 +191,7 @@ class FocusGateService : AccessibilityService() {
       textSize = 14f
       setTextColor(palette.primary)
       gravity = Gravity.START
-      setTypeface(typeface, android.graphics.Typeface.BOLD)
+      typeface = Typeface.DEFAULT_BOLD
       letterSpacing = 0.06f
       setPadding(0, 0, 0, dp(10))
     })
@@ -206,7 +207,7 @@ class FocusGateService : AccessibilityService() {
       textSize = 20f
       setTextColor(palette.text)
       gravity = Gravity.START
-      setTypeface(typeface, android.graphics.Typeface.BOLD)
+      typeface = Typeface.DEFAULT_BOLD
       setPadding(0, 0, 0, dp(12))
     })
 
@@ -255,7 +256,7 @@ class FocusGateService : AccessibilityService() {
           text = "• "
           textSize = 13f
           setTextColor(palette.primary)
-          setTypeface(typeface, android.graphics.Typeface.BOLD)
+          typeface = Typeface.DEFAULT_BOLD
         })
         row.addView(TextView(this).apply {
           text = taskTitle
