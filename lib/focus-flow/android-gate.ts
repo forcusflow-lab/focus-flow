@@ -20,6 +20,8 @@ type FocusGateNativeModule = {
   getGateDiagnostics: () => Promise<GateDiagnostics>;
   getLaunchableApps: () => Promise<LaunchableApp[]>;
   openTimePicker: (initialHour: number, initialMinute: number, is24Hour: boolean) => Promise<{ action: "set" | "dismissed"; hour?: number; minute?: number }>;
+  saveAppDataBackup: (serialized: string) => Promise<boolean>;
+  getAppDataBackup: () => Promise<string | null>;
 };
 
 function nativeModule() { return Platform.OS === "android" ? (NativeModules.FocusGate as FocusGateNativeModule | undefined) : undefined; }
@@ -82,4 +84,6 @@ export async function getGateDiagnostics() { return await nativeModule()?.getGat
 export async function getLaunchableApps() { return (await nativeModule()?.getLaunchableApps()) ?? [] as LaunchableApp[]; }
 export async function consumeWidgetActions() { return (await nativeModule()?.consumeWidgetActions()) ?? [] as WidgetAction[]; }
 export async function openTimePicker(initialHour: number, initialMinute: number, is24Hour = true) { return (await nativeModule()?.openTimePicker(initialHour, initialMinute, is24Hour)) ?? null; }
+export async function saveAppDataBackup(serialized: string): Promise<boolean> { return (await nativeModule()?.saveAppDataBackup(serialized)) ?? false; }
+export async function getAppDataBackup(): Promise<string | null> { return (await nativeModule()?.getAppDataBackup()) ?? null; }
 export type { LaunchableApp };

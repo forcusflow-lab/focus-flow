@@ -33,7 +33,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
   override fun onDeleted(context: Context, ids: IntArray) {
     val editor = context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE).edit()
     ids.forEach { id -> editor.remove("$WIDGET_SIZE_PREFIX$id").remove(completedVisibilityKey(id)) }
-    editor.apply()
+    editor.commit()
     super.onDeleted(context, ids)
   }
 
@@ -120,7 +120,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     val state = state(context)
     if (state.optInt("widgetHiddenCompletedCount", 0) <= 0) return false
     val preferences = context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE)
-    preferences.edit().putBoolean(completedVisibilityKey(id), !widgetCompletedVisible(context, id)).apply()
+    preferences.edit().putBoolean(completedVisibilityKey(id), !widgetCompletedVisible(context, id)).commit()
     return true
   }
 
@@ -153,7 +153,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
       options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0),
       options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
     ).takeIf { it > 0 } ?: 300
-    context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE).edit().putInt("$WIDGET_SIZE_PREFIX$id", widgetBucket(width.toFloat(), height.toFloat()).maxRows).apply()
+    context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE).edit().putInt("$WIDGET_SIZE_PREFIX$id", widgetBucket(width.toFloat(), height.toFloat()).maxRows).commit()
   }
 
   private fun rememberedWidgetBucket(context: Context, id: Int): WidgetBucket? = when (context.getSharedPreferences(FocusGateModule.GATE_PREFS, Context.MODE_PRIVATE).getInt("$WIDGET_SIZE_PREFIX$id", 0)) {
@@ -563,7 +563,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     item.put("timedLocked", false)
     current.put("widgetItems", items)
     if (item.optBoolean("gateRequired", false)) updateRequiredState(current, targetId, kind)
-    preferences.edit().putString(FocusGateModule.GATE_STATE, current.toString()).putString(FocusGateModule.WIDGET_ACTIONS, actions.toString()).putLong(FocusGateModule.GATE_STATE_UPDATED_AT, System.currentTimeMillis()).apply()
+    preferences.edit().putString(FocusGateModule.GATE_STATE, current.toString()).putString(FocusGateModule.WIDGET_ACTIONS, actions.toString()).putLong(FocusGateModule.GATE_STATE_UPDATED_AT, System.currentTimeMillis()).commit()
     return true
   }
 
@@ -581,7 +581,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     if (item.optBoolean("gateRequired", false)) restoreRequiredState(current, item, kind)
     val actions = widgetActions(preferences)
     actions.put(JSONObject().put("id", targetId).put("kind", kind).put("operation", "restore"))
-    preferences.edit().putString(FocusGateModule.GATE_STATE, current.put("widgetItems", items).toString()).putString(FocusGateModule.WIDGET_ACTIONS, actions.toString()).putLong(FocusGateModule.GATE_STATE_UPDATED_AT, System.currentTimeMillis()).apply()
+    preferences.edit().putString(FocusGateModule.GATE_STATE, current.put("widgetItems", items).toString()).putString(FocusGateModule.WIDGET_ACTIONS, actions.toString()).putLong(FocusGateModule.GATE_STATE_UPDATED_AT, System.currentTimeMillis()).commit()
     return true
   }
 
@@ -628,7 +628,7 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     if (operation == "timer_start") queuedAction.put("startedAt", java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date()))
     if (operation == "timer_pause") queuedAction.put("elapsedSeconds", item.optInt("timerElapsedSeconds", 0).coerceAtLeast(0))
     actions.put(queuedAction)
-    preferences.edit().putString(FocusGateModule.GATE_STATE, current.put("widgetItems", items).toString()).putString(FocusGateModule.WIDGET_ACTIONS, actions.toString()).putLong(FocusGateModule.GATE_STATE_UPDATED_AT, System.currentTimeMillis()).apply()
+    preferences.edit().putString(FocusGateModule.GATE_STATE, current.put("widgetItems", items).toString()).putString(FocusGateModule.WIDGET_ACTIONS, actions.toString()).putLong(FocusGateModule.GATE_STATE_UPDATED_AT, System.currentTimeMillis()).commit()
     return true
   }
 

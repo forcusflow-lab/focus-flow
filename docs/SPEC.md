@@ -411,4 +411,41 @@
   - 1〜5行のWidgetBucket閾値
   - プラグインとAndroidネイティブ実装の完全一致
 
+## 13. 端末再起動時データ永続化保証 & ウィジェットカウンター上下センタリング仕様
+
+### 13.1 端末再起動時のデータ全消失バグの根本原因と恒久対策
+- **現象と根本原因の特定:**
+  - 端末再起動時、Room/SQLite等のDB初期化処理ではなく、アプリ起動時ライフサイクルにおけるJavaScriptと非同期ストレージの**レースコンディション**が主因。
+  - `FocusFlowProvider` のマウント時、`AsyncStorage.getItem(STORAGE_KEY)` による非同期ロードの完了前（メモリ上の `data` が空配列の状態）に、`useEffect` 内の `PERSONAL_UNLIMITED_BUILD` 判定により `applyPlusStatus()` が呼ばれ、`commit()` が発火していた。
+  - 従来の `commit()` では `isReady` 状態の判定を行わずに `persistData(next)` をキューイングしていたため、既存データがロードされる前にメモリ上の空配列（`todos: []`, `habits: []`）でストレージが不可逆的に上書きされていた。
+  - さらに、ネイティブ層の `FocusGateModule` および `FocusFlowWidgetProvider` において `SharedPreferences.Editor.apply()`（メモリ書き込み先行の非同期ディスク同期）が使われており、端末再起動やプロセス急死時にディスクへのフラッシュが完了しないリスクが存在していた。
+- **恒久対策（二重永続化 ＆ 起動レースコンディション防止）:**
+  1. **`isReadyRef` ガードによる初期化前の書き込み完全遮断:**
+     - `FocusFlowProvider` 内に `isReadyRef`（MutableRefObject）を導入。初期データロードが完全に完了するまで、いかなる `commit()` や `applyPlusStatus()` からの `persistData` 呼び出しも完全に無視・遮断。
+  2. **ネイティブ即時ディスク同期（`commit()` 徹底）:**
+     - `FocusGateModule.kt` および `FocusFlowWidgetProvider.kt` の全 `SharedPreferences` 保存処理を `.apply()` から `.commit()`（同期ディスク `fsync` 書き込み）に変更。
+  3. **ネイティブバックアップ層（`saveAppDataBackup` / `getAppDataBackup`）の導入:**
+     - `FocusGateModule` に `saveAppDataBackup(serialized)` および `getAppDataBackup()` を追加。
+     - アプリデータ変更時には `AsyncStorage` だけでなくネイティブ側の同期 `commit()` 領域（`appDataBackup`）にも常時バックアップを書き込み。
+     - アプリ起動時、万一 `AsyncStorage` が空または破損していた場合でも、ネイティブの `appDataBackup` から自動復元し、`AsyncStorage` へ再シードする自動復旧機構を確立。
+
+### 13.2 ウィジェット回数カウンター（[-] 2/5 [+]）の上下センタリング
+- **現状の課題:**
+  - カウンターの数字や `−` `+` がカード上下中央よりわずかに下方に沈んで見えていた。
+- **改善内容:**
+  - `focus_flow_widget_initial.xml` の全行（row 1〜5）のカウンター内 `LinearLayout` に `android:layout_gravity="center"` を明示追加。
+  - 減算ボタン（`decrement`）、数値表示（`progress`）、加算ボタン（`increment`）の各 TextView に `android:textAlignment="center"` および `android:includeFontPadding="false"` を追加。フォントパディングによるフォントベースラインの沈み込みを排除し、タイマーボタン（`▶ 開始`）のピルと完全に一致した上下中央整列を実現。
+
+### 13.3 プラグインとAndroidネイティブ実装の完全同期 & 契約テスト
+- **同期対象:**
+  - `plugins/native/android/res/layout/focus_flow_widget_initial.xml` と `android/app/src/main/res/layout/focus_flow_widget_initial.xml`
+  - `plugins/native/android/kotlin/FocusGateModule.kt` と `android/app/src/main/java/com/app/focusflow/focusflow/FocusGateModule.kt`
+  - `plugins/native/android/kotlin/FocusFlowWidgetProvider.kt` と `android/app/src/main/java/com/app/focusflow/focusflow/FocusFlowWidgetProvider.kt`
+- **契約テスト (`tests/focus-flow-v34-persistence-and-counter-centering.test.ts`):**
+  - `isReadyRef` ガードおよび `getAppDataBackup` による自動復元
+  - ネイティブ層の `.commit()` ディスク書き込みの徹底
+  - カウンターの上下センタリング属性（`layout_gravity="center"`, `includeFontPadding="false"`, `textAlignment="center"`）
+  - 全ネイティブファイルとプラグインコードの完全一致
+
+
 

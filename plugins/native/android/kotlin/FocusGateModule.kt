@@ -26,7 +26,7 @@ class FocusGateModule(private val context: ReactApplicationContext) : ReactConte
           promise.resolve(null)
           return@execute
         }
-        preferences.edit().putString(GATE_STATE, serialized).remove(WIDGET_UNDO).putLong(GATE_STATE_UPDATED_AT, System.currentTimeMillis()).apply()
+        preferences.edit().putString(GATE_STATE, serialized).remove(WIDGET_UNDO).putLong(GATE_STATE_UPDATED_AT, System.currentTimeMillis()).commit()
         FocusFlowWidgetProvider.refreshAll(context)
         promise.resolve(null)
       } catch (error: Exception) {
@@ -34,7 +34,30 @@ class FocusGateModule(private val context: ReactApplicationContext) : ReactConte
       }
     }
   }
-  @ReactMethod fun consumeWidgetActions(promise: Promise) { try { val preferences = context.getSharedPreferences(GATE_PREFS, Context.MODE_PRIVATE); val queued = org.json.JSONArray(preferences.getString(WIDGET_ACTIONS, "[]") ?: "[]"); preferences.edit().remove(WIDGET_ACTIONS).apply(); val result = Arguments.createArray(); for (index in 0 until queued.length()) { val action = queued.optJSONObject(index) ?: continue; val startedAt = action.optString("startedAt").takeIf { it.isNotBlank() }; val elapsedSeconds = action.takeIf { it.has("elapsedSeconds") }?.optDouble("elapsedSeconds")?.takeIf { it.isFinite() }; result.pushMap(Arguments.makeNativeMap(mapOf("id" to action.optString("id"), "kind" to action.optString("kind"), "operation" to action.optString("operation"), "startedAt" to startedAt, "elapsedSeconds" to elapsedSeconds))) }; promise.resolve(result) } catch (error: Exception) { promise.reject("WIDGET_ACTIONS_UNAVAILABLE", error) } }
+
+  @ReactMethod fun saveAppDataBackup(serialized: String, promise: Promise) {
+    executor.execute {
+      try {
+        val preferences = context.getSharedPreferences(GATE_PREFS, Context.MODE_PRIVATE)
+        preferences.edit().putString(APP_DATA_BACKUP, serialized).commit()
+        promise.resolve(true)
+      } catch (error: Exception) {
+        promise.reject("SAVE_APP_DATA_BACKUP_FAILED", error)
+      }
+    }
+  }
+
+  @ReactMethod fun getAppDataBackup(promise: Promise) {
+    try {
+      val preferences = context.getSharedPreferences(GATE_PREFS, Context.MODE_PRIVATE)
+      val backup = preferences.getString(APP_DATA_BACKUP, null)
+      promise.resolve(backup)
+    } catch (error: Exception) {
+      promise.reject("GET_APP_DATA_BACKUP_FAILED", error)
+    }
+  }
+
+  @ReactMethod fun consumeWidgetActions(promise: Promise) { try { val preferences = context.getSharedPreferences(GATE_PREFS, Context.MODE_PRIVATE); val queued = org.json.JSONArray(preferences.getString(WIDGET_ACTIONS, "[]") ?: "[]"); preferences.edit().remove(WIDGET_ACTIONS).commit(); val result = Arguments.createArray(); for (index in 0 until queued.length()) { val action = queued.optJSONObject(index) ?: continue; val startedAt = action.optString("startedAt").takeIf { it.isNotBlank() }; val elapsedSeconds = action.takeIf { it.has("elapsedSeconds") }?.optDouble("elapsedSeconds")?.takeIf { it.isFinite() }; result.pushMap(Arguments.makeNativeMap(mapOf("id" to action.optString("id"), "kind" to action.optString("kind"), "operation" to action.optString("operation"), "startedAt" to startedAt, "elapsedSeconds" to elapsedSeconds))) }; promise.resolve(result) } catch (error: Exception) { promise.reject("WIDGET_ACTIONS_UNAVAILABLE", error) } }
   @ReactMethod fun getAccessibilityStatus(promise: Promise) { val enabled = Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES).orEmpty(); promise.resolve(enabled.contains("${context.packageName}/${FocusGateService::class.java.name}")) }
   @ReactMethod fun openAccessibilitySettings(promise: Promise) { try { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); promise.resolve(null) } catch (error: Exception) { promise.reject("SETTINGS_UNAVAILABLE", error) } }
   @ReactMethod fun openAppDetailsSettings(promise: Promise) { try { context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:${context.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); promise.resolve(null) } catch (error: Exception) { promise.reject("APP_SETTINGS_UNAVAILABLE", error) } }
@@ -75,5 +98,5 @@ class FocusGateModule(private val context: ReactApplicationContext) : ReactConte
       }
     }
   }
-  companion object { const val GATE_PREFS = "FocusFlowGate"; const val GATE_STATE = "gateState"; const val GATE_STATE_UPDATED_AT = "gateStateUpdatedAt"; const val GATE_LAST_EVENT_AT = "gateLastEventAt"; const val GATE_LAST_EVENT_PACKAGE = "gateLastEventPackage"; const val GATE_LAST_BLOCKED_AT = "gateLastBlockedAt"; const val GATE_LAST_BLOCKED_PACKAGE = "gateLastBlockedPackage"; const val WIDGET_ACTIONS = "widgetActions"; const val WIDGET_UNDO = "widgetUndo" }
+  companion object { const val GATE_PREFS = "FocusFlowGate"; const val GATE_STATE = "gateState"; const val GATE_STATE_UPDATED_AT = "gateStateUpdatedAt"; const val GATE_LAST_EVENT_AT = "gateLastEventAt"; const val GATE_LAST_EVENT_PACKAGE = "gateLastEventPackage"; const val GATE_LAST_BLOCKED_AT = "gateLastBlockedAt"; const val GATE_LAST_BLOCKED_PACKAGE = "gateLastBlockedPackage"; const val WIDGET_ACTIONS = "widgetActions"; const val WIDGET_UNDO = "widgetUndo"; const val APP_DATA_BACKUP = "appDataBackup" }
 }

@@ -3,7 +3,7 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, 
 import { AppState, InteractionManager, Platform } from "react-native";
 import Constants from "expo-constants";
 
-import { consumeWidgetActions, syncAndroidGate, type WidgetAction } from "./android-gate";
+import { consumeWidgetActions, getAppDataBackup, saveAppDataBackup, syncAndroidGate, type WidgetAction } from "./android-gate";
 import { EARLY_COMPLETION_PRODUCT_ID, PLUS_PRODUCT_ID, type EarlyCompletionStatus, type PlusStatus } from "./billing";
 import { finishPlatformPurchase, openSubscriptionManagement, usePlatformIAP, type IapProduct, type IapSubscription } from "./iap-bridge";
 import { canSelectBlockedApp as canSelectBlockedAppForPlan, capBlockedApps, countUncompletedTodos, isFreeItemLimitReached } from "./limits";
@@ -104,6 +104,7 @@ function maybeAdvanceRecurring(todo: Todo) { return todo.repeatRule && todo.repe
 export function FocusFlowProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<FocusFlowData>(EMPTY_FOCUS_FLOW_DATA);
   const [isReady, setIsReady] = useState(false);
+  const isReadyRef = useRef(false);
   const [plusStatus, setPlusStatus] = useState<PlusStatus>(PERSONAL_UNLIMITED_BUILD ? PERSONAL_PLUS_STATUS : { status: "unavailable", active: false });
   const [earlyCompletionStatus, setEarlyCompletionStatus] = useState<EarlyCompletionStatus>({ status: "unavailable", productId: EARLY_COMPLETION_PRODUCT_ID });
   const pendingEarlyCompletion = useRef<EarlyCompletionTarget | undefined>(undefined);
@@ -111,23 +112,71 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
-    void AsyncStorage.getItem(STORAGE_KEY)
-      .then((serialized) => {
-        if (!active || !serialized) return;
+    async function loadInitialData() {
+      let serialized: string | null = null;
+      try {
+        serialized = await AsyncStorage.getItem(STORAGE_KEY);
+      } catch {
+        serialized = null;
+      }
+
+      let parsedData: unknown = null;
+      if (serialized) {
         try {
-          setData(normalizeData(JSON.parse(serialized)));
+          parsedData = JSON.parse(serialized);
         } catch {
-          // 読込失敗時に空データを保存して既存の端末データを失わない。
+          parsedData = null;
         }
-      })
-      .catch(() => {
-        // 一時的なストレージ障害では現在のメモリ状態を維持する。
-      })
-      .finally(() => { if (active) setIsReady(true); });
+      }
+
+      const hasStoredItems = Boolean(
+        parsedData &&
+        typeof parsedData === "object" &&
+        (((parsedData as { todos?: unknown[] }).todos?.length ?? 0) > 0 ||
+         ((parsedData as { habits?: unknown[] }).habits?.length ?? 0) > 0)
+      );
+
+      // If AsyncStorage is empty or corrupted, fall back to native committed backup
+      if (!hasStoredItems) {
+        try {
+          const backup = await getAppDataBackup();
+          if (backup) {
+            const backupParsed = JSON.parse(backup);
+            if (
+              backupParsed &&
+              typeof backupParsed === "object" &&
+              (((backupParsed as { todos?: unknown[] }).todos?.length ?? 0) > 0 ||
+               ((backupParsed as { habits?: unknown[] }).habits?.length ?? 0) > 0)
+            ) {
+              parsedData = backupParsed;
+              void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(backupParsed)).catch(() => undefined);
+            }
+          }
+        } catch {
+          // Backup fallback error
+        }
+      }
+
+      if (!active) return;
+      if (parsedData) {
+        try {
+          setData(normalizeData(parsedData));
+        } catch {
+          // Keep current state
+        }
+      }
+      isReadyRef.current = true;
+      setIsReady(true);
+    }
+
+    void loadInitialData();
     return () => { active = false; };
   }, []);
 
   const persistData = useCallback((next: FocusFlowData) => {
+    if (!isReadyRef.current) return;
+    const serialized = JSON.stringify(next);
+    void saveAppDataBackup(serialized).catch(() => undefined);
     persistQueue.current = persistQueue.current
       .catch(() => undefined)
       .then(() => new Promise<void>((resolve) => { InteractionManager.runAfterInteractions(() => { void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).finally(resolve); }); }))
@@ -136,7 +185,7 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
   const commit = useCallback((updater: (current: FocusFlowData) => FocusFlowData) => {
     setData((current) => {
       const next = updater(current);
-      if (next !== current) persistData(next);
+      if (next !== current && isReadyRef.current) persistData(next);
       return next;
     });
   }, [persistData]);
@@ -205,7 +254,7 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
   }), [commit, plusStatus.active]);
   const canSelectBlockedApp = useCallback((packageName: string) => canSelectBlockedAppForPlan(data.gateConfig, packageName, isPlus), [data.gateConfig, isPlus]);
   const setDisplaySettings = useCallback((input: Partial<DisplaySettings>) => commit((current) => ({ ...current, displaySettings: { ...current.displaySettings, ...input } })), [commit]);
-  const clearAllData = useCallback(() => { setData({ todos: [], habits: [], memos: [], focusSessions: [], gateConfig: { ...DEFAULT_GATE_CONFIG, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], schedules: [] }, displaySettings: { ...DEFAULT_DISPLAY_SETTINGS } }); void AsyncStorage.removeItem(STORAGE_KEY); void cancelDailyReminder(); }, []);
+  const clearAllData = useCallback(() => { setData({ todos: [], habits: [], memos: [], focusSessions: [], gateConfig: { ...DEFAULT_GATE_CONFIG, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], schedules: [] }, displaySettings: { ...DEFAULT_DISPLAY_SETTINGS } }); void AsyncStorage.removeItem(STORAGE_KEY); void saveAppDataBackup(""); void cancelDailyReminder(); }, []);
 
   const refreshPlusStatus = useCallback(async () => { if (PERSONAL_UNLIMITED_BUILD) { applyPlusStatus(PERSONAL_PLUS_STATUS); setEarlyCompletionStatus({ status: "unavailable", productId: EARLY_COMPLETION_PRODUCT_ID, reason: "STORE_PRODUCT_UNAVAILABLE" }); return; } if (Platform.OS === "web") { applyPlusStatus({ status: "unavailable", active: false, productId: PLUS_PRODUCT_ID, reason: "NATIVE_BUILD_REQUIRED" }); setEarlyCompletionStatus({ status: "unavailable", productId: EARLY_COMPLETION_PRODUCT_ID, reason: "NATIVE_BUILD_REQUIRED" }); return; } if (!connected) { applyPlusStatus({ status: "loading", active: false, productId: PLUS_PRODUCT_ID }); await reconnect(); return; } await Promise.all([fetchProducts({ skus: [PLUS_PRODUCT_ID], type: "subs" }), fetchProducts({ skus: [EARLY_COMPLETION_PRODUCT_ID], type: "in-app" }), getActiveSubscriptions([PLUS_PRODUCT_ID])]); }, [applyPlusStatus, connected, fetchProducts, getActiveSubscriptions, reconnect]);
   const purchasePlus = useCallback(async () => { if (PERSONAL_UNLIMITED_BUILD) { applyPlusStatus(PERSONAL_PLUS_STATUS); return; } if (Platform.OS === "web" || !connected || !plusProduct) { applyPlusStatus({ status: "unavailable", active: false, productId: PLUS_PRODUCT_ID, reason: "STORE_PRODUCT_UNAVAILABLE" }); return; } const offerToken = plusProduct.subscriptionOffers?.find((offer) => offer.offerTokenAndroid)?.offerTokenAndroid; if (Platform.OS === "android" && !offerToken) { applyPlusStatus({ status: "unavailable", active: false, productId: PLUS_PRODUCT_ID, reason: "ANDROID_OFFER_UNAVAILABLE" }); return; } setPlusStatus((current) => ({ ...current, status: "loading" })); await requestPurchase({ type: "subs", request: { apple: { sku: PLUS_PRODUCT_ID }, google: { skus: [PLUS_PRODUCT_ID], subscriptionOffers: offerToken ? [{ sku: PLUS_PRODUCT_ID, offerToken }] : [] } } }); }, [applyPlusStatus, connected, plusProduct, requestPurchase]);
