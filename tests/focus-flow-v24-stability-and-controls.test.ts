@@ -33,7 +33,6 @@ describe("Focus Flow v24 安定性・操作面・設定UI", () => {
     expect(settings).toContain("onPanResponderRelease");
     expect(settings).toContain("setDragValue(next)");
     expect(settings).toContain("setDragValue(undefined)");
-    expect(settings).toContain("1%単位で反映");
   });
 
   it("Widget回数操作はラベル付きの独立ボタン面として説明され、本文タップと混線しない", () => {

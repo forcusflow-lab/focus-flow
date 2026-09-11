@@ -448,4 +448,44 @@
   - 全ネイティブファイルとプラグインコードの完全一致
 
 
+## 14. ウィジェット透過率リアルタイム・ミニプレビュー (v35)
+
+### 14.1 インラインプレビュー (`WidgetMiniPreview`)
+- **配置:** 設定画面 > 表示・文字・Widget > ウィジェットセクション内、「本体のテーマを使用」行の直下・スライダーの直上に配置。
+- **背景:** 壁紙を想起させるソフトな2色グラデーション球（`widgetPreviewGradA` / `widgetPreviewGradB`）を配置し、透け感を直感的に確認可能。ダーク/ライトモードで適切な色調に切り替え。
+- **モック構成:**
+  - ヘッダー行: 「今日の目標」+ 「終日」バッジ（`widget_title` 文言と同期）
+  - Todo行: 左端カラーバー（`palette.primary`）+ チェック枠 + 「朝のストレッチ」+ 「終日」バッジ
+  - 習慣行: 左端カラーバー（`#7AADCF`）+ チェック枠 + 「読書」+ 「1/3」カウンター
+- **透過率の適用ルール:**
+  - ヘッダー背景・ウィジェット外枠の背景色 → `backgroundOpacity`（0〜100）を `rgba()` の `alpha` として適用
+  - 各アイテム行の背景色 → `cardOpacity`（0〜100）を `rgba()` の `alpha` として適用
+  - テキスト・アイコンは常に不透明（100%）— 実ウィジェットと同じ設計思想
+- **ヘルパー関数:**
+  - `withAlpha(hex, alpha)`: 16進数カラーを `rgba()` 文字列に変換
+  - `blendHex(base, blend, ratio)`: 2色をブレンドしてヘッダー背景色を生成（`FocusFlowWidgetProvider.kt` の `blendColors` と同等ロジック）
+
+### 14.2 リアルタイム連動とパフォーマンス最適化
+- **ローカルドラッグ状態:**
+  - `WidgetsPanel` 内に `dragBgOpacity` / `dragCardOpacity`（`useState<number>`）を導入。
+  - `OpacitySlider` に `onDrag` コールバックを追加し、ドラッグ中の値を `WidgetsPanel` のローカル状態に伝達。
+  - プレビューは `previewBg = dragBgOpacity ?? bgValue`、`previewCard = dragCardOpacity ?? cardValue` を参照し、ドラッグ中はローカル値、静止時は永続値でレンダリング。
+- **永続化のタイミング:**
+  - ドラッグ中（`onPanResponderMove`）: `setDragValue` + `onDrag` でローカルUIのみ更新。Preference保存やウィジェット更新ブロードキャストは一切発生しない。
+  - フィンガーリフト（`onPanResponderRelease`）: `onChange` を呼び出し、親コンポーネント経由で `setDisplaySettings` → `persistData` → AsyncStorage + ネイティブバックアップ → ウィジェット更新。
+  - これにより60fps相当のドラッグ中でもIPC通信ゼロ、端末負荷ゼロを保証。
+
+### 14.3 UIテキスト整理
+- **冗長なヒントテキストの削除:**
+  - `OpacitySlider` 末尾の「タップ・スライドとも1%単位で反映されます」を完全削除。スライダー下の余白をスッキリ整理。
+  - 1%刻みの動作仕様自体は変更なし（`Math.round` による整数丸め + `0〜100` のクランプは維持）。
+
+### 14.4 契約テスト
+- **`tests/focus-flow-v35-widget-preview.test.ts`:**
+  - `WidgetMiniPreview` コンポーネントの存在と壁紙・ヘッダー・行の構成要素
+  - `onDrag` コールバックの存在と `onDragRef` パターン
+  - `dragBgOpacity` / `dragCardOpacity` ローカル状態とプレビューへの接続
+  - `withAlpha` / `blendHex` ヘルパー関数の存在
+  - ヒントテキスト `"タップ・スライドとも1%単位で反映されます"` の不在
+  - リリースのみ永続化パターン（`onPanResponderRelease` + `onChange`）
 

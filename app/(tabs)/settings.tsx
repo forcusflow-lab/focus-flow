@@ -309,7 +309,7 @@ function ReminderPanel({ english, enabled, permission, time, busy, onToggle, onC
   return <><InfoCard icon="notifications-none" title={t("1日1回だけの確認", "One gentle daily check-in")} detail={t("完了状況を問わず、今日の予定を確認するための中立的な通知です。", "A neutral reminder to review today, regardless of completion.")} /><View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}><SettingRow title={t("日課を確認する", "Daily check-in")} detail={permission ? t("通知は許可されています。", "Notifications are allowed.") : t("オンにすると端末の通知許可を確認します。", "Turning this on requests notification permission.")} control={<Switch value={enabled} disabled={busy} onValueChange={onToggle} trackColor={{ false: "#CCD7D1", true: "#91C3B3" }} thumbColor={enabled ? COLORS.forest : "#F7F8F5"} />}/>{enabled ? <><TimeStepper value={time} english={english} onChange={onChangeTime} /><TouchableOpacity disabled={busy} onPress={onTest} style={[styles.primaryButton, { backgroundColor: palette.primary }]}><Text style={[styles.primaryButtonText, { color: palette.isDark ? palette.background : COLORS.white }]}>{busy ? t("準備中…", "Preparing…") : t("今すぐ試す", "Send a test")}</Text></TouchableOpacity></> : null}</View></>;
 }
 
-function OpacitySlider({ english, label, detail, value, onChange }: { english: boolean; label: string; detail: string; value: number; onChange: (value: number) => void }) {
+function OpacitySlider({ english, label, detail, value, onChange, onDrag }: { english: boolean; label: string; detail: string; value: number; onChange: (value: number) => void; onDrag?: (value: number | undefined) => void }) {
   const palette = useFocusPalette();
   const [trackWidth, setTrackWidth] = useState(0);
   const [dragValue, setDragValue] = useState<number>();
@@ -319,6 +319,8 @@ function OpacitySlider({ english, label, detail, value, onChange }: { english: b
   const displayedValue = dragValue ?? normalized;
   const dragStartValRef = useRef(normalized);
   const currentDragValRef = useRef(normalized);
+  const onDragRef = useRef(onDrag);
+  onDragRef.current = onDrag;
 
   const valueFromLocationX = useCallback((locationX: number) => {
     if (!trackWidth) return;
@@ -335,6 +337,7 @@ function OpacitySlider({ english, label, detail, value, onChange }: { english: b
       dragStartValRef.current = startVal;
       currentDragValRef.current = startVal;
       setDragValue(startVal);
+      onDragRef.current?.(startVal);
     },
     onPanResponderMove: (_event, gestureState) => {
       if (!usableTrackWidth) return;
@@ -343,27 +346,60 @@ function OpacitySlider({ english, label, detail, value, onChange }: { english: b
       if (next !== currentDragValRef.current) {
         currentDragValRef.current = next;
         setDragValue(next);
+        onDragRef.current?.(next);
       }
     },
     onPanResponderRelease: () => {
       const finalVal = currentDragValRef.current;
       setDragValue(undefined);
+      onDragRef.current?.(undefined);
       if (finalVal !== normalized) onChange(finalVal);
     },
-    onPanResponderTerminate: () => setDragValue(undefined),
+    onPanResponderTerminate: () => { setDragValue(undefined); onDragRef.current?.(undefined); },
   }), [normalized, onChange, usableTrackWidth, valueFromLocationX]);
 
-  const t = (ja: string, en: string) => english ? en : ja;
   const thumbLeft = (displayedValue / 100) * usableTrackWidth;
-  return <View style={appearanceStyles.sliderWrap}><View style={appearanceStyles.sliderHeading}><View style={styles.selectorCopy}><Text style={[styles.settingTitle, { color: palette.text }]}>{label}</Text><Text style={[styles.settingDetail, { color: palette.muted }]}>{detail}</Text></View><Text style={[appearanceStyles.sliderValue, { color: palette.primary }]}>{displayedValue}%</Text></View><View accessibilityRole="adjustable" accessibilityLabel={`${label}: ${displayedValue}%`} accessibilityValue={{ min: 0, max: 100, now: displayedValue, text: `${displayedValue}%` }} onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)} {...responder.panHandlers} style={[appearanceStyles.sliderTrack, { backgroundColor: palette.elevated }]}><View pointerEvents="none" style={[appearanceStyles.sliderFill, { width: `${displayedValue}%`, backgroundColor: palette.primary }]} /><View pointerEvents="none" style={[appearanceStyles.sliderThumb, { left: thumbLeft, backgroundColor: palette.surface, borderColor: palette.primary }]} /></View><View style={appearanceStyles.sliderMarks}>{[0, 25, 50, 75, 100].map((mark) => <Text key={mark} style={[appearanceStyles.sliderMark, { color: palette.muted }]}>{mark}%</Text>)}</View><Text style={[appearanceStyles.sliderHint, { color: palette.muted }]}>{t("タップ・スライドとも1%単位で反映されます", "Tap or slide to apply in 1% steps")}</Text></View>;
+  return <View style={appearanceStyles.sliderWrap}><View style={appearanceStyles.sliderHeading}><View style={styles.selectorCopy}><Text style={[styles.settingTitle, { color: palette.text }]}>{label}</Text><Text style={[styles.settingDetail, { color: palette.muted }]}>{detail}</Text></View><Text style={[appearanceStyles.sliderValue, { color: palette.primary }]}>{displayedValue}%</Text></View><View accessibilityRole="adjustable" accessibilityLabel={`${label}: ${displayedValue}%`} accessibilityValue={{ min: 0, max: 100, now: displayedValue, text: `${displayedValue}%` }} onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)} {...responder.panHandlers} style={[appearanceStyles.sliderTrack, { backgroundColor: palette.elevated }]}><View pointerEvents="none" style={[appearanceStyles.sliderFill, { width: `${displayedValue}%`, backgroundColor: palette.primary }]} /><View pointerEvents="none" style={[appearanceStyles.sliderThumb, { left: thumbLeft, backgroundColor: palette.surface, borderColor: palette.primary }]} /></View><View style={appearanceStyles.sliderMarks}>{[0, 25, 50, 75, 100].map((mark) => <Text key={mark} style={[appearanceStyles.sliderMark, { color: palette.muted }]}>{mark}%</Text>)}</View></View>;
+}
+
+function WidgetMiniPreview({ english, palette, backgroundOpacity, cardOpacity }: { english: boolean; palette: AppPalette; backgroundOpacity: number; cardOpacity: number }) {
+  const t = (ja: string, en: string) => english ? en : ja;
+  const bgAlpha = backgroundOpacity / 100;
+  const cardAlpha = cardOpacity / 100;
+  const headerSurface = palette.isDark ? blendHex(palette.background, palette.primary, 0.36) : blendHex(palette.background, palette.primary, 0.30);
+  return <View style={appearanceStyles.widgetPreview}><View style={appearanceStyles.widgetPreviewWallpaper}><View style={[appearanceStyles.widgetPreviewGradA, { backgroundColor: palette.isDark ? "#2A4060" : "#B8D4E8" }]} /><View style={[appearanceStyles.widgetPreviewGradB, { backgroundColor: palette.isDark ? "#3D2D50" : "#D4C4E0" }]} /><View style={[appearanceStyles.widgetPreviewWidget, { backgroundColor: withAlpha(palette.background, bgAlpha), borderColor: withAlpha(palette.border, bgAlpha) }]}><View style={[appearanceStyles.widgetPreviewHeader, { backgroundColor: withAlpha(headerSurface, bgAlpha) }]}><Text style={[appearanceStyles.widgetPreviewHeaderText, { color: palette.text }]}>{t("今日の目標", "Today's goals")}</Text><Text style={[appearanceStyles.widgetPreviewHeaderSub, { color: palette.muted }]}>{t("終日", "All day")}</Text></View><View style={[appearanceStyles.widgetPreviewDivider, { backgroundColor: withAlpha(palette.border, bgAlpha) }]} /><View style={[appearanceStyles.widgetPreviewRow, { backgroundColor: withAlpha(palette.surface, cardAlpha) }]}><View style={[appearanceStyles.widgetPreviewRail, { backgroundColor: palette.primary }]} /><View style={[appearanceStyles.widgetPreviewCheck, { borderColor: palette.primary }]} /><Text style={[appearanceStyles.widgetPreviewItemText, { color: palette.text }]} numberOfLines={1}>{t("朝のストレッチ", "Morning stretch")}</Text><Text style={[appearanceStyles.widgetPreviewBadge, { color: palette.muted }]}>{t("終日", "All day")}</Text></View><View style={[appearanceStyles.widgetPreviewDivider, { backgroundColor: withAlpha(palette.border, cardAlpha) }]} /><View style={[appearanceStyles.widgetPreviewRow, { backgroundColor: withAlpha(palette.surface, cardAlpha) }]}><View style={[appearanceStyles.widgetPreviewRail, { backgroundColor: "#7AADCF" }]} /><View style={[appearanceStyles.widgetPreviewCheck, { borderColor: "#7AADCF" }]} /><Text style={[appearanceStyles.widgetPreviewItemText, { color: palette.text }]} numberOfLines={1}>{t("読書", "Reading")}</Text><Text style={[appearanceStyles.widgetPreviewCounter, { color: palette.muted }]}>1/3</Text></View></View></View></View>;
+}
+
+function blendHex(base: string, blend: string, ratio: number): string {
+  const parse = (hex: string) => { const h = hex.replace("#", ""); return [parseInt(h.substring(0, 2), 16), parseInt(h.substring(2, 4), 16), parseInt(h.substring(4, 6), 16)]; };
+  const [bR, bG, bB] = parse(base);
+  const [tR, tG, tB] = parse(blend);
+  const r = Math.round(bR + (tR - bR) * ratio);
+  const g = Math.round(bG + (tG - bG) * ratio);
+  const b = Math.round(bB + (tB - bB) * ratio);
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}
+
+function withAlpha(hex: string, alpha: number): string {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha.toFixed(2)})`;
 }
 
 function WidgetsPanel({ english, displaySettings, onBackgroundOpacity, onCardOpacity }: { english: boolean; displaySettings: DisplaySettings; onBackgroundOpacity: (value: number) => void; onCardOpacity: (value: number) => void }) {
   const t = (ja: string, en: string) => english ? en : ja;
   const palette = useFocusPalette();
+  const bgValue = displaySettings.widgetBackgroundOpacity ?? displaySettings.widgetOpacity ?? 86;
+  const cardValue = displaySettings.widgetCardOpacity ?? 100;
+  const [dragBgOpacity, setDragBgOpacity] = useState<number>();
+  const [dragCardOpacity, setDragCardOpacity] = useState<number>();
+  const previewBg = dragBgOpacity ?? bgValue;
+  const previewCard = dragCardOpacity ?? cardValue;
   return <>
     <SectionTitle title={t("ホーム画面ウィジェット", "Home screen widget")} detail={t("テーマと文字はアプリ本体に連動します。透過率はWidgetだけで調整できます。", "Theme and type follow the app. Opacity can be adjusted for the widget.")} />
-    <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}><View style={appearanceStyles.widgetFollowRow}><View style={[styles.selectorIcon, { backgroundColor: palette.primarySoft }]}><MaterialIcons name="palette" size={20} color={palette.primary} /></View><View style={styles.selectorCopy}><Text style={[styles.selectorTitle, { color: palette.text }]}>{t("本体のテーマを使用", "Follow app theme")}</Text><Text style={[styles.selectorDetail, { color: palette.muted }]}>{english ? APP_THEMES[resolvedAppTheme(displaySettings)].label.en : APP_THEMES[resolvedAppTheme(displaySettings)].label.ja}</Text></View><MaterialIcons name="link" size={20} color={palette.muted} /></View><View style={[styles.widgetEditor, { borderTopColor: palette.border }]}><OpacitySlider english={english} label={t("背景とタイトル", "Background & title")} detail={t("Widget全体とタイトル行に同じ透過率を使います", "Used by the whole widget and its title row")} value={displaySettings.widgetBackgroundOpacity ?? displaySettings.widgetOpacity ?? 86} onChange={onBackgroundOpacity} /><OpacitySlider english={english} label={t("項目の背景", "Item row background")} detail={t("Todo・習慣の行だけを独立して調整します", "Adjusts Todo and Habit rows separately")} value={displaySettings.widgetCardOpacity ?? 100} onChange={onCardOpacity} /></View></View>
+    <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}><View style={appearanceStyles.widgetFollowRow}><View style={[styles.selectorIcon, { backgroundColor: palette.primarySoft }]}><MaterialIcons name="palette" size={20} color={palette.primary} /></View><View style={styles.selectorCopy}><Text style={[styles.selectorTitle, { color: palette.text }]}>{t("本体のテーマを使用", "Follow app theme")}</Text><Text style={[styles.selectorDetail, { color: palette.muted }]}>{english ? APP_THEMES[resolvedAppTheme(displaySettings)].label.en : APP_THEMES[resolvedAppTheme(displaySettings)].label.ja}</Text></View><MaterialIcons name="link" size={20} color={palette.muted} /></View><View style={[styles.widgetEditor, { borderTopColor: palette.border }]}><WidgetMiniPreview english={english} palette={palette} backgroundOpacity={previewBg} cardOpacity={previewCard} /><OpacitySlider english={english} label={t("背景とタイトル", "Background & title")} detail={t("Widget全体とタイトル行に同じ透過率を使います", "Used by the whole widget and its title row")} value={bgValue} onChange={onBackgroundOpacity} onDrag={setDragBgOpacity} /><OpacitySlider english={english} label={t("項目の背景", "Item row background")} detail={t("Todo・習慣の行だけを独立して調整します", "Adjusts Todo and Habit rows separately")} value={cardValue} onChange={onCardOpacity} onDrag={setDragCardOpacity} /></View></View>
   </>;
 }
 
@@ -491,4 +527,5 @@ const appearanceStyles = StyleSheet.create({
   widgetFollowRow: { minHeight: 70, flexDirection: "row", alignItems: "center", gap: 10 },
   sliderWrap: { paddingTop: 13, paddingBottom: 4 }, sliderHeading: { minHeight: 38, flexDirection: "row", alignItems: "flex-start", gap: 10 }, sliderValue: { fontSize: 18, lineHeight: 23, fontWeight: "900" }, sliderTrack: { height: 8, borderRadius: 4, marginTop: 9, marginHorizontal: 2, justifyContent: "center" }, sliderFill: { position: "absolute", left: 0, height: 8, borderRadius: 4 }, sliderThumb: { position: "absolute", width: 22, height: 22, borderRadius: 11, borderWidth: 2, top: -7 }, sliderMarks: { flexDirection: "row", justifyContent: "space-between", marginTop: 10, paddingHorizontal: 2 }, sliderMark: { fontSize: 10, lineHeight: 13, fontWeight: "700" }, sliderHint: { fontSize: 10, lineHeight: 14, marginTop: 4 },
   completedToggleRow: { minHeight: 64, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, borderBottomWidth: 0 }, completedToggleTitle: { fontSize: 14, lineHeight: 20, fontWeight: "800" }, completedToggleDetail: { fontSize: 11, lineHeight: 16, marginTop: 2, fontWeight: "700" }, opacitySummary: { minHeight: 54, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 10 }, opacityStep: { width: 44, height: 44, borderRadius: 13, borderWidth: 1, alignItems: "center", justifyContent: "center" }, opacityStepText: { fontSize: 21, lineHeight: 24, fontWeight: "700" }, opacityValue: { flex: 1, minWidth: 0, alignItems: "center" }, disabledControl: { opacity: 0.42 }, opacityPresets: { flexDirection: "row", gap: 7 }, opacityPreset: { flex: 1, minHeight: 40, alignItems: "center", justifyContent: "center", borderRadius: 12, borderWidth: 1 }, opacityPresetText: { fontSize: 12, fontWeight: "800" },
+  widgetPreview: { marginTop: 14, marginBottom: 6, borderRadius: 16, overflow: "hidden" as const }, widgetPreviewWallpaper: { paddingHorizontal: 10, paddingVertical: 12, position: "relative" as const }, widgetPreviewGradA: { position: "absolute" as const, top: -30, right: -20, width: 160, height: 160, borderRadius: 80, opacity: 0.55 }, widgetPreviewGradB: { position: "absolute" as const, bottom: -40, left: -10, width: 140, height: 140, borderRadius: 70, opacity: 0.45 }, widgetPreviewWidget: { borderRadius: 14, borderWidth: 1, overflow: "hidden" as const }, widgetPreviewHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 10, paddingVertical: 7 }, widgetPreviewHeaderText: { fontSize: 12, fontWeight: "900" }, widgetPreviewHeaderSub: { fontSize: 9, fontWeight: "700" }, widgetPreviewDivider: { height: StyleSheet.hairlineWidth }, widgetPreviewRow: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 6, paddingVertical: 7 }, widgetPreviewRail: { width: 3, height: 22, borderRadius: 1.5 }, widgetPreviewCheck: { width: 14, height: 14, borderWidth: 1.4, borderRadius: 4 }, widgetPreviewItemText: { flex: 1, fontSize: 11, fontWeight: "800" }, widgetPreviewBadge: { fontSize: 8, fontWeight: "700" }, widgetPreviewCounter: { fontSize: 9, fontWeight: "800" },
 });
