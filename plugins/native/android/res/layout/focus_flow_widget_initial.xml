@@ -3,6 +3,13 @@
   android:id="@+id/focus_flow_widget_root"
   android:layout_width="match_parent"
   android:layout_height="match_parent">
+  <ImageView
+    android:id="@+id/focus_flow_widget_bg_geometric"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:scaleType="fitXY"
+    android:src="@drawable/widget_bg_geometric"
+    android:visibility="gone" />
   <LinearLayout
     android:id="@+id/focus_flow_widget_card"
     android:layout_width="match_parent"

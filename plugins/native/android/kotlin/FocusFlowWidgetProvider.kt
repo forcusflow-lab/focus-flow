@@ -195,8 +195,19 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     // 薄いprimarySoftではなく、見出し専用のアクセント面として認識できる濃度にする。
     // ダークは明るいprimary、ライトは濃いprimaryを背景へ混ぜるため、双方で同等の階層感になる。
     val headerSurface = blendColors(background, primary, if (dark) 0.36f else 0.30f)
-    views.setInt(R.id.focus_flow_widget_card, "setBackgroundColor", colorWithOpacity(background, opacity))
-    views.setInt(R.id.focus_flow_widget_header, "setBackgroundColor", colorWithOpacity(headerSurface, opacity))
+    val backgroundStyle = state.optString("widgetBackgroundStyle", "solid")
+    if (backgroundStyle == "geometric") {
+      views.setViewVisibility(R.id.focus_flow_widget_bg_geometric, View.VISIBLE)
+      val bgRes = if (dark) R.drawable.widget_bg_geometric_dark else R.drawable.widget_bg_geometric
+      views.setImageViewResource(R.id.focus_flow_widget_bg_geometric, bgRes)
+      views.setInt(R.id.focus_flow_widget_bg_geometric, "setImageAlpha", opacity * 255 / 100)
+      views.setInt(R.id.focus_flow_widget_card, "setBackgroundColor", Color.TRANSPARENT)
+      views.setInt(R.id.focus_flow_widget_header, "setBackgroundColor", colorWithOpacity(headerSurface, (opacity * 0.45f).toInt()))
+    } else {
+      views.setViewVisibility(R.id.focus_flow_widget_bg_geometric, View.GONE)
+      views.setInt(R.id.focus_flow_widget_card, "setBackgroundColor", colorWithOpacity(background, opacity))
+      views.setInt(R.id.focus_flow_widget_header, "setBackgroundColor", colorWithOpacity(headerSurface, opacity))
+    }
     listOf(R.id.focus_flow_widget_static_divider_one, R.id.focus_flow_widget_static_divider_two).forEach { dividerId -> views.setTextViewText(dividerId, ""); views.setInt(dividerId, "setBackgroundColor", colorWithOpacity(border, opacity)) }
   }
 

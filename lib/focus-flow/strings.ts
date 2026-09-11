@@ -40,6 +40,9 @@ export const R = {
     widget_status_window: "widget_status_window",
     widget_status_unlocked: "widget_status_unlocked",
     widget_status_off: "widget_status_off",
+    widget_bg_style_title: "widget_bg_style_title",
+    widget_bg_style_solid: "widget_bg_style_solid",
+    widget_bg_style_geometric: "widget_bg_style_geometric",
     // 習慣（Habit）画面
     habit_today_progress: "habit_today_progress",
     habit_streak: "habit_streak",
@@ -193,6 +196,18 @@ export const STRING_RESOURCES: Record<StringResourceId, LocalizedString> = {
   widget_status_off: {
     ja: "集中制限はオフです",
     en: "App limits off",
+  },
+  widget_bg_style_title: {
+    ja: "背景スタイル",
+    en: "Background style",
+  },
+  widget_bg_style_solid: {
+    ja: "無地",
+    en: "Solid",
+  },
+  widget_bg_style_geometric: {
+    ja: "幾何学模様",
+    en: "Geometric",
   },
   // 習慣画面
   habit_today_progress: {

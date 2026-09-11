@@ -489,3 +489,40 @@
   - ヒントテキスト `"タップ・スライドとも1%単位で反映されます"` の不在
   - リリースのみ永続化パターン（`onPanResponderRelease` + `onChange`）
 
+---
+
+## 15. ウィジェット背景スタイル（無地／幾何学模様）仕様 (v36)
+
+### 15.1 背景スタイル概要
+- **スタイル種別 (`WidgetBackgroundStyle`):**
+  - `solid`（無地）: 従来の単色テーマ背景色 + 透過率適用。
+  - `geometric`（幾何学模様）: プレビューで好評だった大きな丸（右上と左下の2つの円）が重なるグラフィックデザイン + 透過率適用。
+- **Vector Drawable リソース:**
+  - `res/drawable/widget_bg_geometric.xml`（ライトモード用: `#F7F8F5` ベース、右上 `#B8D4E8`、左下 `#D4C4E0`、16dp角丸clip-path）
+  - `res/drawable/widget_bg_geometric_dark.xml` / `res/drawable-night/widget_bg_geometric.xml`（ダークモード用: `#14231F` ベース、右上 `#2A4060`、左下 `#3D2D50`、16dp角丸clip-path）
+  - ベクター定義により描画負荷とメモリ消費を極小化。
+
+### 15.2 設定画面 UI & リアルタイムミニプレビュー連動
+- **UI 配置:** 設定画面 > 表示・文字・Widget > ウィジェットセクション内、ミニプレビューの直下に「背景スタイル」選択 Segmented コントロールを配置（`無地` / `幾何学模様`）。
+- **リアルタイム反映:** セグメント切り替え時に即座にプレビューへ反映。
+  - `geometric` 選択時: `WidgetMiniPreview` 内のウィジェット本体に幾何学模様レイヤーをオーバーレイし、設定された `widgetBackgroundOpacity`（アルファ値）を適用。
+  - `solid` 選択時: ウィジェット本体は単色背景 + アルファ値でレンダリング。
+- **スライダー操作の安定性（引き戻り解消）:**
+  - `OpacitySlider` に `committedValue` を導入。指を離した瞬間に `finalVal` を `committedValue` に保持することで、親コンポーネントの非同期State反映待ちによるスライダー位置の巻き戻り（勝手に右や元の値に戻るバグ）を恒久解消。
+
+### 15.3 ホーム画面ウィジェット（RemoteViews）実体への適用
+- **状態伝達:**
+  - `displaySettings.widgetBackgroundStyle` を `FocusGateModule.saveGateState()` 経由で native SharedPreferences へ保存。
+- **Provider 実装 (`FocusFlowWidgetProvider.kt`):**
+  - `bindTheme()` にて `widgetBackgroundStyle` を判定。
+  - `geometric` の場合: `focus_flow_widget_bg_geometric`（ImageView）を VISIBLE にし、ダーク/ライトに応じた `widget_bg_geometric` をセット。`setImageAlpha(opacity * 255 / 100)` により透過率を適用。`focus_flow_widget_card` は透明背景にし、ヘッダー背景は幾何学模様が柔らかく透ける濃度（`opacity * 0.45`）で混色。
+  - `solid` の場合: `focus_flow_widget_bg_geometric` を GONE にし、従来通り `focus_flow_widget_card` に `colorWithOpacity(background, opacity)` を適用。
+- **レイアウト (`focus_flow_widget_initial.xml`):**
+  - `focus_flow_widget_root`（FrameLayout）直下に `<ImageView android:id="@+id/focus_flow_widget_bg_geometric" android:scaleType="fitXY" android:visibility="gone" />` を配置。
+
+### 15.4 多言語リソース集約
+- `widget_bg_style_title`（背景スタイル / Background style）
+- `widget_bg_style_solid`（無地 / Solid）
+- `widget_bg_style_geometric`（幾何学模様 / Geometric）
+- `strings.xml` および `strings.ts` に集約・管理。
+

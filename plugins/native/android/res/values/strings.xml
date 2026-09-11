@@ -42,6 +42,9 @@
   <string name="widget_status_window">制限中（%1$s〜%2$s）</string>
   <string name="widget_status_unlocked">制限解除中</string>
   <string name="widget_status_off">集中制限はオフです</string>
+  <string name="widget_bg_style_title">背景スタイル</string>
+  <string name="widget_bg_style_solid">無地</string>
+  <string name="widget_bg_style_geometric">幾何学模様</string>
 
   <!-- 習慣（Habit）画面 -->
   <string name="habit_today_progress">今日 %1$d/%2$d 回</string>
