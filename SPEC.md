@@ -526,3 +526,31 @@
 - `widget_bg_style_geometric`（幾何学模様 / Geometric）
 - `strings.xml` および `strings.ts` に集約・管理。
 
+---
+
+## 16. 透過率スライダーState管理 & ドラッグ競合解消 (v37)
+
+### 16.1 不具合原因の分析
+- **PanResponder インスタンス再生成の競合:**
+  - `useMemo` の依存配列に `normalized` や `onChange` などの再レンダリング毎に変化する変数が含まれていたため、ドラッグ中にスライダーのジェスチャーハンドラが破棄・再生成され、`onPanResponderTerminate` が発火して初期値へ巻き戻る現象が発生していた。
+- **外部State同期とローカル更新の競合:**
+  - 親コンポーネント経由の再描画時に、外部から渡される保存値がドラッグ中のローカルStateを上書きしてしまっていた。
+- **スクロールビューによるジェスチャー横取り:**
+  - 親の `ScrollView` がドラッグ中の横スワイプジェスチャーをスクロールと誤認識して割り込み、スライダー操作が中断されていた。
+
+### 16.2 根本修正設計
+1. **ドラッグ中フラグ (`isDragging` & `isDraggingRef`):**
+   - ローカルState `const [isDragging, setIsDragging] = useState(false)` と Ref `isDraggingRef` を導入。
+   - タッチ開始（`onPanResponderGrant`）および移動（`onPanResponderMove`）で `true`、終了（`onPanResponderRelease` / `onPanResponderTerminate`）で `false` に切り替え。
+2. **外部State同期ガード (`if (!isDragging)`):**
+   - `useEffect(() => { if (!isDragging) { setSliderValue(normalized); setCommittedValue(undefined); } }, [normalized, isDragging])`
+   - ドラッグ中は外部からの更新を完全に遮断し、ユーザーの指による操作値（`sliderValue`）を保護。
+3. **`PanResponder` の不変安定化:**
+   - 依存配列を `[thumbRadius]`（定数）のみに限定し、コンポーネントのライフサイクル中にインスタンスが再生成されないように設計。
+   - 動的値（`usableTrackWidth`, `trackWidth`, `normalized`, `onChange`, `onDrag`）はすべて最新の Ref を経由して参照。
+   - `onPanResponderTerminationRequest: () => false` を明示し、親 `ScrollView` によるタッチ横取り・中断を防止。
+4. **ドラッグ処理の完全軽量化と保存限定:**
+   - ドラッグ中（`onPanResponderMove`）は `setSliderValue(next)` と `onDragRef` によるプレビュー通知のみを行い、保存（`onChange`）やIPC・IO処理は一切行わない。
+   - 指を離した時（`onPanResponderRelease`）にのみ確定値で `onChange(finalVal)` を呼び出し、永続化とウィジェット更新を実行。
+
+

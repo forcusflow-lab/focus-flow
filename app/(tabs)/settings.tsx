@@ -312,21 +312,36 @@ function ReminderPanel({ english, enabled, permission, time, busy, onToggle, onC
 function OpacitySlider({ english, label, detail, value, onChange, onDrag }: { english: boolean; label: string; detail: string; value: number; onChange: (value: number) => void; onDrag?: (value: number | undefined) => void }) {
   const palette = useFocusPalette();
   const [trackWidth, setTrackWidth] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
+  const normalized = Math.max(0, Math.min(100, Math.round(value)));
+  const [sliderValue, setSliderValue] = useState(normalized);
   const [dragValue, setDragValue] = useState<number>();
   const [committedValue, setCommittedValue] = useState<number>();
   const thumbRadius = 11;
   const usableTrackWidth = Math.max(1, trackWidth - thumbRadius * 2);
-  const normalized = Math.max(0, Math.min(100, Math.round(value)));
 
-  useEffect(() => {
-    setCommittedValue(undefined);
-  }, [value]);
-
-  const displayedValue = dragValue ?? committedValue ?? normalized;
-  const dragStartValRef = useRef(normalized);
-  const currentDragValRef = useRef(normalized);
+  const usableTrackWidthRef = useRef(usableTrackWidth);
+  usableTrackWidthRef.current = usableTrackWidth;
+  const trackWidthRef = useRef(trackWidth);
+  trackWidthRef.current = trackWidth;
+  const normalizedRef = useRef(normalized);
+  normalizedRef.current = normalized;
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
   const onDragRef = useRef(onDrag);
   onDragRef.current = onDrag;
+
+  const dragStartValRef = useRef(normalized);
+  const currentDragValRef = useRef(normalized);
+
+  // 外部State（保存値）との同期ガード: ドラッグ中は外部からの更新を遮断し、引き戻しを防止
+  useEffect(() => {
+    if (!isDragging) {
+      setSliderValue(normalized);
+      setCommittedValue(undefined);
+    }
+  }, [normalized, isDragging]);
 
   const valueFromLocationX = useCallback((locationX: number) => {
     if (!trackWidth) return;
@@ -337,34 +352,65 @@ function OpacitySlider({ english, label, detail, value, onChange, onDrag }: { en
   const responder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
+    onPanResponderTerminationRequest: () => false,
     onPanResponderGrant: (event) => {
-      const tapped = valueFromLocationX(event.nativeEvent.locationX);
-      const startVal = tapped ?? normalized;
+      const fullTrack = trackWidthRef.current;
+      const usable = usableTrackWidthRef.current;
+      let startVal = normalizedRef.current;
+      if (fullTrack > 0 && usable > 0) {
+        const clampedX = Math.max(0, Math.min(fullTrack, event.nativeEvent.locationX));
+        startVal = Math.max(0, Math.min(100, Math.round(((clampedX - thumbRadius) / usable) * 100)));
+      }
+      isDraggingRef.current = true;
+      setIsDragging(true);
       dragStartValRef.current = startVal;
       currentDragValRef.current = startVal;
+      setSliderValue(startVal);
       setDragValue(startVal);
       onDragRef.current?.(startVal);
     },
     onPanResponderMove: (_event, gestureState) => {
-      if (!usableTrackWidth) return;
-      const deltaPercent = (gestureState.dx / usableTrackWidth) * 100;
+      const usable = usableTrackWidthRef.current;
+      if (!usable) return;
+      const deltaPercent = (gestureState.dx / usable) * 100;
       const next = Math.max(0, Math.min(100, Math.round(dragStartValRef.current + deltaPercent)));
       if (next !== currentDragValRef.current) {
         currentDragValRef.current = next;
+        isDraggingRef.current = true;
+        setSliderValue(next);
         setDragValue(next);
         onDragRef.current?.(next);
       }
     },
     onPanResponderRelease: () => {
       const finalVal = currentDragValRef.current;
+      isDraggingRef.current = false;
+      setIsDragging(false);
+      setSliderValue(finalVal);
       setCommittedValue(finalVal);
       setDragValue(undefined);
       onDragRef.current?.(undefined);
-      if (finalVal !== normalized) onChange(finalVal);
+      const commit = onChangeRef.current;
+      if (finalVal !== normalizedRef.current) {
+        if (commit) commit(finalVal); else onChange(finalVal);
+      }
     },
-    onPanResponderTerminate: () => { setDragValue(undefined); onDragRef.current?.(undefined); },
-  }), [normalized, onChange, usableTrackWidth, valueFromLocationX]);
+    onPanResponderTerminate: () => {
+      const finalVal = currentDragValRef.current;
+      isDraggingRef.current = false;
+      setIsDragging(false);
+      setSliderValue(finalVal);
+      setCommittedValue(finalVal);
+      setDragValue(undefined);
+      onDragRef.current?.(undefined);
+      const commit = onChangeRef.current;
+      if (finalVal !== normalizedRef.current) {
+        if (commit) commit(finalVal); else onChange(finalVal);
+      }
+    },
+  }), [thumbRadius]);
 
+  const displayedValue = isDragging ? (dragValue ?? sliderValue) : (committedValue ?? sliderValue);
   const thumbLeft = (displayedValue / 100) * usableTrackWidth;
   return <View style={appearanceStyles.sliderWrap}><View style={appearanceStyles.sliderHeading}><View style={styles.selectorCopy}><Text style={[styles.settingTitle, { color: palette.text }]}>{label}</Text><Text style={[styles.settingDetail, { color: palette.muted }]}>{detail}</Text></View><Text style={[appearanceStyles.sliderValue, { color: palette.primary }]}>{displayedValue}%</Text></View><View accessibilityRole="adjustable" accessibilityLabel={`${label}: ${displayedValue}%`} accessibilityValue={{ min: 0, max: 100, now: displayedValue, text: `${displayedValue}%` }} onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)} {...responder.panHandlers} style={[appearanceStyles.sliderTrack, { backgroundColor: palette.elevated }]}><View pointerEvents="none" style={[appearanceStyles.sliderFill, { width: `${displayedValue}%`, backgroundColor: palette.primary }]} /><View pointerEvents="none" style={[appearanceStyles.sliderThumb, { left: thumbLeft, backgroundColor: palette.surface, borderColor: palette.primary }]} /></View><View style={appearanceStyles.sliderMarks}>{[0, 25, 50, 75, 100].map((mark) => <Text key={mark} style={[appearanceStyles.sliderMark, { color: palette.muted }]}>{mark}%</Text>)}</View></View>;
 }
