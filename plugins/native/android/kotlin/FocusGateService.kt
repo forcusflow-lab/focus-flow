@@ -115,7 +115,7 @@ class FocusGateService : AccessibilityService() {
 
       val activePackage = activeWindowPackage()
       val candidatePackage = foregroundCandidate(eventPackage, activePackage, state) ?: return
-      if (candidatePackage == applicationContext.packageName) {
+      if (candidatePackage == applicationContext.packageName || isProtectedSystemPackage(candidatePackage)) {
         hideGateOverlay()
         return
       }
@@ -161,10 +161,11 @@ class FocusGateService : AccessibilityService() {
     return activeCandidate ?: eventCandidate ?: lastReliableForegroundPackage
   }
 
+  private fun isProtectedSystemPackage(packageName: String): Boolean =
+    packageName == applicationContext.packageName || isEssentialSystemPackage(packageName)
+
   private fun isTransientForegroundPackage(packageName: String): Boolean =
-    packageName == applicationContext.packageName ||
-      packageName == "android" ||
-      packageName.startsWith("com.android.systemui")
+    isProtectedSystemPackage(packageName)
 
   private fun showGateOverlay(packageName: String, rule: GateRule, state: GateState) {
     if (gateOverlay != null && gateOverlayPackage == packageName) return
@@ -470,7 +471,7 @@ private data class GateState(
   val habitQueue: org.json.JSONArray? = null
 ) {
   fun ruleBlocking(packageName: String): GateRule? {
-    if (!active || rules == null) return null
+    if (!active || rules == null || isEssentialSystemPackage(packageName)) return null
     for (index in 0 until rules.length()) {
       val rule = rules.optJSONObject(index)?.let(::GateRule) ?: continue
       if (rule.effectivePendingCount > 0 && rule.isWithinSchedule() && packageName in rule.blockedPackages) return rule
@@ -478,6 +479,18 @@ private data class GateState(
     return null
   }
 }
+
+private fun isEssentialSystemPackage(packageName: String): Boolean =
+  packageName == "android" ||
+    packageName.startsWith("com.android.systemui") ||
+    packageName == "com.android.settings" ||
+    packageName == "com.android.vending" ||
+    packageName == "com.google.android.packageinstaller" ||
+    packageName == "com.android.packageinstaller" ||
+    packageName == "com.android.dialer" ||
+    packageName == "com.google.android.dialer" ||
+    packageName == "com.android.server.telecom" ||
+    packageName == "com.android.phone"
 
 private data class GatePalette(val background: Int, val elevated: Int, val primarySoft: Int, val primary: Int, val text: Int, val muted: Int, val onPrimary: Int) {
   companion object {

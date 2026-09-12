@@ -115,4 +115,6 @@
   <string name="must_do">必須</string>
   <string name="action_complete">完了</string>
   <string name="action_delete">削除</string>
+  <string name="paywall_offline_title">インターネットに接続されていません</string>
+  <string name="paywall_offline_message">定期購入や復元を行うには、ネットワーク接続が必要です。通信環境をご確認のうえ、再度お試しください。</string>
 </resources>

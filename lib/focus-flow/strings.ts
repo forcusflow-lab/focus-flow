@@ -109,6 +109,8 @@ export const R = {
     must_do: "must_do",
     action_complete: "action_complete",
     action_delete: "action_delete",
+    paywall_offline_title: "paywall_offline_title",
+    paywall_offline_message: "paywall_offline_message",
   },
 } as const;
 
@@ -507,6 +509,14 @@ export const STRING_RESOURCES: Record<StringResourceId, LocalizedString> = {
   action_delete: {
     ja: "削除",
     en: "Delete",
+  },
+  paywall_offline_title: {
+    ja: "インターネットに接続されていません",
+    en: "No Internet Connection",
+  },
+  paywall_offline_message: {
+    ja: "定期購入や復元を行うには、ネットワーク接続が必要です。通信環境をご確認のうえ、再度お試しください。",
+    en: "An active internet connection is required to purchase or restore subscriptions. Please check your network and try again.",
   },
 };
 

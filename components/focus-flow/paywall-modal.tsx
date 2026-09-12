@@ -1,8 +1,9 @@
-﻿import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Modal,
   Platform,
   ScrollView,
@@ -67,6 +68,12 @@ export function PaywallModal({ visible, onClose }: PaywallModalProps) {
     setBusy(true);
     try {
       await purchasePlus();
+    } catch {
+      Alert.alert(
+        stringResource(R.string.paywall_offline_title, english ? "en" : "ja"),
+        stringResource(R.string.paywall_offline_message, english ? "en" : "ja"),
+        [{ text: "OK" }],
+      );
     } finally {
       setBusy(false);
     }
@@ -77,6 +84,12 @@ export function PaywallModal({ visible, onClose }: PaywallModalProps) {
     setBusy(true);
     try {
       await restorePlus();
+    } catch {
+      Alert.alert(
+        stringResource(R.string.paywall_offline_title, english ? "en" : "ja"),
+        stringResource(R.string.paywall_offline_message, english ? "en" : "ja"),
+        [{ text: "OK" }],
+      );
     } finally {
       setBusy(false);
     }

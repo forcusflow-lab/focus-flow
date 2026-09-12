@@ -682,3 +682,32 @@ Things 3、Craft、Fabulous等のモダンアプリをベンチマークとし�
 - **グローバルコンテキスト & ルートレイアウト:**
   - `FocusFlowProvider` に `paywallVisible`, `openPaywall`, `closePaywall` を提供し、`app/_layout.tsx` のルートシェルに `<PaywallModal />` をマウント。アプリ内のあらゆる場所からワンコールでPaywallをトリガー可能。
 
+---
+
+## 20. ストア品質・クラッシュ防止・堅牢化アーキテクチャ (v42 - Phase 3)
+
+### 20.1 端末再起動・プロセス破棄への完全耐性 (Reboot & Memory-Kill Resilience)
+1. **デュアル永続化（AsyncStorage + Native SharedPreferences バックアップ）:**
+   - JS側の AsyncStorage への非同期保存と同時に、ネイティブ側の SharedPreferences（`FocusGateModule.GATE_PREFS`）へ完全な JSON データを `commit()` により即時ディスク同期。
+   - OS によるプロセスキル、バッテリー切れ、端末強制終了直前でもトランザクションの破損や未コミットによるデータ消失を完全に防止。
+   - ネイティブモジュール経由で `saveAppDataBackup` / `getAppDataBackup` を備え、万一の AsyncStorage 破損時にもネイティブストレージから自動復旧可能。
+2. **再起動後のウィジェット（Glance / RemoteViews）安全復帰:**
+   - 端末起動時（`ACTION_BOOT_COMPLETED`）およびアプリ更新時（`ACTION_MY_PACKAGE_REPLACED`）に `FocusFlowWidgetProvider.refreshAll()` をトリガー。
+   - `safeUpdateWidget` / `updateFallbackWidget` 機構により、未ロード状態でも「Focus Flow」のヘッダーおよび「タスクを読み込み中...」のフォールバック表示を即座にレンダリングし、白画面・透明化・ANRを完全に根絶。
+
+### 20.2 AccessibilityService 安全機構・フェイルセーフ (Fail-Safe Whitelist)
+1. **システム必須パッケージの完全保護（Lockout Prevention）:**
+   - OS 設定（`com.android.settings`）、Google Play ストア（`com.android.vending`）、パッケージインストーラー（`com.google.android.packageinstaller`, `com.android.packageinstaller`）、電話・通話（`com.android.dialer`, `com.google.android.dialer`, `com.android.server.telecom`, `com.android.phone`）、SystemUI 等をハードコードされた `isProtectedSystemPackage` で厳格に除外。
+   - ユーザーが誤ってこれらのパッケージをブロックリストに登録した場合や、画面遷移の一過性状態であっても、`ruleBlocking()` が常に `null` を返却してオーバーレイ表示を無効化。設定アプリや緊急通話、ストアでの更新操作がブロックされる重大トラブルを100%防止。
+2. **オーバーレイ WindowManager 安全カプセル化:**
+   - `windowManager().addView()` および `windowManager().removeViewImmediate()` を `try-catch` ブロックで完全に保護。
+   - ライフサイクル中断時（`onInterrupt` / `onDestroy`）にも `gateOverlay = null` / `gateOverlayPackage = null` のクリーンアップを徹底し、オーバーレイのゴースト表示やリークを排除。
+
+### 20.3 オフラインファースト設計 & 課金ネットワーク耐性 (Offline Resilience)
+1. **100% ローカル完結のコア機能:**
+   - Todo管理、習慣記録、タイマー、集中制限判定、ウィジェット描画は一切の外部ネットワーク通信を必要とせず、完全オフラインで動作を保証。
+2. **ネットワーク不通時の課金エラー安全ハンドリング:**
+   - Paywall モーダル（`components/focus-flow/paywall-modal.tsx`）における購入（`handlePurchase`）および復元（`handleRestore`）の実行時、ネットワーク未接続や Google Play ストア通信失敗による未捕捉の例外（Unhandled Promise Rejection）をキャッチ。
+   - ローカライズされた親切なダイアログ（`paywall_offline_title`:「インターネットに接続されていません」、`paywall_offline_message`:「定期購入や復元を行うには、ネットワーク接続が必要です。通信環境をご確認のうえ、再度お試しください。」）を表示して安全に復帰。
+
+
