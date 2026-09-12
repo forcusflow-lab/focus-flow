@@ -9,7 +9,7 @@ import { finishPlatformPurchase, openSubscriptionManagement, usePlatformIAP, typ
 import { canSelectBlockedApp as canSelectBlockedAppForPlan, capBlockedApps, countUncompletedTodos, isFreeItemLimitReached } from "./limits";
 import { cancelDailyReminder } from "./reminders";
 import { createId, dayKey, getGateSummary, getHabitTimerProgress, getTodoSubtasks, isHabitCompleteOn, isHabitTimeReady, isTimedTodo, isTodoAchieved, isTodoTimeReady, nextRecurringDueDate } from "./utils";
-import { DEFAULT_DISPLAY_SETTINGS, DEFAULT_GATE_CONFIG, DisplaySettings, EMPTY_FOCUS_FLOW_DATA, FocusFlowData, GateConfig, Habit, Memo, Priority, ProgressUnit, RepeatRule, RequiredWindowMode, Todo, TodoSubtask } from "./types";
+import { DEFAULT_DISPLAY_SETTINGS, DEFAULT_GATE_CONFIG, DisplaySettings, EMPTY_FOCUS_FLOW_DATA, FocusFlowData, GateConfig, Habit, Memo, Priority, ProgressUnit, RepeatRule, RequiredWindowMode, Todo, TodoSubtask, WidgetBackgroundStyle } from "./types";
 
 const STORAGE_KEY = "@focus-flow/data-v1";
 const PERSONAL_UNLIMITED_BUILD = Constants.expoConfig?.extra?.personalUnlimitedBuild === true;
@@ -89,7 +89,8 @@ function normalizeData(value: unknown): FocusFlowData {
   const legacyWidgetOpacity = normalizedWidgetOpacity(savedDisplaySettings.widgetOpacity, savedDisplaySettings.widgetTransparency);
   const widgetBackgroundOpacity = typeof savedDisplaySettings.widgetBackgroundOpacity === "number" ? normalizedWidgetOpacity(savedDisplaySettings.widgetBackgroundOpacity, savedDisplaySettings.widgetTransparency) : legacyWidgetOpacity;
   const widgetCardOpacity = typeof savedDisplaySettings.widgetCardOpacity === "number" ? normalizedWidgetOpacity(savedDisplaySettings.widgetCardOpacity, "solid") : 100;
-  const widgetBackgroundStyle = savedDisplaySettings.widgetBackgroundStyle === "geometric" ? "geometric" : "solid";
+  // const widgetBackgroundStyle = savedDisplaySettings.widgetBackgroundStyle === "geometric" ? "geometric" : "solid"
+  const widgetBackgroundStyle: WidgetBackgroundStyle = (["geometric", "aurora", "grid"] as WidgetBackgroundStyle[]).includes(savedDisplaySettings.widgetBackgroundStyle as WidgetBackgroundStyle) ? (savedDisplaySettings.widgetBackgroundStyle as WidgetBackgroundStyle) : "solid";
   return { todos: Array.isArray(candidate.todos) ? candidate.todos.map((todo) => normalizedTodo(todo, legacyTodoIds, availableScheduleIds)) : [], habits: Array.isArray(candidate.habits) ? candidate.habits.map((habit) => normalizedHabit(habit, legacyHabitIds, availableScheduleIds)) : [], memos: Array.isArray(candidate.memos) ? candidate.memos : [], focusSessions: Array.isArray(candidate.focusSessions) ? candidate.focusSessions : [], gateConfig: { ...gateConfig, requiredTodoIds: [], requiredHabitIds: [], schedules }, displaySettings: { ...DEFAULT_DISPLAY_SETTINGS, ...savedDisplaySettings, appTheme: savedDisplaySettings.appTheme ?? savedDisplaySettings.theme ?? "mist", widgetOpacity: legacyWidgetOpacity, widgetBackgroundOpacity, widgetCardOpacity, widgetBackgroundStyle } };
 }
 

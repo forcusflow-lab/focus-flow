@@ -196,9 +196,13 @@ class FocusFlowWidgetProvider : AppWidgetProvider() {
     // ダークは明るいprimary、ライトは濃いprimaryを背景へ混ぜるため、双方で同等の階層感になる。
     val headerSurface = blendColors(background, primary, if (dark) 0.36f else 0.30f)
     val backgroundStyle = state.optString("widgetBackgroundStyle", "solid")
-    if (backgroundStyle == "geometric") {
+    if (backgroundStyle == "geometric" || backgroundStyle == "aurora" || backgroundStyle == "grid") {
       views.setViewVisibility(R.id.focus_flow_widget_bg_geometric, View.VISIBLE)
-      val bgRes = if (dark) R.drawable.widget_bg_geometric_dark else R.drawable.widget_bg_geometric
+      val bgRes = when (backgroundStyle) {
+        "aurora" -> if (dark) R.drawable.widget_bg_aurora_dark else R.drawable.widget_bg_aurora
+        "grid" -> if (dark) R.drawable.widget_bg_grid_dark else R.drawable.widget_bg_grid
+        else -> if (dark) R.drawable.widget_bg_geometric_dark else R.drawable.widget_bg_geometric
+      }
       views.setImageViewResource(R.id.focus_flow_widget_bg_geometric, bgRes)
       views.setInt(R.id.focus_flow_widget_bg_geometric, "setImageAlpha", opacity * 255 / 100)
       views.setInt(R.id.focus_flow_widget_card, "setBackgroundColor", Color.TRANSPARENT)

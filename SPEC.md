@@ -553,4 +553,47 @@
    - ドラッグ中（`onPanResponderMove`）は `setSliderValue(next)` と `onDragRef` によるプレビュー通知のみを行い、保存（`onChange`）やIPC・IO処理は一切行わない。
    - 指を離した時（`onPanResponderRelease`）にのみ確定値で `onChange(finalVal)` を呼び出し、永続化とウィジェット更新を実行。
 
+---
 
+## 17. カスタム背景システム & Pro（Plus）機能連携 (v38)
+
+### 17.1 背景スタイルのラインナップ
+Things 3、Craft、Fabulous等のモダンアプリをベンチマークとした洗練された4つの背景スタイルを提供。
+1. **無地 (`solid` / Free):**
+   - プレーンでクリーンなソリッド背景。
+   - ミニプレビューにおいて壁紙の装飾サークルを非表示にし、純粋な無地カードの透過性を正確に再現。
+2. **幾何学模様 (`geometric` / Pro):**
+   - 大きな円が重なり合う有機的で幾何学的なグラフィック。
+   - Light: `#B8D4E8` / `#D4C4E0`, Dark: `#2A4060` / `#3D2D50`。
+3. **オーロラ (`aurora` / Pro):**
+   - 幻想的なグラデーションと波打つ曲線のオーロラパターン。
+   - Light: `#BCE3DB` / `#D5C8E8` / `#F0D4DC`, Dark: `#1D3F38` / `#2D2545` / `#382035`。
+4. **ミニマルグリッド (`grid` / Pro):**
+   - 秩序と集中を高める精密なグリッド線（方眼調）パターン。
+   - Light: `#DCE5E0`（線幅0.8dp, アルファ0.65）, Dark: `#233830`。
+
+### 17.2 アプリ全体およびウィジェットへの適用設計
+1. **アプリ全体（`ScreenContainer` / `AppBackground`）:**
+   - 全ての主要画面（「今日」、Todos、Habits、設定、分析等）の最背面レイヤーとして `AppBackground` を描画。
+   - `pointerEvents="none"` および `StyleSheet.absoluteFill` により、操作への干渉と再描画負荷を完全に排除。
+   - カードの背景コントラストを維持し、Material 3 の可読性ガイドラインを遵守。
+2. **ホーム画面ウィジェット（`FocusFlowWidgetProvider.kt` / RemoteViews）:**
+   - `widget_bg_geometric`、`widget_bg_aurora`、`widget_bg_grid` の Vector Drawable（Light/Dark）を `R.id.focus_flow_widget_bg_geometric` に動的バインド。
+   - 設定された透過率（`widgetBackgroundOpacity`）に応じた `setImageAlpha` 制御を継承。
+
+### 17.3 Pro（Plus）課金連携
+1. **UI表現:**
+   - 選択オプション（幾何学模様、オーロラ、ミニマルグリッド）に 👑 Pro バッジを明示。
+2. **アクセス制御 & ガード:**
+   - 無料ユーザーが Pro 背景を選択した場合、Paywallダイアログ（`Alert.alert`）を表示し、Plus確認（`setPanel("plus")`）へスムーズに誘導。
+   - 設定値は保存されず、無償プランの範囲（`solid`）を保護。
+3. **Plusユーザー保護:**
+   - Plus契約中またはアンリミテッドビルド（`isPlus === true`）のユーザーのみ選択・永続化・ウィジェット反映が可能。
+
+### 17.4 多言語リソース集約
+- `widget_bg_style_aurora`（オーロラ / Aurora）
+- `widget_bg_style_grid`（ミニマルグリッド / Minimal Grid）
+- `bg_theme_title`（背景テーマ / Background theme）
+- `bg_theme_detail`（アプリ全体とホーム画面ウィジェットに共通で反映されます。 / Applies to the entire app and home screen widgets.）
+- `pro_badge`（👑 Pro）
+- `plus_feature_bg_style_message`（カスタム背景テーマ（幾何学模様・オーロラ・ミニマルグリッド）はPlus限定です。…）

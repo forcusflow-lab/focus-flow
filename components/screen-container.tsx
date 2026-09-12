@@ -40,6 +40,8 @@ export interface ScreenContainerProps extends ViewProps {
  * </ScreenContainer>
  * ```
  */
+import { AppBackground } from "./app-background";
+
 export function ScreenContainer({
   children,
   edges = ["top", "left", "right"],
@@ -62,6 +64,7 @@ export function ScreenContainer({
       {...props}
       style={[{ backgroundColor: palette.background }, style]}
     >
+      <AppBackground style={displaySettings.widgetBackgroundStyle} palette={palette} />
       <SafeAreaView
         edges={edges}
         className={cn("flex-1", safeAreaClassName)}

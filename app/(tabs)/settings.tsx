@@ -190,7 +190,7 @@ export default function SettingsScreen() {
     <ScrollView key={panel} contentContainerStyle={[styles.detailContent, { paddingBottom: Math.max(88, insets.bottom + 44) }]} showsVerticalScrollIndicator={false}>
       <PanelHeader title={panel === "limits" ? t("集中制限", "App limits") : panel === "appearance" ? t("表示と言語", "Appearance & language") : panel === "reminders" ? t("毎日のリマインダー", "Daily reminder") : t("Plusとサブスクリプション", "Plus & subscription")} onBack={() => setPanel("home")} />
       {panel === "limits" ? <LimitsPanel english={english} isIOS={isIOS} nativeReady={nativeReady} loadingApps={loadingApps} apps={apps} appPickerOpen={appPickerOpen} onToggleAppPicker={() => setAppPickerOpen((value) => !value)} selectedApps={gateConfig.blockedPackages} onSelectApp={selectGlobalApp} enabled={gateConfig.enabled} strictMode={Boolean(gateConfig.strictMode)} pendingCount={summary.pendingCount} scheduleActive={scheduleActive} accessibilityEnabled={accessibilityEnabled} diagnostics={diagnostics} schedules={gateConfig.schedules} routineOpenId={routineOpenId} onToggleEnabled={setGateEnabled} onToggleStrictMode={setStrictMode} onOpenAccessibility={() => void enableAndOpenAccessibility()} onRequestBatteryOptimization={confirmBatteryOptimization} onRefresh={() => void loadAndroidStatus()} onOpenAppInfo={() => void openAppDetailsSettings()} onAddSchedule={addSchedule} onToggleRoutine={setRoutineOpenId} onUpdateSchedule={updateSchedule} onRemoveSchedule={removeSchedule} canSelectBlockedApp={canSelectBlockedApp} /> : null}
-      {panel === "appearance" ? <><AppearancePanel english={english} displaySettings={displaySettings} onChange={setDisplaySettings} /><WidgetsPanel english={english} displaySettings={displaySettings} onBackgroundOpacity={(widgetBackgroundOpacity) => setDisplaySettings({ widgetBackgroundOpacity })} onCardOpacity={(widgetCardOpacity) => setDisplaySettings({ widgetCardOpacity })} onBackgroundStyle={(widgetBackgroundStyle) => setDisplaySettings({ widgetBackgroundStyle })} /></> : null}
+      {panel === "appearance" ? <><AppearancePanel english={english} displaySettings={displaySettings} isPlus={isPlus} onOpenPlus={() => setPanel("plus")} onChange={setDisplaySettings} /><WidgetsPanel english={english} displaySettings={displaySettings} isPlus={isPlus} onOpenPlus={() => setPanel("plus")} onBackgroundOpacity={(widgetBackgroundOpacity) => setDisplaySettings({ widgetBackgroundOpacity })} onCardOpacity={(widgetCardOpacity) => setDisplaySettings({ widgetCardOpacity })} onBackgroundStyle={(widgetBackgroundStyle) => setDisplaySettings({ widgetBackgroundStyle })} /></> : null}
       {panel === "reminders" ? <ReminderPanel english={english} enabled={Boolean(displaySettings.dailyReminderEnabled)} permission={reminderPermission} time={displaySettings.dailyReminderTime ?? "19:00"} busy={reminderBusy} onToggle={(enabled) => void toggleReminder(enabled)} onChangeTime={(time) => void updateReminderTime(time)} onTest={() => void (async () => { setReminderBusy(true); try { setReminderPermission((await sendReminderTest(english)) || reminderPermission); } finally { setReminderBusy(false); } })()} /> : null}
       {panel === "plus" ? <PlusPanel english={english} isIOS={isIOS} isPlus={isPlus} price={plusStatus.price} status={plusStatus.status} reason={plusStatus.reason} themeSetName={themeSetName} themeSets={displaySettings.savedThemeSets ?? []} onNameChange={setThemeSetName} onSaveSet={saveThemeSet} onApplySet={(set) => setDisplaySettings({ appTheme: set.appTheme, appearance: set.appearance, fontFamily: set.fontFamily ?? "system", widgetThemes: set.widgetThemes, widgetTextSizes: set.widgetTextSizes, widgetOpacity: set.widgetOpacity ?? 86, widgetBackgroundOpacity: set.widgetBackgroundOpacity ?? set.widgetOpacity ?? 86, widgetCardOpacity: set.widgetCardOpacity ?? 100, widgetBackgroundStyle: set.widgetBackgroundStyle ?? "solid" })} onRemoveSet={(id) => setDisplaySettings({ savedThemeSets: (displaySettings.savedThemeSets ?? []).filter((set) => set.id !== id) })} onPurchase={() => void purchasePlus()} onRestore={() => void restorePlus()} onRefresh={() => void refreshPlusStatus()} onManage={() => void managePlus()} /> : null}
     </ScrollView>
@@ -287,13 +287,21 @@ function LimitsPanel({ english, isIOS, nativeReady, loadingApps, apps, appPicker
   </>;
 }
 
-function AppearancePanel({ english, displaySettings, onChange }: { english: boolean; displaySettings: DisplaySettings; onChange: (input: Partial<DisplaySettings>) => void }) {
+function AppearancePanel({ english, displaySettings, onChange, isPlus, onOpenPlus }: { english: boolean; displaySettings: DisplaySettings; onChange: (input: Partial<DisplaySettings>) => void; isPlus?: boolean; onOpenPlus?: () => void }) {
   const t = (ja: string, en: string) => english ? en : ja;
   const palette = useFocusPalette();
   return <>
     <AppearancePreview english={english} displaySettings={displaySettings} />
     <SectionTitle title={t("テーマ", "Theme")} detail={t("アプリとホーム画面ウィジェットに共通で反映されます。", "Used by both the app and home-screen widget.")} />
     <View style={styles.choiceGrid}>{(Object.keys(APP_THEMES) as AppThemeId[]).map((theme) => <ThemeChoice key={theme} theme={theme} selected={resolvedAppTheme(displaySettings) === theme} english={english} palette={palette} onPress={() => onChange({ appTheme: theme, cardOpacity: "soft" })} />)}</View>
+    <SectionTitle title={t("背景テーマ", "Background theme")} detail={t("アプリ全体とホーム画面ウィジェットに共通で反映されます。", "Applies to the entire app and home screen widgets.")} />
+    <BackgroundStyleSelector
+      english={english}
+      selected={displaySettings.widgetBackgroundStyle ?? "solid"}
+      isPlus={Boolean(isPlus)}
+      onSelect={(style) => onChange({ widgetBackgroundStyle: style })}
+      onOpenPlus={onOpenPlus}
+    />
     <SectionTitle title={t("明るさ", "Appearance")} />
     <Segmented options={APPEARANCE_OPTIONS.map((item) => ({ key: item, label: item === "system" ? t("端末に連動", "System") : item === "light" ? t("ライト", "Light") : t("ダーク", "Dark") }))} selected={displaySettings.appearance ?? "system"} onSelect={(appearance) => onChange({ appearance: appearance as DisplaySettings["appearance"] })} />
     <SectionTitle title={t("文字", "Type")} detail={t("同じ見本で読みやすさを比べます。", "Compare readability with one consistent sample.")} />
@@ -420,7 +428,71 @@ function WidgetMiniPreview({ english, palette, backgroundOpacity, cardOpacity, b
   const bgAlpha = backgroundOpacity / 100;
   const cardAlpha = cardOpacity / 100;
   const headerSurface = palette.isDark ? blendHex(palette.background, palette.primary, 0.36) : blendHex(palette.background, palette.primary, 0.30);
-  return <View style={appearanceStyles.widgetPreview}><View style={appearanceStyles.widgetPreviewWallpaper}><View style={[appearanceStyles.widgetPreviewGradA, { backgroundColor: palette.isDark ? "#2A4060" : "#B8D4E8" }]} /><View style={[appearanceStyles.widgetPreviewGradB, { backgroundColor: palette.isDark ? "#3D2D50" : "#D4C4E0" }]} /><View style={[appearanceStyles.widgetPreviewWidget, { backgroundColor: backgroundStyle === "geometric" ? "transparent" : withAlpha(palette.background, bgAlpha), borderColor: withAlpha(palette.border, bgAlpha) }]}>{backgroundStyle === "geometric" ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, appearanceStyles.widgetPreviewGeometricBase, { backgroundColor: palette.background, opacity: bgAlpha }]}><View style={[appearanceStyles.widgetPreviewGradA, { backgroundColor: palette.isDark ? "#2A4060" : "#B8D4E8" }]} /><View style={[appearanceStyles.widgetPreviewGradB, { backgroundColor: palette.isDark ? "#3D2D50" : "#D4C4E0" }]} /></View> : null}<View style={[appearanceStyles.widgetPreviewHeader, { backgroundColor: withAlpha(headerSurface, backgroundStyle === "geometric" ? bgAlpha * 0.45 : bgAlpha) }]}><Text style={[appearanceStyles.widgetPreviewHeaderText, { color: palette.text }]}>{t("今日の目標", "Today's goals")}</Text><Text style={[appearanceStyles.widgetPreviewHeaderSub, { color: palette.muted }]}>{t("終日", "All day")}</Text></View><View style={[appearanceStyles.widgetPreviewDivider, { backgroundColor: withAlpha(palette.border, bgAlpha) }]} /><View style={[appearanceStyles.widgetPreviewRow, { backgroundColor: withAlpha(palette.surface, cardAlpha) }]}><View style={[appearanceStyles.widgetPreviewRail, { backgroundColor: palette.primary }]} /><View style={[appearanceStyles.widgetPreviewCheck, { borderColor: palette.primary }]} /><Text style={[appearanceStyles.widgetPreviewItemText, { color: palette.text }]} numberOfLines={1}>{t("朝のストレッチ", "Morning stretch")}</Text><Text style={[appearanceStyles.widgetPreviewBadge, { color: palette.muted }]}>{t("終日", "All day")}</Text></View><View style={[appearanceStyles.widgetPreviewDivider, { backgroundColor: withAlpha(palette.border, cardAlpha) }]} /><View style={[appearanceStyles.widgetPreviewRow, { backgroundColor: withAlpha(palette.surface, cardAlpha) }]}><View style={[appearanceStyles.widgetPreviewRail, { backgroundColor: "#7AADCF" }]} /><View style={[appearanceStyles.widgetPreviewCheck, { borderColor: "#7AADCF" }]} /><Text style={[appearanceStyles.widgetPreviewItemText, { color: palette.text }]} numberOfLines={1}>{t("読書", "Reading")}</Text><Text style={[appearanceStyles.widgetPreviewCounter, { color: palette.muted }]}>1/3</Text></View></View></View></View>;
+  const isCustomBg = backgroundStyle !== "solid";
+  return <View style={appearanceStyles.widgetPreview}><View style={appearanceStyles.widgetPreviewWallpaper}>{isCustomBg ? <><View style={[appearanceStyles.widgetPreviewGradA, { backgroundColor: palette.isDark ? "#2A4060" : "#B8D4E8" }]} /><View style={[appearanceStyles.widgetPreviewGradB, { backgroundColor: palette.isDark ? "#3D2D50" : "#D4C4E0" }]} /></> : null}<View style={[appearanceStyles.widgetPreviewWidget, { backgroundColor: isCustomBg ? "transparent" : withAlpha(palette.background, bgAlpha), borderColor: withAlpha(palette.border, bgAlpha) }]}>{backgroundStyle === "geometric" ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, appearanceStyles.widgetPreviewGeometricBase, { backgroundColor: palette.background, opacity: bgAlpha }]}><View style={[appearanceStyles.widgetPreviewGradA, { backgroundColor: palette.isDark ? "#2A4060" : "#B8D4E8" }]} /><View style={[appearanceStyles.widgetPreviewGradB, { backgroundColor: palette.isDark ? "#3D2D50" : "#D4C4E0" }]} /></View> : backgroundStyle === "aurora" ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, appearanceStyles.widgetPreviewGeometricBase, { backgroundColor: palette.background, opacity: bgAlpha }]}><View style={[appearanceStyles.widgetPreviewAuroraA, { backgroundColor: palette.isDark ? "#1D3F38" : "#BCE3DB" }]} /><View style={[appearanceStyles.widgetPreviewAuroraB, { backgroundColor: palette.isDark ? "#2D2545" : "#D5C8E8" }]} /><View style={[appearanceStyles.widgetPreviewAuroraC, { backgroundColor: palette.isDark ? "#382035" : "#F0D4DC" }]} /></View> : backgroundStyle === "grid" ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, appearanceStyles.widgetPreviewGeometricBase, { backgroundColor: palette.background, opacity: bgAlpha }]}><View style={[appearanceStyles.widgetPreviewGridLine, { top: 26, borderColor: palette.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)" }]} /><View style={[appearanceStyles.widgetPreviewGridLine, { top: 52, borderColor: palette.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)" }]} /><View style={[appearanceStyles.widgetPreviewGridLine, { top: 78, borderColor: palette.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)" }]} /><View style={[appearanceStyles.widgetPreviewGridLineV, { left: 75, borderColor: palette.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)" }]} /><View style={[appearanceStyles.widgetPreviewGridLineV, { left: 150, borderColor: palette.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)" }]} /></View> : null}<View style={[appearanceStyles.widgetPreviewHeader, { backgroundColor: withAlpha(headerSurface, isCustomBg ? bgAlpha * 0.45 : bgAlpha) }]}><Text style={[appearanceStyles.widgetPreviewHeaderText, { color: palette.text }]}>{t("今日の目標", "Today's goals")}</Text><Text style={[appearanceStyles.widgetPreviewHeaderSub, { color: palette.muted }]}>{t("終日", "All day")}</Text></View><View style={[appearanceStyles.widgetPreviewDivider, { backgroundColor: withAlpha(palette.border, bgAlpha) }]} /><View style={[appearanceStyles.widgetPreviewRow, { backgroundColor: withAlpha(palette.surface, cardAlpha) }]}><View style={[appearanceStyles.widgetPreviewRail, { backgroundColor: palette.primary }]} /><View style={[appearanceStyles.widgetPreviewCheck, { borderColor: palette.primary }]} /><Text style={[appearanceStyles.widgetPreviewItemText, { color: palette.text }]} numberOfLines={1}>{t("朝のストレッチ", "Morning stretch")}</Text><Text style={[appearanceStyles.widgetPreviewBadge, { color: palette.muted }]}>{t("終日", "All day")}</Text></View><View style={[appearanceStyles.widgetPreviewDivider, { backgroundColor: withAlpha(palette.border, cardAlpha) }]} /><View style={[appearanceStyles.widgetPreviewRow, { backgroundColor: withAlpha(palette.surface, cardAlpha) }]}><View style={[appearanceStyles.widgetPreviewRail, { backgroundColor: "#7AADCF" }]} /><View style={[appearanceStyles.widgetPreviewCheck, { borderColor: "#7AADCF" }]} /><Text style={[appearanceStyles.widgetPreviewItemText, { color: palette.text }]} numberOfLines={1}>{t("読書", "Reading")}</Text><Text style={[appearanceStyles.widgetPreviewCounter, { color: palette.muted }]}>1/3</Text></View></View></View></View>;
+}
+
+function BackgroundStyleSelector({ english, selected, isPlus, onSelect, onOpenPlus }: { english: boolean; selected: WidgetBackgroundStyle; isPlus: boolean; onSelect: (value: WidgetBackgroundStyle) => void; onOpenPlus?: () => void }) {
+  const t = (ja: string, en: string) => english ? en : ja;
+  const palette = useFocusPalette();
+  const options: { key: WidgetBackgroundStyle; label: string; isPro: boolean }[] = [
+    { key: "solid", label: t("無地", "Solid"), isPro: false },
+    { key: "geometric", label: t("幾何学模様", "Geometric"), isPro: true },
+    { key: "aurora", label: t("オーロラ", "Aurora"), isPro: true },
+    { key: "grid", label: t("ミニマルグリッド", "Minimal Grid"), isPro: true },
+  ];
+
+  const handlePress = (option: { key: WidgetBackgroundStyle; isPro: boolean }) => {
+    if (option.isPro && !isPlus) {
+      Alert.alert(
+        t("Plus限定の機能です", "Plus Feature"),
+        t(
+          "カスタム背景テーマ（幾何学模様・オーロラ・ミニマルグリッド）はPlus限定です。Plusに登録してアプリとウィジェットをカスタマイズしますか？",
+          "Custom background themes (Geometric, Aurora, Minimal Grid) are available with Plus. Upgrade to customize your app and widgets?"
+        ),
+        [
+          { text: t("キャンセル", "Cancel"), style: "cancel" },
+          { text: t("Plusを確認", "View Plus"), onPress: () => onOpenPlus?.() },
+        ]
+      );
+      return;
+    }
+    onSelect(option.key);
+  };
+
+  return (
+    <View style={appearanceStyles.bgStyleGrid}>
+      {options.map((option) => {
+        const active = selected === option.key;
+        return (
+          <TouchableOpacity
+            key={option.key}
+            onPress={() => handlePress(option)}
+            style={[
+              appearanceStyles.bgStyleChip,
+              {
+                backgroundColor: active ? palette.primarySoft : palette.elevated,
+                borderColor: active ? palette.primary : palette.border,
+              },
+            ]}
+          >
+            <View style={appearanceStyles.bgStyleChipLabelRow}>
+              <Text style={[appearanceStyles.bgStyleChipText, { color: active ? palette.primary : palette.text }]}>
+                {option.label}
+              </Text>
+              {option.isPro ? (
+                <View style={[appearanceStyles.bgStyleProBadge, { backgroundColor: isPlus ? palette.primarySoft : (palette.isDark ? "#3E2A18" : "#FFF4E3"), borderColor: isPlus ? palette.primary : "#E5A93C" }]}>
+                  <Text style={[appearanceStyles.bgStyleProBadgeText, { color: isPlus ? palette.primary : "#B87A10" }]}>
+                    👑 Pro
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
 }
 
 function blendHex(base: string, blend: string, ratio: number): string {
@@ -441,7 +513,7 @@ function withAlpha(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha.toFixed(2)})`;
 }
 
-function WidgetsPanel({ english, displaySettings, onBackgroundOpacity, onCardOpacity, onBackgroundStyle }: { english: boolean; displaySettings: DisplaySettings; onBackgroundOpacity: (value: number) => void; onCardOpacity: (value: number) => void; onBackgroundStyle: (value: WidgetBackgroundStyle) => void }) {
+function WidgetsPanel({ english, displaySettings, isPlus, onOpenPlus, onBackgroundOpacity, onCardOpacity, onBackgroundStyle }: { english: boolean; displaySettings: DisplaySettings; isPlus?: boolean; onOpenPlus?: () => void; onBackgroundOpacity: (value: number) => void; onCardOpacity: (value: number) => void; onBackgroundStyle: (value: WidgetBackgroundStyle) => void }) {
   const t = (ja: string, en: string) => english ? en : ja;
   const palette = useFocusPalette();
   const bgValue = displaySettings.widgetBackgroundOpacity ?? displaySettings.widgetOpacity ?? 86;
@@ -460,7 +532,7 @@ function WidgetsPanel({ english, displaySettings, onBackgroundOpacity, onCardOpa
   const previewBgStyle = localBgStyle;
   return <>
     <SectionTitle title={t("ホーム画面ウィジェット", "Home screen widget")} detail={t("テーマと文字はアプリ本体に連動します。透過率はWidgetだけで調整できます。", "Theme and type follow the app. Opacity can be adjusted for the widget.")} />
-    <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}><View style={appearanceStyles.widgetFollowRow}><View style={[styles.selectorIcon, { backgroundColor: palette.primarySoft }]}><MaterialIcons name="palette" size={20} color={palette.primary} /></View><View style={styles.selectorCopy}><Text style={[styles.selectorTitle, { color: palette.text }]}>{t("本体のテーマを使用", "Follow app theme")}</Text><Text style={[styles.selectorDetail, { color: palette.muted }]}>{english ? APP_THEMES[resolvedAppTheme(displaySettings)].label.en : APP_THEMES[resolvedAppTheme(displaySettings)].label.ja}</Text></View><MaterialIcons name="link" size={20} color={palette.muted} /></View><View style={[styles.widgetEditor, { borderTopColor: palette.border }]}><WidgetMiniPreview english={english} palette={palette} backgroundOpacity={previewBg} cardOpacity={previewCard} backgroundStyle={previewBgStyle} /><View style={appearanceStyles.bgStyleSection}><Text style={[styles.settingTitle, { color: palette.text, marginBottom: 8 }]}>{t("背景スタイル", "Background style")}</Text><Segmented options={[{ key: "solid", label: t("無地", "Solid") }, { key: "geometric", label: t("幾何学模様", "Geometric") }]} selected={previewBgStyle} onSelect={(key) => { const next = key as WidgetBackgroundStyle; setLocalBgStyle(next); onBackgroundStyle(next); }} /></View><OpacitySlider english={english} label={t("背景とタイトル", "Background & title")} detail={t("Widget全体とタイトル行に同じ透過率を使います", "Used by the whole widget and its title row")} value={bgValue} onChange={(val) => { setCommittedBgOpacity(val); onBackgroundOpacity(val); }} onDrag={setDragBgOpacity} /><OpacitySlider english={english} label={t("項目の背景", "Item row background")} detail={t("Todo・習慣の行だけを独立して調整します", "Adjusts Todo and Habit rows separately")} value={cardValue} onChange={(val) => { setCommittedCardOpacity(val); onCardOpacity(val); }} onDrag={setDragCardOpacity} /></View></View>
+    <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}><View style={appearanceStyles.widgetFollowRow}><View style={[styles.selectorIcon, { backgroundColor: palette.primarySoft }]}><MaterialIcons name="palette" size={20} color={palette.primary} /></View><View style={styles.selectorCopy}><Text style={[styles.selectorTitle, { color: palette.text }]}>{t("本体のテーマを使用", "Follow app theme")}</Text><Text style={[styles.selectorDetail, { color: palette.muted }]}>{english ? APP_THEMES[resolvedAppTheme(displaySettings)].label.en : APP_THEMES[resolvedAppTheme(displaySettings)].label.ja}</Text></View><MaterialIcons name="link" size={20} color={palette.muted} /></View><View style={[styles.widgetEditor, { borderTopColor: palette.border }]}><WidgetMiniPreview english={english} palette={palette} backgroundOpacity={previewBg} cardOpacity={previewCard} backgroundStyle={previewBgStyle} /><View style={appearanceStyles.bgStyleSection}><Text style={[styles.settingTitle, { color: palette.text, marginBottom: 8 }]}>{t("背景スタイル", "Background style")}</Text><BackgroundStyleSelector english={english} selected={previewBgStyle} isPlus={Boolean(isPlus)} onSelect={(key) => { setLocalBgStyle(key); onBackgroundStyle(key); }} onOpenPlus={onOpenPlus} /></View><OpacitySlider english={english} label={t("背景とタイトル", "Background & title")} detail={t("Widget全体とタイトル行に同じ透過率を使います", "Used by the whole widget and its title row")} value={bgValue} onChange={(val) => { setCommittedBgOpacity(val); onBackgroundOpacity(val); }} onDrag={setDragBgOpacity} /><OpacitySlider english={english} label={t("項目の背景", "Item row background")} detail={t("Todo・習慣の行だけを独立して調整します", "Adjusts Todo and Habit rows separately")} value={cardValue} onChange={(val) => { setCommittedCardOpacity(val); onCardOpacity(val); }} onDrag={setDragCardOpacity} /></View></View>
   </>;
 }
 
@@ -589,5 +661,17 @@ const appearanceStyles = StyleSheet.create({
   sliderWrap: { paddingTop: 13, paddingBottom: 4 }, sliderHeading: { minHeight: 38, flexDirection: "row", alignItems: "flex-start", gap: 10 }, sliderValue: { fontSize: 18, lineHeight: 23, fontWeight: "900" }, sliderTrack: { height: 8, borderRadius: 4, marginTop: 9, marginHorizontal: 2, justifyContent: "center" }, sliderFill: { position: "absolute", left: 0, height: 8, borderRadius: 4 }, sliderThumb: { position: "absolute", width: 22, height: 22, borderRadius: 11, borderWidth: 2, top: -7 }, sliderMarks: { flexDirection: "row", justifyContent: "space-between", marginTop: 10, paddingHorizontal: 2 }, sliderMark: { fontSize: 10, lineHeight: 13, fontWeight: "700" }, sliderHint: { fontSize: 10, lineHeight: 14, marginTop: 4 },
   completedToggleRow: { minHeight: 64, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, borderBottomWidth: 0 }, completedToggleTitle: { fontSize: 14, lineHeight: 20, fontWeight: "800" }, completedToggleDetail: { fontSize: 11, lineHeight: 16, marginTop: 2, fontWeight: "700" }, opacitySummary: { minHeight: 54, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 10 }, opacityStep: { width: 44, height: 44, borderRadius: 13, borderWidth: 1, alignItems: "center", justifyContent: "center" }, opacityStepText: { fontSize: 21, lineHeight: 24, fontWeight: "700" }, opacityValue: { flex: 1, minWidth: 0, alignItems: "center" }, disabledControl: { opacity: 0.42 }, opacityPresets: { flexDirection: "row", gap: 7 }, opacityPreset: { flex: 1, minHeight: 40, alignItems: "center", justifyContent: "center", borderRadius: 12, borderWidth: 1 }, opacityPresetText: { fontSize: 12, fontWeight: "800" },
   widgetPreview: { marginTop: 14, marginBottom: 6, borderRadius: 16, overflow: "hidden" as const }, widgetPreviewWallpaper: { paddingHorizontal: 10, paddingVertical: 12, position: "relative" as const }, widgetPreviewGradA: { position: "absolute" as const, top: -30, right: -20, width: 160, height: 160, borderRadius: 80, opacity: 0.55 }, widgetPreviewGradB: { position: "absolute" as const, bottom: -40, left: -10, width: 140, height: 140, borderRadius: 70, opacity: 0.45 }, widgetPreviewWidget: { borderRadius: 14, borderWidth: 1, overflow: "hidden" as const }, widgetPreviewHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 10, paddingVertical: 7 }, widgetPreviewHeaderText: { fontSize: 12, fontWeight: "900" }, widgetPreviewHeaderSub: { fontSize: 9, fontWeight: "700" }, widgetPreviewDivider: { height: StyleSheet.hairlineWidth }, widgetPreviewRow: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 6, paddingVertical: 7 }, widgetPreviewRail: { width: 3, height: 22, borderRadius: 1.5 }, widgetPreviewCheck: { width: 14, height: 14, borderWidth: 1.4, borderRadius: 4 }, widgetPreviewItemText: { flex: 1, fontSize: 11, fontWeight: "800" }, widgetPreviewBadge: { fontSize: 8, fontWeight: "700" }, widgetPreviewCounter: { fontSize: 9, fontWeight: "800" },
-  widgetPreviewGeometricBase: { borderRadius: 14, overflow: "hidden" as const }, bgStyleSection: { paddingTop: 10, paddingBottom: 4 },
+  widgetPreviewGeometricBase: { borderRadius: 14, overflow: "hidden" as const },
+  widgetPreviewAuroraA: { position: "absolute" as const, top: -20, left: -20, width: 180, height: 120, borderRadius: 60, opacity: 0.50, transform: [{ rotate: "-15deg" }] },
+  widgetPreviewAuroraB: { position: "absolute" as const, bottom: -20, right: -20, width: 170, height: 110, borderRadius: 55, opacity: 0.45, transform: [{ rotate: "20deg" }] },
+  widgetPreviewAuroraC: { position: "absolute" as const, top: 20, right: 30, width: 100, height: 80, borderRadius: 40, opacity: 0.35 },
+  widgetPreviewGridLine: { position: "absolute" as const, left: 0, right: 0, borderBottomWidth: StyleSheet.hairlineWidth * 1.5 },
+  widgetPreviewGridLineV: { position: "absolute" as const, top: 0, bottom: 0, borderRightWidth: StyleSheet.hairlineWidth * 1.5 },
+  bgStyleSection: { paddingTop: 10, paddingBottom: 4 },
+  bgStyleGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
+  bgStyleChip: { flexBasis: "48%", flexGrow: 1, minHeight: 46, borderRadius: 12, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 8, justifyContent: "center" },
+  bgStyleChipLabelRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 6 },
+  bgStyleChipText: { fontSize: 12, fontWeight: "800" },
+  bgStyleProBadge: { borderRadius: 8, borderWidth: 1, paddingHorizontal: 6, paddingVertical: 2 },
+  bgStyleProBadgeText: { fontSize: 9, fontWeight: "900" },
 });

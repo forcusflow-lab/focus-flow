@@ -45,6 +45,13 @@
   <string name="widget_bg_style_title">背景スタイル</string>
   <string name="widget_bg_style_solid">無地</string>
   <string name="widget_bg_style_geometric">幾何学模様</string>
+  <string name="widget_bg_style_aurora">オーロラ</string>
+  <string name="widget_bg_style_grid">ミニマルグリッド</string>
+  <string name="bg_theme_title">背景テーマ</string>
+  <string name="bg_theme_detail">アプリ全体とホーム画面ウィジェットに共通で反映されます</string>
+  <string name="pro_badge">Pro</string>
+  <string name="plus_feature_title">Plus限定の機能です</string>
+  <string name="plus_feature_bg_style_message">カスタム背景テーマ（幾何学模様・オーロラ・ミニマルグリッド）はPlus限定です。Plusに登録してアプリとウィジェットをカスタマイズしますか？</string>
 
   <!-- 習慣（Habit）画面 -->
   <string name="habit_today_progress">今日 %1$d/%2$d 回</string>

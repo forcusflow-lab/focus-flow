@@ -43,6 +43,13 @@ export const R = {
     widget_bg_style_title: "widget_bg_style_title",
     widget_bg_style_solid: "widget_bg_style_solid",
     widget_bg_style_geometric: "widget_bg_style_geometric",
+    widget_bg_style_aurora: "widget_bg_style_aurora",
+    widget_bg_style_grid: "widget_bg_style_grid",
+    bg_theme_title: "bg_theme_title",
+    bg_theme_detail: "bg_theme_detail",
+    pro_badge: "pro_badge",
+    plus_feature_title: "plus_feature_title",
+    plus_feature_bg_style_message: "plus_feature_bg_style_message",
     // 習慣（Habit）画面
     habit_today_progress: "habit_today_progress",
     habit_streak: "habit_streak",
@@ -208,6 +215,34 @@ export const STRING_RESOURCES: Record<StringResourceId, LocalizedString> = {
   widget_bg_style_geometric: {
     ja: "幾何学模様",
     en: "Geometric",
+  },
+  widget_bg_style_aurora: {
+    ja: "オーロラ",
+    en: "Aurora",
+  },
+  widget_bg_style_grid: {
+    ja: "ミニマルグリッド",
+    en: "Minimal Grid",
+  },
+  bg_theme_title: {
+    ja: "背景テーマ",
+    en: "Background theme",
+  },
+  bg_theme_detail: {
+    ja: "アプリ全体とホーム画面ウィジェットに共通で反映されます",
+    en: "Applies across the app and home-screen widgets",
+  },
+  pro_badge: {
+    ja: "Pro",
+    en: "Pro",
+  },
+  plus_feature_title: {
+    ja: "Plus限定の機能です",
+    en: "Plus feature",
+  },
+  plus_feature_bg_style_message: {
+    ja: "カスタム背景テーマ（幾何学模様・オーロラ・ミニマルグリッド）はPlus限定です。Plusに登録してアプリとウィジェットをカスタマイズしますか？",
+    en: "Custom background themes (Geometric, Aurora, Minimal Grid) are available with Plus. Upgrade to customize your app and widgets?",
   },
   // 習慣画面
   habit_today_progress: {
