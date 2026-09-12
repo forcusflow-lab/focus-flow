@@ -51,6 +51,10 @@ type FocusFlowContextValue = FocusFlowData & {
   restorePlus: () => Promise<void>;
   managePlus: () => Promise<void>;
   purchaseEarlyCompletion: (target: EarlyCompletionTarget) => Promise<MutationResult>;
+  isPlus: boolean;
+  paywallVisible: boolean;
+  openPaywall: () => void;
+  closePaywall: () => void;
 };
 
 const FocusFlowContext = createContext<FocusFlowContextValue | null>(null);
@@ -258,6 +262,15 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
   const setDisplaySettings = useCallback((input: Partial<DisplaySettings>) => commit((current) => ({ ...current, displaySettings: { ...current.displaySettings, ...input } })), [commit]);
   const clearAllData = useCallback(() => { setData({ todos: [], habits: [], memos: [], focusSessions: [], gateConfig: { ...DEFAULT_GATE_CONFIG, blockedPackages: [], requiredTodoIds: [], requiredHabitIds: [], schedules: [] }, displaySettings: { ...DEFAULT_DISPLAY_SETTINGS } }); void AsyncStorage.removeItem(STORAGE_KEY); void saveAppDataBackup(""); void cancelDailyReminder(); }, []);
 
+  const [paywallVisible, setPaywallVisible] = useState(false);
+  const openPaywall = useCallback(() => setPaywallVisible(true), []);
+  const closePaywall = useCallback(() => setPaywallVisible(false), []);
+  useEffect(() => {
+    if (isPlus && paywallVisible) {
+      setPaywallVisible(false);
+    }
+  }, [isPlus, paywallVisible]);
+
   const refreshPlusStatus = useCallback(async () => { if (PERSONAL_UNLIMITED_BUILD) { applyPlusStatus(PERSONAL_PLUS_STATUS); setEarlyCompletionStatus({ status: "unavailable", productId: EARLY_COMPLETION_PRODUCT_ID, reason: "STORE_PRODUCT_UNAVAILABLE" }); return; } if (Platform.OS === "web") { applyPlusStatus({ status: "unavailable", active: false, productId: PLUS_PRODUCT_ID, reason: "NATIVE_BUILD_REQUIRED" }); setEarlyCompletionStatus({ status: "unavailable", productId: EARLY_COMPLETION_PRODUCT_ID, reason: "NATIVE_BUILD_REQUIRED" }); return; } if (!connected) { applyPlusStatus({ status: "loading", active: false, productId: PLUS_PRODUCT_ID }); await reconnect(); return; } await Promise.all([fetchProducts({ skus: [PLUS_PRODUCT_ID], type: "subs" }), fetchProducts({ skus: [EARLY_COMPLETION_PRODUCT_ID], type: "in-app" }), getActiveSubscriptions([PLUS_PRODUCT_ID])]); }, [applyPlusStatus, connected, fetchProducts, getActiveSubscriptions, reconnect]);
   const purchasePlus = useCallback(async () => { if (PERSONAL_UNLIMITED_BUILD) { applyPlusStatus(PERSONAL_PLUS_STATUS); return; } if (Platform.OS === "web" || !connected || !plusProduct) { applyPlusStatus({ status: "unavailable", active: false, productId: PLUS_PRODUCT_ID, reason: "STORE_PRODUCT_UNAVAILABLE" }); return; } const offerToken = plusProduct.subscriptionOffers?.find((offer) => offer.offerTokenAndroid)?.offerTokenAndroid; if (Platform.OS === "android" && !offerToken) { applyPlusStatus({ status: "unavailable", active: false, productId: PLUS_PRODUCT_ID, reason: "ANDROID_OFFER_UNAVAILABLE" }); return; } setPlusStatus((current) => ({ ...current, status: "loading" })); await requestPurchase({ type: "subs", request: { apple: { sku: PLUS_PRODUCT_ID }, google: { skus: [PLUS_PRODUCT_ID], subscriptionOffers: offerToken ? [{ sku: PLUS_PRODUCT_ID, offerToken }] : [] } } }); }, [applyPlusStatus, connected, plusProduct, requestPurchase]);
   const restorePlus = useCallback(async () => { if (PERSONAL_UNLIMITED_BUILD) { applyPlusStatus(PERSONAL_PLUS_STATUS); return; } if (Platform.OS === "web" || !connected) { applyPlusStatus({ status: "unavailable", active: false, productId: PLUS_PRODUCT_ID, reason: "NATIVE_BUILD_REQUIRED" }); return; } setPlusStatus((current) => ({ ...current, status: "loading" })); await restorePurchases(); await getActiveSubscriptions([PLUS_PRODUCT_ID]); }, [applyPlusStatus, connected, getActiveSubscriptions, restorePurchases]);
@@ -322,7 +335,7 @@ export function FocusFlowProvider({ children }: { children: ReactNode }) {
   useEffect(() => { if (!isReady) return; void applyWidgetActions(); void refreshPlusStatus(); const subscription = AppState.addEventListener("change", (state) => { if (state === "active") { void applyWidgetActions(); applyElapsedTimers(); void refreshPlusStatus(); } }); return () => subscription.remove(); }, [applyElapsedTimers, applyWidgetActions, isReady, refreshPlusStatus]);
   useEffect(() => { if (isReady) void syncAndroidGate(data); }, [data, isReady]);
 
-  const value = useMemo(() => ({ ...data, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo, addHabit, updateHabit, toggleHabit, startHabitTimer, pauseHabitTimer, adjustHabitProgress, deleteHabit, addMemo, updateMemo, deleteMemo, addFocusSession, setGateConfig, canSelectBlockedApp, setDisplaySettings, clearAllData, plusStatus, earlyCompletionStatus, earlyCompletionPrice: earlyCompletionProduct?.displayPrice, refreshPlusStatus, purchasePlus, restorePlus, managePlus, purchaseEarlyCompletion }), [data, isReady, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo, addHabit, updateHabit, toggleHabit, startHabitTimer, pauseHabitTimer, adjustHabitProgress, deleteHabit, addMemo, updateMemo, deleteMemo, addFocusSession, setGateConfig, canSelectBlockedApp, setDisplaySettings, clearAllData, plusStatus, earlyCompletionStatus, earlyCompletionProduct?.displayPrice, refreshPlusStatus, purchasePlus, restorePlus, managePlus, purchaseEarlyCompletion]);
+  const value = useMemo(() => ({ ...data, isReady, isPlus, paywallVisible, openPaywall, closePaywall, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo, addHabit, updateHabit, toggleHabit, startHabitTimer, pauseHabitTimer, adjustHabitProgress, deleteHabit, addMemo, updateMemo, deleteMemo, addFocusSession, setGateConfig, canSelectBlockedApp, setDisplaySettings, clearAllData, plusStatus, earlyCompletionStatus, earlyCompletionPrice: earlyCompletionProduct?.displayPrice, refreshPlusStatus, purchasePlus, restorePlus, managePlus, purchaseEarlyCompletion }), [data, isReady, isPlus, paywallVisible, openPaywall, closePaywall, addTodo, updateTodo, toggleTodo, adjustTodoProgress, toggleSubtask, deleteTodo, addHabit, updateHabit, toggleHabit, startHabitTimer, pauseHabitTimer, adjustHabitProgress, deleteHabit, addMemo, updateMemo, deleteMemo, addFocusSession, setGateConfig, canSelectBlockedApp, setDisplaySettings, clearAllData, plusStatus, earlyCompletionStatus, earlyCompletionProduct?.displayPrice, refreshPlusStatus, purchasePlus, restorePlus, managePlus, purchaseEarlyCompletion]);
   return <FocusFlowContext.Provider value={value}>{children}</FocusFlowContext.Provider>;
 }
 

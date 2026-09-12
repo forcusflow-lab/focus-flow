@@ -68,6 +68,33 @@
   <string name="plan_feature_free_bg">無地背景のみ</string>
   <string name="plan_feature_free_themes">基本カラーテーマ</string>
 
+  <!-- Pro専用 Paywall（アップグレード案内）画面 -->
+  <string name="paywall_hero_title">Focus Flow Pro</string>
+  <string name="paywall_hero_tagline">日々の集中と習慣を、最高峰の心地よさへ。</string>
+  <string name="paywall_feature_bg_title">カスタム背景テーマ</string>
+  <string name="paywall_feature_bg_desc">幾何学模様・オーロラ・グリッドでアプリとウィジェットを彩る</string>
+  <string name="paywall_feature_widget_title">ウィジェット透過率の微調整</string>
+  <string name="paywall_feature_widget_desc">壁紙に馴染む透け感やカードの透明度をミリ単位で調整</string>
+  <string name="paywall_feature_unlimited_title">Todo・習慣・メモが無制限</string>
+  <string name="paywall_feature_unlimited_desc">無料枠の上限なく、日々の目標とルーティンをすべて管理</string>
+  <string name="paywall_feature_limits_title">制限アプリ無制限＆テーマセット保存</string>
+  <string name="paywall_feature_limits_desc">制限アプリを無制限に解除し、現在の外観をテーマセットとして保存</string>
+  <string name="paywall_plan_annual_title">年額プラン</string>
+  <string name="paywall_plan_annual_badge">おすすめ / ベストバリュー</string>
+  <string name="paywall_plan_annual_price">¥3,800 / 年</string>
+  <string name="paywall_plan_annual_sub">約¥316 / 月（34%お得）</string>
+  <string name="paywall_plan_monthly_title">月額プラン</string>
+  <string name="paywall_plan_monthly_price">¥480 / 月</string>
+  <string name="paywall_plan_monthly_sub">いつでも解約可能</string>
+  <string name="paywall_cta_trial">7日間の無料体験を開始</string>
+  <string name="paywall_cta_start">Proを開始する</string>
+  <string name="paywall_cancel_anytime">Google Play の定期購入設定からいつでも解約できます</string>
+  <string name="paywall_restore">購入を復元</string>
+  <string name="paywall_terms">利用規約</string>
+  <string name="paywall_privacy">プライバシーポリシー</string>
+  <string name="paywall_active_title">Proをご利用中です</string>
+  <string name="paywall_active_desc">すべてのPro機能と上限解除をご利用いただけます。</string>
+
   <!-- 習慣（Habit）画面 -->
   <string name="habit_today_progress">今日 %1$d/%2$d 回</string>
   <string name="habit_streak">%1$d日連続</string>

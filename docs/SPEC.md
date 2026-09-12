@@ -641,3 +641,44 @@ Things 3、Craft、Fabulous等のモダンアプリをベンチマークとし�
 - `free_limit_app_message`（無料版では制限対象アプリを5件まで選べます。Plusに登録すると…）
 - `plan_feature_*`（比較表各項目）
 
+---
+
+## 19. Pro専用Paywall（アップグレード案内画面）アーキテクチャ (v41)
+
+### 19.1 設計方針
+既存の課金基盤（`lib/focus-flow/billing.ts`, `lib/focus-flow/iap-bridge.ts`, `lib/focus-flow/provider.tsx`）に完全準拠し、Things 3やCraftなどの著名アプリと同等の品格と安心感を提供する専用Paywallモーダル（`components/focus-flow/paywall-modal.tsx`）を構築。
+
+### 19.2 UI・UX構成
+1. **Heroエリア:**
+   - 幾何学グラデーションサークル（`heroCircleA`, `heroCircleB`）のやわらかな透け感。
+   - ゴールドクラウンバッジ（`workspace-premium`）、大見出し「Focus Flow Pro」、洗練されたタグライン。
+2. **4大Pro機能バリュー提示:**
+   - `wallpaper`: カスタム背景テーマ（幾何学模様・オーロラ・グリッドでアプリとウィジェットを彩る）
+   - `tune`: ウィジェット透過率の微調整（壁紙に馴染む透け感やカードの透明度をミリ単位で調整）
+   - `all-inclusive`: Todo・習慣・メモが無制限（無料枠上限を全撤廃）
+   - `lock-clock`: 制限アプリ無制限＆テーマセット保存（集中制限を無限に拡張し、現在の見た目を保存）
+3. **プランセレクター:**
+   - **年額プラン（おすすめ / ベストバリュー）:** ¥3,800/年（約¥316/月・34%お得）
+   - **月額プラン:** ¥480/月（いつでも解約可能）
+   - ラジオ選択による直感的なプラン選択。
+4. **CTAボタン & 購入フィードバック:**
+   - 「7日間の無料体験を開始」または「Proを開始する」
+   - 購入処理中は `ActivityIndicator` を表示して重複タップを防止。
+   - 既存の `purchasePlus()` を呼び出し、購入完了・Pro化検知時に `safeHaptic("success")` と共にモーダルを自動閉幕。
+5. **Google Play ガイドライン & 法的要件:**
+   - 上部および下部に「購入を復元」(`restorePlus()`) ボタンを常設。
+   - 「Google Play の定期購入設定からいつでも解約できます」の明記。
+   - 利用規約（`/terms`）およびプライバシーポリシー（`/privacy`）への直接リンク。
+   - 閉じるボタン（`×`）を配置。
+
+### 19.3 各Pro導線との接続
+- **ウィジェット透過率スライダー（`OpacitySlider`）:**
+  - 非Pro時は `👑 Pro` バッジを表示。
+  - スライダードラッグ/タップ操作時に即座にPaywallモーダルを開き、無料ユーザーによる変更を安全にガード。
+- **背景スタイル選択（`BackgroundStyleSelector`）:**
+  - 幾何学模様等のPro背景タップ時にPaywallモーダルを開く。
+- **Plusパネル（`PlusPanel`）:**
+  - 「👑 Proアップグレード詳細を見る」ボタンを追加し、Paywallモーダルを直接呼び出し可能。
+- **グローバルコンテキスト & ルートレイアウト:**
+  - `FocusFlowProvider` に `paywallVisible`, `openPaywall`, `closePaywall` を提供し、`app/_layout.tsx` のルートシェルに `<PaywallModal />` をマウント。アプリ内のあらゆる場所からワンコールでPaywallをトリガー可能。
+

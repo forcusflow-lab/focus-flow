@@ -65,6 +65,32 @@ export const R = {
     plan_feature_free_fonts: "plan_feature_free_fonts",
     plan_feature_free_bg: "plan_feature_free_bg",
     plan_feature_free_themes: "plan_feature_free_themes",
+    // Pro専用 Paywall（アップグレード案内）画面
+    paywall_hero_title: "paywall_hero_title",
+    paywall_hero_tagline: "paywall_hero_tagline",
+    paywall_feature_bg_title: "paywall_feature_bg_title",
+    paywall_feature_bg_desc: "paywall_feature_bg_desc",
+    paywall_feature_widget_title: "paywall_feature_widget_title",
+    paywall_feature_widget_desc: "paywall_feature_widget_desc",
+    paywall_feature_unlimited_title: "paywall_feature_unlimited_title",
+    paywall_feature_unlimited_desc: "paywall_feature_unlimited_desc",
+    paywall_feature_limits_title: "paywall_feature_limits_title",
+    paywall_feature_limits_desc: "paywall_feature_limits_desc",
+    paywall_plan_annual_title: "paywall_plan_annual_title",
+    paywall_plan_annual_badge: "paywall_plan_annual_badge",
+    paywall_plan_annual_price: "paywall_plan_annual_price",
+    paywall_plan_annual_sub: "paywall_plan_annual_sub",
+    paywall_plan_monthly_title: "paywall_plan_monthly_title",
+    paywall_plan_monthly_price: "paywall_plan_monthly_price",
+    paywall_plan_monthly_sub: "paywall_plan_monthly_sub",
+    paywall_cta_trial: "paywall_cta_trial",
+    paywall_cta_start: "paywall_cta_start",
+    paywall_cancel_anytime: "paywall_cancel_anytime",
+    paywall_restore: "paywall_restore",
+    paywall_terms: "paywall_terms",
+    paywall_privacy: "paywall_privacy",
+    paywall_active_title: "paywall_active_title",
+    paywall_active_desc: "paywall_active_desc",
     // 習慣（Habit）画面
     habit_today_progress: "habit_today_progress",
     habit_streak: "habit_streak",
@@ -318,6 +344,107 @@ export const STRING_RESOURCES: Record<StringResourceId, LocalizedString> = {
   plan_feature_free_themes: {
     ja: "基本カラーテーマ",
     en: "Basic color themes",
+  },
+  // Pro専用 Paywall（アップグレード案内）画面
+  paywall_hero_title: {
+    ja: "Focus Flow Pro",
+    en: "Focus Flow Pro",
+  },
+  paywall_hero_tagline: {
+    ja: "日々の集中と習慣を、最高峰の心地よさへ。",
+    en: "Elevate your focus, habits, and daily flow.",
+  },
+  paywall_feature_bg_title: {
+    ja: "カスタム背景テーマ",
+    en: "Custom background themes",
+  },
+  paywall_feature_bg_desc: {
+    ja: "幾何学模様・オーロラ・グリッドでアプリとウィジェットを彩る",
+    en: "Adorn your app and widgets with geometric, aurora, and minimal grid styles.",
+  },
+  paywall_feature_widget_title: {
+    ja: "ウィジェット透過率の微調整",
+    en: "Fine-tune widget transparency",
+  },
+  paywall_feature_widget_desc: {
+    ja: "壁紙に馴染む透け感やカードの透明度をミリ単位で調整",
+    en: "Precisely adjust widget and card opacity to blend with your wallpaper.",
+  },
+  paywall_feature_unlimited_title: {
+    ja: "Todo・習慣・メモが無制限",
+    en: "Unlimited tasks, habits & notes",
+  },
+  paywall_feature_unlimited_desc: {
+    ja: "無料枠の上限なく、日々の目標とルーティンをすべて管理",
+    en: "Organize all your daily actions, habits, and notes with zero item limits.",
+  },
+  paywall_feature_limits_title: {
+    ja: "制限アプリ無制限＆テーマセット保存",
+    en: "Unlimited app limits & saved themes",
+  },
+  paywall_feature_limits_desc: {
+    ja: "制限アプリを無制限に解除し、現在の外観をテーマセットとして保存",
+    en: "Block unlimited apps and save your favorite configurations as named theme sets.",
+  },
+  paywall_plan_annual_title: {
+    ja: "年額プラン",
+    en: "Annual Plan",
+  },
+  paywall_plan_annual_badge: {
+    ja: "おすすめ / ベストバリュー",
+    en: "Best Value",
+  },
+  paywall_plan_annual_price: {
+    ja: "¥3,800 / 年",
+    en: "¥3,800 / year",
+  },
+  paywall_plan_annual_sub: {
+    ja: "約¥316 / 月（34%お得）",
+    en: "Approx. ¥316 / mo (Save 34%)",
+  },
+  paywall_plan_monthly_title: {
+    ja: "月額プラン",
+    en: "Monthly Plan",
+  },
+  paywall_plan_monthly_price: {
+    ja: "¥480 / 月",
+    en: "¥480 / month",
+  },
+  paywall_plan_monthly_sub: {
+    ja: "いつでも解約可能",
+    en: "Cancel anytime",
+  },
+  paywall_cta_trial: {
+    ja: "7日間の無料体験を開始",
+    en: "Start 7-Day Free Trial",
+  },
+  paywall_cta_start: {
+    ja: "Proを開始する",
+    en: "Get Pro",
+  },
+  paywall_cancel_anytime: {
+    ja: "Google Play の定期購入設定からいつでも解約できます",
+    en: "Cancel anytime in Google Play subscription settings",
+  },
+  paywall_restore: {
+    ja: "購入を復元",
+    en: "Restore purchases",
+  },
+  paywall_terms: {
+    ja: "利用規約",
+    en: "Terms of Service",
+  },
+  paywall_privacy: {
+    ja: "プライバシーポリシー",
+    en: "Privacy Policy",
+  },
+  paywall_active_title: {
+    ja: "Proをご利用中です",
+    en: "Pro is Active",
+  },
+  paywall_active_desc: {
+    ja: "すべてのPro機能と上限解除をご利用いただけます。",
+    en: "All Pro features and unlimited items are active on your device.",
   },
   // 習慣画面
   habit_today_progress: {
