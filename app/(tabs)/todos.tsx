@@ -1,6 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Alert, Animated, FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { TaskForm } from "@/components/focus-flow/task-form";
@@ -45,7 +45,7 @@ export default function TodosScreen() {
   if (!isReady) return <ScreenContainer><LoadingScreen /></ScreenContainer>;
   return <ScreenContainer className="px-5" containerClassName="bg-background"><FlatList data={listItems} keyExtractor={(item) => item.id} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}
     ListHeaderComponent={<><ScreenHeading eyebrow={t("今日の実行リスト", "Your action list")} title={t("Todo", "Tasks")} action={<IconButton icon="add" label={t("Todoを追加", "Add task")} onPress={() => openForm()} variant="filled" />} /><View style={[styles.summary, { backgroundColor: palette.elevated, borderColor: palette.border }]}><View style={styles.summaryTop}><View style={[styles.summaryIcon, { backgroundColor: palette.surface }]}><MaterialIcons name="lock-outline" size={17} color={palette.primary} /></View><View style={styles.summaryCopy}><Text style={[styles.summaryEyebrow, { color: palette.primary }]}>{t("アプリ解除の進捗", "UNLOCK PROGRESS")}</Text><Text style={[styles.summaryTitle, { color: palette.text }]} numberOfLines={1}>{totalMustDos ? t(`必須 ${completedMustDos}/${totalMustDos}件を完了`, `${completedMustDos}/${totalMustDos} must-dos complete`) : t("必須Todoを追加して開始", "Add a must-do to get started")}</Text></View><Text style={[styles.summaryPercent, { color: palette.primary }]}>{mustProgress}%</Text></View><View style={[styles.progressTrack, { backgroundColor: palette.surface }]}><View style={[styles.progressFill, { width: `${mustProgress}%`, backgroundColor: palette.primary }]} /></View><Text style={[styles.summaryHint, { color: palette.muted }]} numberOfLines={1}>{t("必須のTodoがアプリ制限の解除条件になります。", "Must-dos count toward unlocking app limits.")}</Text></View><GroupHeading title={t("未完了", "Open")} count={openTodos.length} color={palette.primary} background={palette.primarySoft} /></>}
-    ListEmptyComponent={<EmptyState icon="playlist-add" title={t("未完了のTodoはありません", "No open tasks")} description={doneTodos.length ? t("完了済みは下の操作から確認できます。", "Use the control below to review completed tasks.") : t("完了したいことを1つ追加しましょう。", "Add one thing you want to complete.")} actionLabel={t("Todoを追加", "Add task")} onAction={() => openForm()} />}
+    ListEmptyComponent={doneTodos.length > 0 ? (<AllDonePanel t={t} palette={palette} />) : (<EmptyState icon="playlist-add" title={t("未完了のTodoはありません", "No open tasks")} description={t("完了したいことを1つ追加しましょう。", "Add one thing you want to complete.")} actionLabel={t("Todoを追加", "Add task")} onAction={() => openForm()} />)}
     renderItem={({ item, index }) => <>{showCompleted && index === openTodos.length ? <GroupHeading title={t("完了", "Done")} count={doneTodos.length} color={palette.muted} background={palette.elevated} /> : null}<TodoItemCard todo={item} language={language} t={t} onOpen={() => openForm(item)} onToggle={() => { const wasComplete = isTodoAchieved(item); const result = toggleTodo(item.id); if (result.ok) safeHaptic(wasComplete ? "light" : "success"); }} onToggleSubtask={(subtaskId) => { toggleSubtask(item.id, subtaskId); }} /></>}
     ListFooterComponent={doneTodos.length ? <CompletionControl visible={showCompleted} count={doneTodos.length} t={t} palette={palette} onPress={() => setShowCompleted((value) => !value)} /> : null}
   /><TaskForm visible={formOpen} todo={editingTodo} onClose={() => { setFormOpen(false); setEditingTodo(undefined); router.setParams({ open: undefined, create: undefined }); if (widgetOpenedTodo.current) { widgetOpenedTodo.current = undefined; router.replace("/(tabs)" as never); } }} onSave={(input) => { const result = editingTodo ? updateTodo(editingTodo.id, input) : addTodo(input); showMutationResult(result); return result; }} onDelete={editingTodo ? () => deleteTodo(editingTodo.id) : undefined} /></ScreenContainer>;
@@ -53,6 +53,43 @@ export default function TodosScreen() {
 
 function GroupHeading({ title, count, color, background }: { title: string; count: number; color: string; background: string }) { return <View style={styles.groupHeading}><Text style={[styles.groupTitle, { color }]}>{title}</Text><Text style={[styles.groupCount, { color, backgroundColor: background }]}>{count}</Text></View>; }
 function CompletionControl({ visible, count, t, palette, onPress }: { visible: boolean; count: number; t: (ja: string, en: string) => string; palette: ReturnType<typeof useFocusPalette>; onPress: () => void }) { return <TouchableOpacity accessibilityRole="button" accessibilityState={{ expanded: visible }} onPress={onPress} style={[styles.revealButton, { backgroundColor: palette.elevated, borderColor: palette.border }]}><MaterialIcons name={visible ? "visibility-off" : "visibility"} size={17} color={palette.primary} /><Text style={[styles.revealText, { color: palette.primary }]}>{visible ? t("完了済みを非表示", "Hide completed") : t(`完了済みを表示（${count}件）`, `Show completed (${count})`)}</Text></TouchableOpacity>; }
+
+function AllDonePanel({ t, palette }: { t: (ja: string, en: string) => string; palette: ReturnType<typeof useFocusPalette> }) {
+  const scaleAnim = useRef(new Animated.Value(0.92)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(scaleAnim, { toValue: 1, friction: 5, tension: 200, useNativeDriver: true }),
+      Animated.timing(opacityAnim, { toValue: 1, duration: 280, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  return (
+    <Animated.View
+      style={[
+        allDoneStyles.panel,
+        { backgroundColor: palette.primarySoft, borderColor: palette.primary, transform: [{ scale: scaleAnim }], opacity: opacityAnim },
+      ]}
+    >
+      <Text style={[allDoneStyles.icon]}>🎉</Text>
+      <Text style={[allDoneStyles.title, { color: palette.text }]}>
+        {t("すべて完了しました！", "All tasks complete!")}
+      </Text>
+      <Text style={[allDoneStyles.desc, { color: palette.muted }]}>
+        {t("今日のTodoを全部終わらせました。すばらしい！", "You've finished all your tasks for today. Amazing!")}
+      </Text>
+    </Animated.View>
+  );
+}
+
+const allDoneStyles = StyleSheet.create({
+  panel: { alignItems: "center", justifyContent: "center", paddingHorizontal: 28, paddingVertical: 26, borderWidth: 1, borderRadius: 20, marginTop: 8, gap: 6 },
+  icon: { fontSize: 36, marginBottom: 4 },
+  title: { fontSize: 16, fontWeight: "900", textAlign: "center" },
+  desc: { fontSize: 13, lineHeight: 19, textAlign: "center" },
+});
+
 
 const styles = StyleSheet.create({
   content: { paddingTop: 10, paddingBottom: 24, flexGrow: 1 },

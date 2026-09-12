@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { Animated, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import type { Habit } from "@/lib/focus-flow/types";
 import { getHabitTimerProgress, isHabitCompleteOn } from "@/lib/focus-flow/utils";
@@ -23,6 +23,14 @@ export function HabitProgressControl({ habit, date, language, onAdjust, onStartT
   const unit = habit.progressUnit ?? "check";
   const timer = useMemo(() => getHabitTimerProgress(habit, date, now), [date, habit, now]);
   const isTimed = unit === "minutes";
+  const plusScaleAnim = useRef(new Animated.Value(1)).current;
+
+  const triggerPlusScale = useCallback(() => {
+    Animated.sequence([
+      Animated.timing(plusScaleAnim, { toValue: 0.85, duration: 70, useNativeDriver: true }),
+      Animated.spring(plusScaleAnim, { toValue: 1, friction: 4, tension: 280, useNativeDriver: true }),
+    ]).start();
+  }, [plusScaleAnim]);
 
   useEffect(() => {
     if (!isTimed || !timer.running) return;
@@ -59,12 +67,17 @@ export function HabitProgressControl({ habit, date, language, onAdjust, onStartT
           accessibilityLabel={language === "en" ? "Increase today's progress" : "今日の進捗を増やす"}
           hitSlop={8}
           onPress={() => {
-            safeHaptic("light");
+            const current = habit.dailyProgress?.[date] ?? 0;
+            const willComplete = current + 1 >= target;
+            safeHaptic(willComplete ? "medium" : "light");
+            triggerPlusScale();
             onAdjust(1);
           }}
           style={[styles.countButton, { backgroundColor: palette.surface }]}
         >
-          <MaterialIcons name="add" size={18} color={habit.color} />
+          <Animated.View style={{ transform: [{ scale: plusScaleAnim }] }}>
+            <MaterialIcons name="add" size={18} color={habit.color} />
+          </Animated.View>
         </TouchableOpacity>
       </View>
     );

@@ -1,6 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Easing, FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { HabitForm } from "@/components/focus-flow/habit-form";
@@ -135,6 +135,19 @@ export default function TodayScreen() {
   const timeActive = activeRules.some((rule) => rule.id === "always" || Boolean(rule.schedule));
   const gateLocked = gateConfig.enabled && timeActive && gateSummary.pendingCount > 0;
   const activeScheduledRule = activeRules.find((rule) => Boolean(rule.schedule && rule.pendingCount > 0));
+
+  const progressRatio = totalRequired ? doneRequired / totalRequired : 0;
+  const progressAnim = useRef(new Animated.Value(progressRatio)).current;
+  const emptyScaleAnim = useRef(new Animated.Value(0.95)).current;
+  const emptyOpacityAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: progressRatio,
+      duration: 400,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [progressRatio]);
 
   const listItems = useMemo<HomeListItem[]>(() => {
     const result: HomeListItem[] = [];
@@ -295,12 +308,15 @@ export default function TodayScreen() {
                 </View>
 
                 <View style={[styles.progressBarTrack, { backgroundColor: palette.surface }]}>
-                  <View
+                  <Animated.View
                     style={[
                       styles.progressBarFill,
                       {
-                        width: `${totalRequired ? Math.round((doneRequired / totalRequired) * 100) : 0}%`,
                         backgroundColor: palette.primary,
+                        width: progressAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ["0%", "100%"],
+                        }),
                       },
                     ]}
                   />
@@ -327,7 +343,18 @@ export default function TodayScreen() {
           </>
         }
         ListEmptyComponent={
-          <View style={[styles.emptyPanel, { backgroundColor: palette.elevated }]}>
+          <Animated.View
+            style={[
+              styles.emptyPanel,
+              { backgroundColor: palette.elevated, transform: [{ scale: emptyScaleAnim }], opacity: emptyOpacityAnim },
+            ]}
+            onLayout={() => {
+              Animated.parallel([
+                Animated.spring(emptyScaleAnim, { toValue: 1, friction: 6, tension: 180, useNativeDriver: true }),
+                Animated.timing(emptyOpacityAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+              ]).start();
+            }}
+          >
             <MaterialIcons name="done-all" size={22} color={palette.primary} />
             <View>
               <Text style={[styles.emptyTitle, { color: palette.text }]}>
@@ -337,7 +364,7 @@ export default function TodayScreen() {
                 {t("新しいTodoを追加するか、明日の項目を整えましょう。", "Add a new task or plan your next action.")}
               </Text>
             </View>
-          </View>
+          </Animated.View>
         }
         renderItem={({ item }) =>
           item.type === "heading" ? (

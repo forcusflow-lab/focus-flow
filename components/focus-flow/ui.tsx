@@ -93,10 +93,11 @@ export function Pill({ label, color = COLORS.forest, muted = false }: { label: s
   );
 }
 
-export function safeHaptic(type: "light" | "success") {
+export function safeHaptic(type: "light" | "medium" | "success") {
   if (Platform.OS === "web") return;
   void import("expo-haptics").then((Haptics) => {
     if (type === "success") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    else if (type === "medium") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     else void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   });
 }

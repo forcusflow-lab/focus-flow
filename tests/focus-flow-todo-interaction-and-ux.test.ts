@@ -28,7 +28,7 @@ describe("Todoカードのインタラクション刷新とサブタスク展開
     const cards = readProjectFile("components", "focus-flow", "item-cards.tsx");
 
     expect(cards).toContain("todoCheckTouchTarget: { width: 48, height: 48");
-    expect(cards).toContain("event.stopPropagation(); onToggle();");
+    expect(cards).toContain("event.stopPropagation(); triggerCheck(); onToggle();");
     expect(cards).toContain("hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}");
   });
 

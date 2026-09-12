@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useRef, useState } from "react";
-import { Animated, LayoutAnimation, Platform, StyleSheet, Text as NativeText, TouchableOpacity, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Easing, LayoutAnimation, Platform, StyleSheet, Text as NativeText, TouchableOpacity, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 import { HabitProgressControl } from "@/components/focus-flow/habit-progress-control";
@@ -35,6 +35,23 @@ export function TodoItemCard({ todo, showRequired = todo.isRequired, language, t
   const completedSubtasks = subtasks.filter((subtask) => subtask.completed).length;
   const [subtasksOpen, setSubtasksOpen] = useState(false);
   const chevronAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const opacityAnim = useRef(new Animated.Value(achieved ? 0.55 : 1)).current;
+
+  const triggerCheck = useCallback(() => {
+    Animated.sequence([
+      Animated.timing(scaleAnim, { toValue: 0.88, duration: 80, useNativeDriver: true }),
+      Animated.spring(scaleAnim, { toValue: 1, friction: 4, tension: 300, useNativeDriver: true }),
+    ]).start();
+  }, [scaleAnim]);
+
+  useEffect(() => {
+    Animated.timing(opacityAnim, {
+      toValue: achieved ? 0.55 : 1,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
+  }, [achieved]);
 
   const toggleSubtasks = useCallback(() => {
     if (Platform.OS !== "web") {
@@ -62,14 +79,18 @@ export function TodoItemCard({ todo, showRequired = todo.isRequired, language, t
   return (
     <View style={[styles.todoRow, { backgroundColor: achieved ? palette.elevated : palette.surface, borderColor: palette.border }]}>
       <View style={[styles.rail, { backgroundColor: railColor }]} />
-      <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: achieved }} accessibilityLabel={achieved ? t(`「${todo.title}」を未完了に戻す`, `Reopen “${todo.title}”`) : t(`「${todo.title}」を完了にする`, `Mark “${todo.title}” complete`)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={(event) => { event.stopPropagation(); onToggle(); }} style={styles.todoCheckTouchTarget}>
-        <View style={[styles.todoCheck, { borderColor: palette.border }, achieved && { backgroundColor: palette.primary, borderColor: palette.primary }]}>
-          {achieved ? <MaterialIcons name="check" size={15} color={COLORS.white} /> : null}
-        </View>
+      <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: achieved }} accessibilityLabel={achieved ? t(`「${todo.title}」を未完了に戻す`, `Reopen "${todo.title}"`) : t(`「${todo.title}」を完了にする`, `Mark "${todo.title}" complete`)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={(event) => { event.stopPropagation(); triggerCheck(); onToggle(); }} style={styles.todoCheckTouchTarget}>
+        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+          <View style={[styles.todoCheck, { borderColor: palette.border }, achieved && { backgroundColor: palette.primary, borderColor: palette.primary }]}>
+            {achieved ? <MaterialIcons name="check" size={15} color={COLORS.white} /> : null}
+          </View>
+        </Animated.View>
       </TouchableOpacity>
       <TouchableOpacity accessibilityRole="button" onPress={hasSubtasks ? toggleSubtasks : onOpen} onLongPress={onOpen} delayLongPress={350} activeOpacity={0.72} style={styles.copy}>
         <View style={styles.todoTitleLine}>
-          <Text style={[styles.todoTitle, { color: palette.text }, doneTitleStyle]} numberOfLines={2}>{todo.title}</Text>
+          <Animated.View style={{ opacity: opacityAnim, flex: 1, minWidth: 0 }}>
+            <Text style={[styles.todoTitle, { color: palette.text }, doneTitleStyle]} numberOfLines={2}>{todo.title}</Text>
+          </Animated.View>
           {effectiveRequired ? <RequiredLabel label={t("必須", "Must-do")} color={palette.muted} /> : null}
         </View>
         {todo.memo || due ? (
@@ -125,10 +146,27 @@ export function HabitItemCard({ habit, showRequired = habit.isRequired, language
   const doneTitleStyle = done ? { color: palette.muted, textDecorationLine: "line-through" as const, textDecorationColor: palette.muted } : undefined;
   const progressText = habitProgressLabel(habit, today, language);
 
+  const progressRatio = Math.min((habit.dailyProgress?.[today] ?? 0) / Math.max(habit.targetValue ?? 1, 1), 1);
+  const progressAnim = useRef(new Animated.Value(
+    Math.min((habit.dailyProgress?.[today] ?? 0) / Math.max(habit.targetValue ?? 1, 1), 1)
+  )).current;
+  const prevProgress = useRef(progressRatio);
+  useEffect(() => {
+    if (prevProgress.current !== progressRatio) {
+      prevProgress.current = progressRatio;
+      Animated.timing(progressAnim, {
+        toValue: progressRatio,
+        duration: 350,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false, // width animation requires false
+      }).start();
+    }
+  }, [progressRatio]);
+
   return (
     <View style={[styles.habitRow, expanded && styles.habitRowExpanded, { backgroundColor: done ? palette.elevated : palette.surface, borderColor: palette.border }]}>
       <View style={[styles.rail, { backgroundColor: habit.color }]} />
-      <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: done }} accessibilityLabel={t(`「${habit.title}」を今日の習慣として記録`, `Record “${habit.title}” for today`)} onPressIn={(event) => event.stopPropagation()} onPress={() => onToggle()} style={styles.checkTouchTarget}>
+      <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: done }} accessibilityLabel={t(`「${habit.title}」を今日の習慣として記録`, `Record "${habit.title}" for today`)} onPressIn={(event) => event.stopPropagation()} onPress={() => onToggle()} style={styles.checkTouchTarget}>
         <View style={[styles.check, { borderColor: palette.border }, done && { backgroundColor: habit.color, borderColor: habit.color }]}>
           {done ? <MaterialIcons name="check" size={15} color={COLORS.white} /> : null}
         </View>
@@ -162,6 +200,22 @@ export function HabitItemCard({ habit, showRequired = habit.isRequired, language
                 · {habitStreak(habit)}{t("日連続", "-day streak")}
               </Text>
             </View>
+            {expanded && habit.progressUnit === "count" && (
+              <View style={[styles.miniProgressTrack, { backgroundColor: palette.elevated }]}>
+                <Animated.View
+                  style={[
+                    styles.miniProgressFill,
+                    {
+                      backgroundColor: habit.color,
+                      width: progressAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ["0%", "100%"],
+                      }),
+                    },
+                  ]}
+                />
+              </View>
+            )}
             <Text style={[styles.detailLabel, { color: palette.muted }]}>{t("曜日", "Days")}</Text>
             <View style={styles.weekRow}>
               {week.map((key) => {
@@ -235,4 +289,6 @@ const styles = StyleSheet.create({
   dayDot: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   dayLetter: { fontSize: 9, fontWeight: "800" },
   trailing: { width: 32, height: 34, alignItems: "center", justifyContent: "center", marginLeft: 1 },
+  miniProgressTrack: { height: 4, borderRadius: 999, overflow: "hidden", marginBottom: 5 },
+  miniProgressFill: { height: "100%", borderRadius: 999 },
 });

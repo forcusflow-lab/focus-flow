@@ -22,7 +22,7 @@ describe("Focus Flowの項目遷移と完了取り消し", () => {
     const today = fs.readFileSync(path.join(process.cwd(), "app", "(tabs)", "index.tsx"), "utf8");
 
     expect(cards).toContain("checkTouchTarget: { width: 44, height: 44");
-    expect(cards).toContain("event.stopPropagation(); onToggle();");
+    expect(cards).toContain("event.stopPropagation(); triggerCheck(); onToggle();");
     expect(cards).toContain("onPressIn={(event) => event.stopPropagation()}");
     expect(today).toContain("<TodoItemCard");
     expect(today).toContain("<HabitItemCard");
