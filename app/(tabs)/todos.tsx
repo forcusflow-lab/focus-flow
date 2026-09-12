@@ -27,7 +27,21 @@ export default function TodosScreen() {
   const openForm = (todo?: Todo) => { setEditingTodo(todo); setFormOpen(true); };
   useEffect(() => { const id = Array.isArray(params.open) ? params.open[0] : params.open; if (!id || widgetOpenedTodo.current === id) return; const todo = todos.find((item) => item.id === id); if (!todo) return; widgetOpenedTodo.current = id; if (isTodoAchieved(todo)) setShowCompleted(true); openForm(todo); router.setParams({ open: undefined }); }, [params.open, todos]);
   useEffect(() => { const create = Array.isArray(params.create) ? params.create[0] : params.create; if (create !== "1" || widgetCreateHandled.current) return; widgetCreateHandled.current = true; openForm(); router.setParams({ create: undefined }); }, [params.create]);
-  const showMutationResult = (result: MutationResult) => { if (result.reason === "FREE_LIMIT_REACHED") Alert.alert(t("無料版の上限です", "Free plan limit"), t("Todoは無料版では2件までです。Plusでは無制限に追加できます。", "The free plan allows up to 2 tasks. Plus removes this limit.")); };
+  const showMutationResult = (result: MutationResult) => {
+    if (result.reason === "FREE_LIMIT_REACHED") {
+      Alert.alert(
+        t("無料版の上限です", "Free plan limit"),
+        t(
+          "Todoは無料版では未完了2件までです。Plusに登録すると、Todo・習慣・メモが無制限になり、カスタム背景やフォントもすべてご利用いただけます。",
+          "Free allows up to 2 active tasks. Plus unlocks unlimited tasks, habits, notes, custom backgrounds, and fonts."
+        ),
+        [
+          { text: t("閉じる", "Dismiss"), style: "cancel" },
+          { text: t("Plusを確認", "View Plus"), onPress: () => router.push({ pathname: "/(tabs)/settings", params: { panel: "plus" } }) },
+        ]
+      );
+    }
+  };
   if (!isReady) return <ScreenContainer><LoadingScreen /></ScreenContainer>;
   return <ScreenContainer className="px-5" containerClassName="bg-background"><FlatList data={listItems} keyExtractor={(item) => item.id} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}
     ListHeaderComponent={<><ScreenHeading eyebrow={t("今日の実行リスト", "Your action list")} title={t("Todo", "Tasks")} action={<IconButton icon="add" label={t("Todoを追加", "Add task")} onPress={() => openForm()} variant="filled" />} /><View style={[styles.summary, { backgroundColor: palette.elevated, borderColor: palette.border }]}><View style={styles.summaryTop}><View style={[styles.summaryIcon, { backgroundColor: palette.surface }]}><MaterialIcons name="lock-outline" size={17} color={palette.primary} /></View><View style={styles.summaryCopy}><Text style={[styles.summaryEyebrow, { color: palette.primary }]}>{t("アプリ解除の進捗", "UNLOCK PROGRESS")}</Text><Text style={[styles.summaryTitle, { color: palette.text }]} numberOfLines={1}>{totalMustDos ? t(`必須 ${completedMustDos}/${totalMustDos}件を完了`, `${completedMustDos}/${totalMustDos} must-dos complete`) : t("必須Todoを追加して開始", "Add a must-do to get started")}</Text></View><Text style={[styles.summaryPercent, { color: palette.primary }]}>{mustProgress}%</Text></View><View style={[styles.progressTrack, { backgroundColor: palette.surface }]}><View style={[styles.progressFill, { width: `${mustProgress}%`, backgroundColor: palette.primary }]} /></View><Text style={[styles.summaryHint, { color: palette.muted }]} numberOfLines={1}>{t("必須のTodoがアプリ制限の解除条件になります。", "Must-dos count toward unlocking app limits.")}</Text></View><GroupHeading title={t("未完了", "Open")} count={openTodos.length} color={palette.primary} background={palette.primarySoft} /></>}

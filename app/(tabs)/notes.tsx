@@ -1,4 +1,5 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,6 +12,7 @@ import { useFocusFlow } from "@/lib/focus-flow/provider";
 import type { Memo } from "@/lib/focus-flow/types";
 
 export default function NotesScreen() {
+  const router = useRouter();
   const { memos, displaySettings, isReady, addMemo, updateMemo, deleteMemo, addTodo } = useFocusFlow();
   const palette = useFocusPalette();
   const language = getAppLanguage(displaySettings);
@@ -26,7 +28,18 @@ export default function NotesScreen() {
     if (Platform.OS === "web") confirm();
     else Alert.alert(t("メモを削除しますか？", "Delete this note?"), t("削除したメモは復元できません。", "Deleted notes cannot be restored."), [{ text: t("キャンセル", "Cancel"), style: "cancel" }, { text: t("削除", "Delete"), style: "destructive", onPress: confirm }]);
   };
-  const showFreeLimit = (kind: string) => Alert.alert(t("無料版の上限です", "Free plan limit"), t(`${kind}は無料版では2件までです。Plusでは無制限に追加できます。`, `The free plan allows up to 2 ${kind.toLowerCase()}. Plus removes this limit.`));
+  const showFreeLimit = (kind: string) =>
+    Alert.alert(
+      t("無料版の上限です", "Free plan limit"),
+      t(
+        `${kind}は無料版では2件までです。Plusに登録すると、Todo・習慣・メモが無制限になり、カスタム背景やフォントもすべてご利用いただけます。`,
+        `Free allows up to 2 ${kind.toLowerCase()}. Plus unlocks unlimited tasks, habits, notes, custom backgrounds, and fonts.`
+      ),
+      [
+        { text: t("閉じる", "Dismiss"), style: "cancel" },
+        { text: t("Plusを確認", "View Plus"), onPress: () => router.push({ pathname: "/(tabs)/settings", params: { panel: "plus" } }) },
+      ]
+    );
   const convert = (memo: Memo) => {
     const confirm = () => {
       const result = addTodo({ title: displayTitle(memo), memo: memo.body.trim() || undefined, priority: "medium", isRequired: false });

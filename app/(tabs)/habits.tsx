@@ -22,7 +22,22 @@ export default function HabitsScreen() {
   const openHabits = useMemo(() => habits.filter((habit) => !isHabitCompleteOn(habit, today)).sort((left, right) => Number(!left.isRequired) - Number(!right.isRequired) || left.title.localeCompare(right.title)), [habits, today]); const doneHabits = useMemo(() => habits.filter((habit) => isHabitCompleteOn(habit, today)).sort((left, right) => left.title.localeCompare(right.title)), [habits, today]); const listItems = useMemo<HabitListItem[]>(() => [{ type: "heading", id: "open", title: t("今日の習慣", "Today’s habits"), count: openHabits.length }, ...openHabits.map((habit) => ({ type: "habit" as const, id: habit.id, habit })), ...(showCompleted ? [{ type: "heading" as const, id: "done", title: t("完了済み", "Completed"), count: doneHabits.length }, ...doneHabits.map((habit) => ({ type: "habit" as const, id: `done-${habit.id}`, habit }))] : [])], [doneHabits, openHabits, showCompleted, t]);
   const totalToday = habits.length; const doneToday = doneHabits.length; const percent = totalToday ? Math.round((doneToday / totalToday) * 100) : 0; const openForm = (habit?: Habit, defaultRequired = false) => { setEditingHabit(habit); setNewHabitDefaultRequired(defaultRequired); setFormOpen(true); };
   useEffect(() => { const id = Array.isArray(params.open) ? params.open[0] : params.open; if (!id || widgetOpenedHabit.current === id) return; const habit = habits.find((item) => item.id === id); if (!habit) return; widgetOpenedHabit.current = id; if (isHabitCompleteOn(habit, today)) setShowCompleted(true); openForm(habit); router.setParams({ open: undefined }); }, [habits, params.open, today]);
-  const showMutationResult = (result: MutationResult) => { if (result.reason === "FREE_LIMIT_REACHED") Alert.alert(t("無料版の上限です", "Free plan limit"), t("習慣は無料版では2件までです。Plusでは無制限に追加できます。", "The free plan allows up to 2 habits. Plus removes this limit.")); if (result.reason === "TIMER_ALREADY_RUNNING") Alert.alert(t("すでに計測中です", "Timer is already running"), t("停止すると、同じ場所から再開できます。", "Pause it to resume from the same elapsed time.")); };
+  const showMutationResult = (result: MutationResult) => {
+    if (result.reason === "FREE_LIMIT_REACHED") {
+      Alert.alert(
+        t("無料版の上限です", "Free plan limit"),
+        t(
+          "習慣は無料版では2件までです。Plusに登録すると、Todo・習慣・メモが無制限になり、カスタム背景やフォントもすべてご利用いただけます。",
+          "Free allows up to 2 habits. Plus unlocks unlimited tasks, habits, notes, custom backgrounds, and fonts."
+        ),
+        [
+          { text: t("閉じる", "Dismiss"), style: "cancel" },
+          { text: t("Plusを確認", "View Plus"), onPress: () => router.push({ pathname: "/(tabs)/settings", params: { panel: "plus" } }) },
+        ]
+      );
+    }
+    if (result.reason === "TIMER_ALREADY_RUNNING") Alert.alert(t("すでに計測中です", "Timer is already running"), t("停止すると、同じ場所から再開できます。", "Pause it to resume from the same elapsed time."));
+  };
   if (!isReady) return <ScreenContainer><LoadingScreen /></ScreenContainer>;
   return <ScreenContainer className="px-5" containerClassName="bg-background"><FlatList data={listItems} keyExtractor={(item) => item.id} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}
     ListHeaderComponent={<><ScreenHeading eyebrow={t("続ける仕組み", "Build consistency")} title={t("習慣", "Habits")} action={<IconButton icon="add" label={t("習慣を追加", "Add habit")} onPress={() => openForm()} variant="filled" />} /><View style={[styles.summary, { backgroundColor: palette.elevated, borderColor: palette.border }]}><View style={styles.summaryTop}><View style={[styles.summaryIcon, { backgroundColor: palette.surface }]}><MaterialIcons name="auto-awesome" size={18} color={palette.primary} /></View><View style={styles.summaryCopy}><Text style={[styles.summaryEyebrow, { color: palette.primary }]}>{t("今日の達成", "TODAY'S PROGRESS")}</Text><Text style={[styles.summaryTitle, { color: palette.text }]}>{totalToday ? t(`${doneToday}/${totalToday}件を記録`, `${doneToday}/${totalToday} complete`) : t("最初の習慣を作りましょう", "Create your first habit")}</Text></View><Text style={[styles.summaryPercent, { color: palette.primary }]}>{percent}%</Text></View><View style={[styles.progressTrack, { backgroundColor: palette.surface }]}><View style={[styles.progressFill, { width: `${percent}%`, backgroundColor: palette.primary }]} /></View></View></>}

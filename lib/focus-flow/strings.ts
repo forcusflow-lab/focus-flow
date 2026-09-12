@@ -50,6 +50,21 @@ export const R = {
     pro_badge: "pro_badge",
     plus_feature_title: "plus_feature_title",
     plus_feature_bg_style_message: "plus_feature_bg_style_message",
+    plus_feature_font_title: "plus_feature_font_title",
+    plus_feature_font_message: "plus_feature_font_message",
+    free_limit_todo_message: "free_limit_todo_message",
+    free_limit_habit_message: "free_limit_habit_message",
+    free_limit_app_message: "free_limit_app_message",
+    plan_feature_unlimited_items: "plan_feature_unlimited_items",
+    plan_feature_unlimited_apps: "plan_feature_unlimited_apps",
+    plan_feature_custom_bg: "plan_feature_custom_bg",
+    plan_feature_premium_fonts: "plan_feature_premium_fonts",
+    plan_feature_theme_sets: "plan_feature_theme_sets",
+    plan_feature_free_items: "plan_feature_free_items",
+    plan_feature_free_apps: "plan_feature_free_apps",
+    plan_feature_free_fonts: "plan_feature_free_fonts",
+    plan_feature_free_bg: "plan_feature_free_bg",
+    plan_feature_free_themes: "plan_feature_free_themes",
     // 習慣（Habit）画面
     habit_today_progress: "habit_today_progress",
     habit_streak: "habit_streak",
@@ -243,6 +258,66 @@ export const STRING_RESOURCES: Record<StringResourceId, LocalizedString> = {
   plus_feature_bg_style_message: {
     ja: "カスタム背景テーマ（幾何学模様・オーロラ・ミニマルグリッド）はPlus限定です。Plusに登録してアプリとウィジェットをカスタマイズしますか？",
     en: "Custom background themes (Geometric, Aurora, Minimal Grid) are available with Plus. Upgrade to customize your app and widgets?",
+  },
+  plus_feature_font_title: {
+    ja: "Plus限定のフォント",
+    en: "Plus Typography",
+  },
+  plus_feature_font_message: {
+    ja: "プレミアムフォント（リーディング・ノート・フォーカス）はPlus限定です。Plusに登録して文字をカスタマイズしますか？",
+    en: "Premium typography (Reading, Notebook, Focus) is available with Plus. Upgrade to customize your fonts?",
+  },
+  free_limit_todo_message: {
+    ja: "Todoは無料版では未完了2件までです。Plusに登録すると、Todo・習慣・メモが無制限になり、カスタム背景やフォントもすべてご利用いただけます。",
+    en: "Free allows up to 2 active tasks. Plus unlocks unlimited tasks, habits, notes, custom backgrounds, and fonts.",
+  },
+  free_limit_habit_message: {
+    ja: "習慣は無料版では2件までです。Plusに登録すると、Todo・習慣・メモが無制限になり、カスタム背景やフォントもすべてご利用いただけます。",
+    en: "Free allows up to 2 habits. Plus unlocks unlimited tasks, habits, notes, custom backgrounds, and fonts.",
+  },
+  free_limit_app_message: {
+    ja: "無料版では制限対象アプリを5件まで選べます。Plusに登録すると、アプリを無制限に制限でき、集中を深められます。",
+    en: "Free allows up to 5 limited apps. Plus allows unlimited app limits to deepen your focus.",
+  },
+  plan_feature_unlimited_items: {
+    ja: "Todo・習慣・メモ 無制限",
+    en: "Unlimited tasks, habits & notes",
+  },
+  plan_feature_unlimited_apps: {
+    ja: "制限アプリ 無制限",
+    en: "Unlimited limited apps",
+  },
+  plan_feature_custom_bg: {
+    ja: "カスタム背景（3種）",
+    en: "3 custom backgrounds",
+  },
+  plan_feature_premium_fonts: {
+    ja: "厳選フォント（3種）",
+    en: "3 premium fonts",
+  },
+  plan_feature_theme_sets: {
+    ja: "テーマセットの保存・復元",
+    en: "Save & restore theme sets",
+  },
+  plan_feature_free_items: {
+    ja: "Todo・習慣・メモ 各2件",
+    en: "2 tasks, habits & notes",
+  },
+  plan_feature_free_apps: {
+    ja: "制限アプリ 5件",
+    en: "5 limited apps",
+  },
+  plan_feature_free_fonts: {
+    ja: "標準フォントのみ",
+    en: "Standard font only",
+  },
+  plan_feature_free_bg: {
+    ja: "無地背景のみ",
+    en: "Solid background only",
+  },
+  plan_feature_free_themes: {
+    ja: "基本カラーテーマ",
+    en: "Basic color themes",
   },
   // 習慣画面
   habit_today_progress: {

@@ -52,6 +52,21 @@
   <string name="pro_badge">Pro</string>
   <string name="plus_feature_title">Plus限定の機能です</string>
   <string name="plus_feature_bg_style_message">カスタム背景テーマ（幾何学模様・オーロラ・ミニマルグリッド）はPlus限定です。Plusに登録してアプリとウィジェットをカスタマイズしますか？</string>
+  <string name="plus_feature_font_title">Plus限定のフォント</string>
+  <string name="plus_feature_font_message">プレミアムフォント（リーディング・ノート・フォーカス）はPlus限定です。Plusに登録して文字をカスタマイズしますか？</string>
+  <string name="free_limit_todo_message">Todoは無料版では未完了2件までです。Plusに登録すると、Todo・習慣・メモが無制限になり、カスタム背景やフォントもすべてご利用いただけます。</string>
+  <string name="free_limit_habit_message">習慣は無料版では2件までです。Plusに登録すると、Todo・習慣・メモが無制限になり、カスタム背景やフォントもすべてご利用いただけます。</string>
+  <string name="free_limit_app_message">無料版では制限対象アプリを5件まで選べます。Plusに登録すると、アプリを無制限に制限でき、集中を深められます。</string>
+  <string name="plan_feature_unlimited_items">Todo・習慣・メモ 無制限</string>
+  <string name="plan_feature_unlimited_apps">制限アプリ 無制限</string>
+  <string name="plan_feature_custom_bg">カスタム背景（3種）</string>
+  <string name="plan_feature_premium_fonts">厳選フォント（3種）</string>
+  <string name="plan_feature_theme_sets">テーマセットの保存・復元</string>
+  <string name="plan_feature_free_items">Todo・習慣・メモ 各2件</string>
+  <string name="plan_feature_free_apps">制限アプリ 5件</string>
+  <string name="plan_feature_free_fonts">標準フォントのみ</string>
+  <string name="plan_feature_free_bg">無地背景のみ</string>
+  <string name="plan_feature_free_themes">基本カラーテーマ</string>
 
   <!-- 習慣（Habit）画面 -->
   <string name="habit_today_progress">今日 %1$d/%2$d 回</string>
