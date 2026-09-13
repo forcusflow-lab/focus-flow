@@ -264,6 +264,30 @@ export function PaywallModal({ visible, onClose }: PaywallModalProps) {
             </View>
           </View>
 
+          {/* 安心保証バッジ (Trust & Value Strip) */}
+          <View style={[styles.trustStrip, { backgroundColor: palette.elevated, borderColor: palette.border }]}>
+            <View style={styles.trustItem}>
+              <MaterialIcons name="event-available" size={15} color={palette.primary} />
+              <Text style={[styles.trustText, { color: palette.text }]}>
+                {english ? "7-Day Free Trial" : "7日間無料体験"}
+              </Text>
+            </View>
+            <View style={[styles.trustDot, { backgroundColor: palette.border }]} />
+            <View style={styles.trustItem}>
+              <MaterialIcons name="check-circle-outline" size={15} color={palette.primary} />
+              <Text style={[styles.trustText, { color: palette.text }]}>
+                {english ? "Cancel Anytime" : "いつでも解約OK"}
+              </Text>
+            </View>
+            <View style={[styles.trustDot, { backgroundColor: palette.border }]} />
+            <View style={styles.trustItem}>
+              <MaterialIcons name="security" size={15} color={palette.primary} />
+              <Text style={[styles.trustText, { color: palette.text }]}>
+                {english ? "100% Ad-Free" : "広告なし・安全"}
+              </Text>
+            </View>
+          </View>
+
           {/* プラン選択カード (未契約時) */}
           {!isPlus ? (
             <View style={styles.plansContainer}>
@@ -602,6 +626,30 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     lineHeight: 16,
     marginTop: 2,
+  },
+  trustStrip: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 20,
+  },
+  trustItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  trustText: {
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  trustDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
   },
   plansContainer: {
     gap: 12,

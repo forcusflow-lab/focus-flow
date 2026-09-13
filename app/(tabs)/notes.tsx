@@ -13,7 +13,7 @@ import type { Memo } from "@/lib/focus-flow/types";
 
 export default function NotesScreen() {
   const router = useRouter();
-  const { memos, displaySettings, isReady, addMemo, updateMemo, deleteMemo, addTodo } = useFocusFlow();
+  const { memos, displaySettings, isReady, addMemo, updateMemo, deleteMemo, addTodo, openPaywall } = useFocusFlow();
   const palette = useFocusPalette();
   const language = getAppLanguage(displaySettings);
   const t = (ja: string, en: string) => localized(language, ja, en);
@@ -37,7 +37,7 @@ export default function NotesScreen() {
       ),
       [
         { text: t("閉じる", "Dismiss"), style: "cancel" },
-        { text: t("Plusを確認", "View Plus"), onPress: () => router.push({ pathname: "/(tabs)/settings", params: { panel: "plus" } }) },
+        { text: t("Plusを確認", "View Plus"), onPress: () => { openPaywall(); router.push({ pathname: "/(tabs)/settings", params: { panel: "plus" } }); } },
       ]
     );
   const convert = (memo: Memo) => {

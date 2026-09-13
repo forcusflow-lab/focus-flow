@@ -16,7 +16,7 @@ import { dayKey, isHabitCompleteOn } from "@/lib/focus-flow/utils";
 type HabitListItem = { type: "heading"; id: string; title: string; count: number } | { type: "habit"; id: string; habit: Habit };
 
 export default function HabitsScreen() {
-  const { habits, displaySettings, isReady, addHabit, updateHabit, toggleHabit, startHabitTimer, pauseHabitTimer, adjustHabitProgress, deleteHabit } = useFocusFlow();
+  const { habits, displaySettings, isReady, addHabit, updateHabit, toggleHabit, startHabitTimer, pauseHabitTimer, adjustHabitProgress, deleteHabit, openPaywall } = useFocusFlow();
   const palette = useFocusPalette(); const language = getAppLanguage(displaySettings); const t = useCallback((ja: string, en: string) => localized(language, ja, en), [language]); const today = dayKey(); const router = useRouter(); const params = useLocalSearchParams<{ open?: string | string[] }>();
   const [formOpen, setFormOpen] = useState(false); const [editingHabit, setEditingHabit] = useState<Habit | undefined>(); const [newHabitDefaultRequired, setNewHabitDefaultRequired] = useState(false); const [showCompleted, setShowCompleted] = useState(false); const widgetOpenedHabit = useRef<string | undefined>(undefined);
   const openHabits = useMemo(() => habits.filter((habit) => !isHabitCompleteOn(habit, today)).sort((left, right) => Number(!left.isRequired) - Number(!right.isRequired) || left.title.localeCompare(right.title)), [habits, today]); const doneHabits = useMemo(() => habits.filter((habit) => isHabitCompleteOn(habit, today)).sort((left, right) => left.title.localeCompare(right.title)), [habits, today]); const listItems = useMemo<HabitListItem[]>(() => [{ type: "heading", id: "open", title: t("今日の習慣", "Today’s habits"), count: openHabits.length }, ...openHabits.map((habit) => ({ type: "habit" as const, id: habit.id, habit })), ...(showCompleted ? [{ type: "heading" as const, id: "done", title: t("完了済み", "Completed"), count: doneHabits.length }, ...doneHabits.map((habit) => ({ type: "habit" as const, id: `done-${habit.id}`, habit }))] : [])], [doneHabits, openHabits, showCompleted, t]);
@@ -32,7 +32,7 @@ export default function HabitsScreen() {
         ),
         [
           { text: t("閉じる", "Dismiss"), style: "cancel" },
-          { text: t("Plusを確認", "View Plus"), onPress: () => router.push({ pathname: "/(tabs)/settings", params: { panel: "plus" } }) },
+          { text: t("Plusを確認", "View Plus"), onPress: () => { openPaywall(); router.push({ pathname: "/(tabs)/settings", params: { panel: "plus" } }); } },
         ]
       );
     }

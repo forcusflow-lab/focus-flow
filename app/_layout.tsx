@@ -23,6 +23,7 @@ import { initializeReminders } from "@/lib/focus-flow/reminders";
 import { FocusFlowProvider, useFocusFlow } from "@/lib/focus-flow/provider";
 import { getAppPalette, resolveAppearance } from "@/lib/focus-flow/app-themes";
 import { PaywallModal } from "@/components/focus-flow/paywall-modal";
+import { ReviewModal } from "@/components/focus-flow/review-modal";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
@@ -37,7 +38,7 @@ if (Platform.OS !== "web") {
 }
 
 function FocusFlowLaunchShell() {
-  const { isReady, displaySettings } = useFocusFlow();
+  const { isReady, displaySettings, reviewPromptVisible, closeReviewPrompt } = useFocusFlow();
   const systemScheme = useColorScheme() === "dark" ? "dark" : "light";
   const palette = getAppPalette(displaySettings, systemScheme);
   const opacity = useRef(new Animated.Value(1)).current;
@@ -61,6 +62,7 @@ function FocusFlowLaunchShell() {
       <Stack.Screen name="oauth/callback" />
     </Stack>
     <PaywallModal />
+    <ReviewModal visible={reviewPromptVisible} onClose={closeReviewPrompt} />
     <StatusBar style={visible ? (palette.isDark ? "light" : "dark") : "auto"} />
     {visible ? <Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[launchStyles.overlay, { opacity, backgroundColor: palette.background }]}><View style={[launchStyles.haloOne, { backgroundColor: palette.elevated }]} /><View style={[launchStyles.haloTwo, { borderColor: palette.primary }]} /><View style={launchStyles.content}><View style={[launchStyles.mark, { backgroundColor: palette.primarySoft }]}><Image source={require("@/assets/images/focus-flow-launch-mark.png")} resizeMode="contain" style={[launchStyles.markImage, { tintColor: palette.primary }]} /></View><Text style={[launchStyles.wordmark, { color: palette.text }]}>Focus Flow</Text><Text style={[launchStyles.tagline, { color: palette.muted }]}>今日を、ひとつずつ。</Text><View style={[launchStyles.rule, { backgroundColor: palette.primary }]} /></View><Text style={[launchStyles.footer, { color: palette.muted }]}>PLAN · FOCUS · FINISH</Text></Animated.View> : null}
   </View>;

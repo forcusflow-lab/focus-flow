@@ -50,6 +50,7 @@ export default function TodayScreen() {
     deleteTodo,
     updateHabit,
     deleteHabit,
+    triggerMilestoneReview,
   } = useFocusFlow();
 
   const palette = useFocusPalette();
@@ -378,8 +379,12 @@ export default function TodayScreen() {
               language={english ? "en" : "ja"}
               t={t}
               onToggle={() => {
+                const wasAchieved = isTodoAchieved(item.todo);
                 const result = toggleTodo(item.todo.id);
                 safeHaptic(result.ok ? "success" : "light");
+                if (result.ok && !wasAchieved && pendingRequired <= 1) {
+                  void triggerMilestoneReview();
+                }
               }}
               onOpen={() => setOpenedTodo(item.todo)}
               onToggleSubtask={(subtaskId) => {
@@ -393,8 +398,13 @@ export default function TodayScreen() {
               language={english ? "en" : "ja"}
               t={t}
               onToggle={(date) => {
+                const targetDate = date ?? today;
+                const wasComplete = isHabitCompleteOn(item.habit, targetDate);
                 const result = toggleHabit(item.habit.id, date);
                 safeHaptic(result.ok ? "success" : "light");
+                if (result.ok && !wasComplete && pendingRequired <= 1) {
+                  void triggerMilestoneReview();
+                }
               }}
               onStartTimer={() => {
                 const result = startHabitTimer(item.habit.id);

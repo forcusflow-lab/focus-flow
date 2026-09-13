@@ -17,7 +17,7 @@ const priorityRank = { high: 0, medium: 1, low: 2 } as const;
 const dueRank = (todo: Todo) => { const status = todo.dueDate ? getTodoDueStatus(todo) : undefined; return status === "overdue" ? 0 : status === "today" ? 1 : todo.dueDate ? 2 : 3; };
 
 export default function TodosScreen() {
-  const { todos, displaySettings, isReady, addTodo, updateTodo, toggleTodo, toggleSubtask, deleteTodo } = useFocusFlow();
+  const { todos, displaySettings, isReady, addTodo, updateTodo, toggleTodo, toggleSubtask, deleteTodo, openPaywall, triggerMilestoneReview } = useFocusFlow();
   const palette = useFocusPalette(); const language = getAppLanguage(displaySettings); const t = useCallback((ja: string, en: string) => localized(language, ja, en), [language]); const router = useRouter(); const params = useLocalSearchParams<{ open?: string | string[]; create?: string | string[] }>();
   const [formOpen, setFormOpen] = useState(false); const [editingTodo, setEditingTodo] = useState<Todo | undefined>(); const [showCompleted, setShowCompleted] = useState(false); const widgetOpenedTodo = useRef<string | undefined>(undefined); const widgetCreateHandled = useRef(false);
   const openTodos = useMemo(() => todos.filter((todo) => !isTodoAchieved(todo)).sort((left, right) => dueRank(left) - dueRank(right) || priorityRank[left.priority] - priorityRank[right.priority] || (left.dueDate ?? "9999-12-31").localeCompare(right.dueDate ?? "9999-12-31") || left.createdAt.localeCompare(right.createdAt)), [todos]);
@@ -37,7 +37,7 @@ export default function TodosScreen() {
         ),
         [
           { text: t("閉じる", "Dismiss"), style: "cancel" },
-          { text: t("Plusを確認", "View Plus"), onPress: () => router.push({ pathname: "/(tabs)/settings", params: { panel: "plus" } }) },
+          { text: t("Plusを確認", "View Plus"), onPress: () => { openPaywall(); router.push({ pathname: "/(tabs)/settings", params: { panel: "plus" } }); } },
         ]
       );
     }
@@ -45,8 +45,8 @@ export default function TodosScreen() {
   if (!isReady) return <ScreenContainer><LoadingScreen /></ScreenContainer>;
   return <ScreenContainer className="px-5" containerClassName="bg-background"><FlatList data={listItems} keyExtractor={(item) => item.id} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}
     ListHeaderComponent={<><ScreenHeading eyebrow={t("今日の実行リスト", "Your action list")} title={t("Todo", "Tasks")} action={<IconButton icon="add" label={t("Todoを追加", "Add task")} onPress={() => openForm()} variant="filled" />} /><View style={[styles.summary, { backgroundColor: palette.elevated, borderColor: palette.border }]}><View style={styles.summaryTop}><View style={[styles.summaryIcon, { backgroundColor: palette.surface }]}><MaterialIcons name="lock-outline" size={17} color={palette.primary} /></View><View style={styles.summaryCopy}><Text style={[styles.summaryEyebrow, { color: palette.primary }]}>{t("アプリ解除の進捗", "UNLOCK PROGRESS")}</Text><Text style={[styles.summaryTitle, { color: palette.text }]} numberOfLines={1}>{totalMustDos ? t(`必須 ${completedMustDos}/${totalMustDos}件を完了`, `${completedMustDos}/${totalMustDos} must-dos complete`) : t("必須Todoを追加して開始", "Add a must-do to get started")}</Text></View><Text style={[styles.summaryPercent, { color: palette.primary }]}>{mustProgress}%</Text></View><View style={[styles.progressTrack, { backgroundColor: palette.surface }]}><View style={[styles.progressFill, { width: `${mustProgress}%`, backgroundColor: palette.primary }]} /></View><Text style={[styles.summaryHint, { color: palette.muted }]} numberOfLines={1}>{t("必須のTodoがアプリ制限の解除条件になります。", "Must-dos count toward unlocking app limits.")}</Text></View><GroupHeading title={t("未完了", "Open")} count={openTodos.length} color={palette.primary} background={palette.primarySoft} /></>}
-    ListEmptyComponent={doneTodos.length > 0 ? (<AllDonePanel t={t} palette={palette} />) : (<EmptyState icon="playlist-add" title={t("未完了のTodoはありません", "No open tasks")} description={t("完了したいことを1つ追加しましょう。", "Add one thing you want to complete.")} actionLabel={t("Todoを追加", "Add task")} onAction={() => openForm()} />)}
-    renderItem={({ item, index }) => <>{showCompleted && index === openTodos.length ? <GroupHeading title={t("完了", "Done")} count={doneTodos.length} color={palette.muted} background={palette.elevated} /> : null}<TodoItemCard todo={item} language={language} t={t} onOpen={() => openForm(item)} onToggle={() => { const wasComplete = isTodoAchieved(item); const result = toggleTodo(item.id); if (result.ok) safeHaptic(wasComplete ? "light" : "success"); }} onToggleSubtask={(subtaskId) => { toggleSubtask(item.id, subtaskId); }} /></>}
+    ListEmptyComponent={doneTodos.length > 0 ? (<AllDonePanel t={t} palette={palette} onMilestone={() => void triggerMilestoneReview()} />) : (<EmptyState icon="playlist-add" title={t("未完了のTodoはありません", "No open tasks")} description={t("完了したいことを1つ追加しましょう。", "Add one thing you want to complete.")} actionLabel={t("Todoを追加", "Add task")} onAction={() => openForm()} />)}
+    renderItem={({ item, index }) => <>{showCompleted && index === openTodos.length ? <GroupHeading title={t("完了", "Done")} count={doneTodos.length} color={palette.muted} background={palette.elevated} /> : null}<TodoItemCard todo={item} language={language} t={t} onOpen={() => openForm(item)} onToggle={() => { const wasComplete = isTodoAchieved(item); const result = toggleTodo(item.id); if (result.ok) { safeHaptic(wasComplete ? "light" : "success"); if (!wasComplete && openTodos.length === 1) void triggerMilestoneReview(); } }} onToggleSubtask={(subtaskId) => { toggleSubtask(item.id, subtaskId); }} /></>}
     ListFooterComponent={doneTodos.length ? <CompletionControl visible={showCompleted} count={doneTodos.length} t={t} palette={palette} onPress={() => setShowCompleted((value) => !value)} /> : null}
   /><TaskForm visible={formOpen} todo={editingTodo} onClose={() => { setFormOpen(false); setEditingTodo(undefined); router.setParams({ open: undefined, create: undefined }); if (widgetOpenedTodo.current) { widgetOpenedTodo.current = undefined; router.replace("/(tabs)" as never); } }} onSave={(input) => { const result = editingTodo ? updateTodo(editingTodo.id, input) : addTodo(input); showMutationResult(result); return result; }} onDelete={editingTodo ? () => deleteTodo(editingTodo.id) : undefined} /></ScreenContainer>;
 }
@@ -54,7 +54,7 @@ export default function TodosScreen() {
 function GroupHeading({ title, count, color, background }: { title: string; count: number; color: string; background: string }) { return <View style={styles.groupHeading}><Text style={[styles.groupTitle, { color }]}>{title}</Text><Text style={[styles.groupCount, { color, backgroundColor: background }]}>{count}</Text></View>; }
 function CompletionControl({ visible, count, t, palette, onPress }: { visible: boolean; count: number; t: (ja: string, en: string) => string; palette: ReturnType<typeof useFocusPalette>; onPress: () => void }) { return <TouchableOpacity accessibilityRole="button" accessibilityState={{ expanded: visible }} onPress={onPress} style={[styles.revealButton, { backgroundColor: palette.elevated, borderColor: palette.border }]}><MaterialIcons name={visible ? "visibility-off" : "visibility"} size={17} color={palette.primary} /><Text style={[styles.revealText, { color: palette.primary }]}>{visible ? t("完了済みを非表示", "Hide completed") : t(`完了済みを表示（${count}件）`, `Show completed (${count})`)}</Text></TouchableOpacity>; }
 
-function AllDonePanel({ t, palette }: { t: (ja: string, en: string) => string; palette: ReturnType<typeof useFocusPalette> }) {
+function AllDonePanel({ t, palette, onMilestone }: { t: (ja: string, en: string) => string; palette: ReturnType<typeof useFocusPalette>; onMilestone?: () => void }) {
   const scaleAnim = useRef(new Animated.Value(0.92)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -63,7 +63,8 @@ function AllDonePanel({ t, palette }: { t: (ja: string, en: string) => string; p
       Animated.spring(scaleAnim, { toValue: 1, friction: 5, tension: 200, useNativeDriver: true }),
       Animated.timing(opacityAnim, { toValue: 1, duration: 280, useNativeDriver: true }),
     ]).start();
-  }, []);
+    if (onMilestone) onMilestone();
+  }, [onMilestone]);
 
   return (
     <Animated.View

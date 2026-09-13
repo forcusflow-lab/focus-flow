@@ -1,7 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Platform, Share, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Linking, Platform, Share, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 
 import { ScaledText as Text } from "@/components/focus-flow/scaled-text";
 import { COLORS, useFocusPalette } from "@/components/focus-flow/ui";
@@ -98,6 +98,22 @@ export default function SupportScreen() {
     await Share.share({ title: t("Focus Flow サポートレポート", "Focus Flow support report"), message: report });
   };
 
+  const sendEmailReport = async () => {
+    const subject = encodeURIComponent(t("Focus Flow サポートレポート", "Focus Flow Support Report"));
+    const body = encodeURIComponent(report);
+    const mailtoUrl = `mailto:forcus.flow@gmail.com?subject=${subject}&body=${body}`;
+    try {
+      const supported = await Linking.canOpenURL(mailtoUrl);
+      if (supported) {
+        await Linking.openURL(mailtoUrl);
+        return;
+      }
+    } catch {
+      // fallback
+    }
+    await shareReport();
+  };
+
   return (
     <ScreenContainer className="px-5" containerClassName="bg-background">
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -137,10 +153,16 @@ export default function SupportScreen() {
         </TouchableOpacity>
         <Text style={styles.templateLabel}>{t("このテンプレートをコピーまたは共有", "Copy or share this template")}</Text>
         <TextInput value={report} editable={false} selectTextOnFocus multiline style={[styles.template, { borderColor: palette.border, backgroundColor: palette.surface, color: palette.text }]} accessibilityLabel={t("不具合報告テンプレート", "Bug report template")} />
-        <TouchableOpacity accessibilityRole="button" onPress={() => void shareReport()} style={[styles.shareButton, { backgroundColor: palette.primary }]}>
-          <MaterialIcons name="ios-share" size={19} color={COLORS.white} />
-          <Text style={styles.shareText}>{t("レポートを共有", "Share report")}</Text>
-        </TouchableOpacity>
+        <View style={styles.actionButtons}>
+          <TouchableOpacity accessibilityRole="button" onPress={() => void sendEmailReport()} style={[styles.emailButton, { backgroundColor: palette.primary }]}>
+            <MaterialIcons name="mail-outline" size={19} color={palette.isDark ? palette.background : COLORS.white} />
+            <Text style={[styles.shareText, { color: palette.isDark ? palette.background : COLORS.white }]}>{t("メールアプリで送信", "Send via email")}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity accessibilityRole="button" onPress={() => void shareReport()} style={[styles.shareButton, { backgroundColor: palette.elevated, borderColor: palette.border }]}>
+            <MaterialIcons name="ios-share" size={19} color={palette.text} />
+            <Text style={[styles.secondaryShareText, { color: palette.text }]}>{t("レポートを共有", "Share report")}</Text>
+          </TouchableOpacity>
+        </View>
         <Text style={styles.privacyNote}>{t("共有する前に、私的な情報を削除してください。Todo名、メモ本文、個人情報を含むスクリーンショットは送らないでください。", "Before you share, remove anything private. Do not include task titles, note content, or screenshots containing sensitive information.")}</Text>
       </ScrollView>
     </ScreenContainer>
@@ -169,7 +191,10 @@ const styles = StyleSheet.create({
   refreshText: { color: COLORS.forest, fontSize: 13, fontWeight: "800" },
   templateLabel: { color: COLORS.text, fontSize: 13, fontWeight: "800", marginTop: 17, marginBottom: 7 },
   template: { minHeight: 278, borderRadius: 15, borderWidth: 1, borderColor: "#CADAD4", backgroundColor: COLORS.white, color: COLORS.text, fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }), fontSize: 12, lineHeight: 18, padding: 13, textAlignVertical: "top" },
-  shareButton: { minHeight: 51, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 15, backgroundColor: COLORS.forest, marginTop: 12 },
-  shareText: { color: COLORS.white, fontSize: 15, fontWeight: "900" },
+  actionButtons: { flexDirection: "row", gap: 10, marginTop: 12 },
+  emailButton: { flex: 1, minHeight: 51, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 15 },
+  shareButton: { flex: 1, minHeight: 51, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 15, borderWidth: 1 },
+  shareText: { fontSize: 14, fontWeight: "900" },
+  secondaryShareText: { fontSize: 14, fontWeight: "800" },
   privacyNote: { color: COLORS.muted, fontSize: 11, lineHeight: 16, marginTop: 10, textAlign: "center" },
 });

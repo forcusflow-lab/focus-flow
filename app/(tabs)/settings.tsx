@@ -1,7 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
-import { ActivityIndicator, Alert, BackHandler, FlatList, Modal, PanResponder, Platform, ScrollView, StyleSheet, Switch, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, BackHandler, FlatList, Linking, Modal, PanResponder, Platform, ScrollView, StyleSheet, Switch, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ScaledText } from "@/components/focus-flow/scaled-text";
@@ -11,9 +11,11 @@ import { ScreenContainer } from "@/components/screen-container";
 import { getAccessibilityStatus, getGateDiagnostics, getLaunchableApps, isNativeGateAvailable, openAccessibilitySettings, openAppDetailsSettings, openTimePicker, requestIgnoreBatteryOptimizations, type GateDiagnostics, type LaunchableApp } from "@/lib/focus-flow/android-gate";
 import { APP_FONT_OPTIONS, getAppFontStyle } from "@/lib/focus-flow/app-fonts";
 import { APPEARANCE_OPTIONS, APP_THEMES, resolvedAppTheme, type AppPalette } from "@/lib/focus-flow/app-themes";
+import { exportAndShareData } from "@/lib/focus-flow/export-data";
 import { isEnglish } from "@/lib/focus-flow/i18n";
 import { useFocusFlow } from "@/lib/focus-flow/provider";
 import { cancelDailyReminder, getReminderPermissionGranted, requestReminderPermission, scheduleDailyReminder, sendReminderTest } from "@/lib/focus-flow/reminders";
+import { SUPPORT_EMAIL } from "@/lib/focus-flow/review-prompt";
 import type { AppThemeId, DisplaySettings, GateSchedule, SavedThemeSet, WidgetBackgroundStyle } from "@/lib/focus-flow/types";
 import { getGateRuleSummaries, getGateSummary } from "@/lib/focus-flow/utils";
 
@@ -206,8 +208,30 @@ export default function SettingsScreen() {
     setThemeSetName("");
   };
 
+  const handleExportData = useCallback(() => {
+    void exportAndShareData(
+      { todos, habits, memos, focusSessions, gateConfig, displaySettings },
+      english
+    );
+  }, [displaySettings, english, focusSessions, gateConfig, habits, memos, todos]);
+
+  const handleDirectFeedback = useCallback(async () => {
+    const subject = encodeURIComponent(english ? "Focus Flow Feedback & Suggestions" : "Focus Flow ご意見・不具合報告");
+    const mailtoUrl = `mailto:${SUPPORT_EMAIL}?subject=${subject}`;
+    try {
+      const canOpen = await Linking.canOpenURL(mailtoUrl);
+      if (canOpen) {
+        await Linking.openURL(mailtoUrl);
+        return;
+      }
+    } catch {
+      // fallback to support page
+    }
+    router.push("/support" as never);
+  }, [english, router]);
+
   const body = panel === "home" ? (
-    <SettingsHome scrollRef={homeScrollRef} english={english} gateEnabled={gateConfig.enabled} pendingCount={summary.pendingCount} accessibilityEnabled={accessibilityEnabled} themeLabel={english ? APP_THEMES[resolvedAppTheme(displaySettings)].label.en : APP_THEMES[resolvedAppTheme(displaySettings)].label.ja} languageLabel={displaySettings.language === "en" ? "English" : displaySettings.language === "ja" ? "日本語" : t("端末に連動", "Automatic")} reminderEnabled={Boolean(displaySettings.dailyReminderEnabled)} isPlus={isPlus} onOpen={setPanel} onLegal={(path) => router.push(path as never)} />
+    <SettingsHome scrollRef={homeScrollRef} english={english} gateEnabled={gateConfig.enabled} pendingCount={summary.pendingCount} accessibilityEnabled={accessibilityEnabled} themeLabel={english ? APP_THEMES[resolvedAppTheme(displaySettings)].label.en : APP_THEMES[resolvedAppTheme(displaySettings)].label.ja} languageLabel={displaySettings.language === "en" ? "English" : displaySettings.language === "ja" ? "日本語" : t("端末に連動", "Automatic")} reminderEnabled={Boolean(displaySettings.dailyReminderEnabled)} isPlus={isPlus} onOpen={setPanel} onLegal={(path) => router.push(path as never)} onExportData={handleExportData} onFeedback={handleDirectFeedback} />
   ) : (
     <ScrollView key={panel} contentContainerStyle={[styles.detailContent, { paddingBottom: Math.max(88, insets.bottom + 44) }]} showsVerticalScrollIndicator={false}>
       <PanelHeader title={panel === "limits" ? t("集中制限", "App limits") : panel === "appearance" ? t("表示と言語", "Appearance & language") : panel === "reminders" ? t("毎日のリマインダー", "Daily reminder") : t("Plusとサブスクリプション", "Plus & subscription")} onBack={() => setPanel("home")} />
@@ -225,7 +249,7 @@ export default function SettingsScreen() {
   </ScreenContainer>;
 }
 
-function SettingsHome({ scrollRef, english, gateEnabled, pendingCount, accessibilityEnabled, themeLabel, languageLabel, reminderEnabled, isPlus, onOpen, onLegal }: { scrollRef: RefObject<ScrollView | null>; english: boolean; gateEnabled: boolean; pendingCount: number; accessibilityEnabled: boolean; themeLabel: string; languageLabel: string; reminderEnabled: boolean; isPlus: boolean; onOpen: (panel: SettingsPanel) => void; onLegal: (path: string) => void }) {
+function SettingsHome({ scrollRef, english, gateEnabled, pendingCount, accessibilityEnabled, themeLabel, languageLabel, reminderEnabled, isPlus, onOpen, onLegal, onExportData, onFeedback }: { scrollRef: RefObject<ScrollView | null>; english: boolean; gateEnabled: boolean; pendingCount: number; accessibilityEnabled: boolean; themeLabel: string; languageLabel: string; reminderEnabled: boolean; isPlus: boolean; onOpen: (panel: SettingsPanel) => void; onLegal: (path: string) => void; onExportData: () => void; onFeedback: () => void }) {
   const t = (ja: string, en: string) => english ? en : ja;
   const palette = useFocusPalette();
   const limitDetail = !gateEnabled ? t("オフ", "Off") : pendingCount ? t(`制限中・未完了 ${pendingCount}件`, `On · ${pendingCount} open`) : t("有効・解除条件を完了", "On · all clear");
@@ -240,9 +264,11 @@ function SettingsHome({ scrollRef, english, gateEnabled, pendingCount, accessibi
     <SectionTitle title={t("アカウントとデータ", "Plan & data")} detail={t("無料版とPlus、端末内のデータとプライバシーを確認します。", "Review Free and Plus, plus your on-device data and privacy.")} />
     <SettingsEntry icon="workspace-premium" tint="#F5ECFB" color="#74509B" title={t("Plusとサブスクリプション", "Plus & subscription")} detail={isPlus ? t("Plusを利用中", "Plus is active") : t("無料版の範囲とPlusを確認", "Review Free and Plus")} onPress={() => onOpen("plus")} />
     <SettingsEntry icon="privacy-tip" tint="#E8F0FC" color="#3D67A8" title={t("データとプライバシー", "Data & privacy")} detail={t("端末内データ、権限、削除について確認します。", "Review on-device data, permissions, and deletion.")} onPress={() => onLegal("/privacy")} />
-    <SectionTitle title={t("困ったとき", "Help")} />
-    <SettingsEntry icon="support-agent" tint="#F2F3F6" color="#596778" title={t("ヘルプとサポート", "Help & support")} detail={t("よくある質問、問い合わせ、動作確認の方法です。", "Find answers, contact support, and check app status.")} onPress={() => onLegal("/support")} />
-    <View style={styles.supportLinks}><TouchableOpacity onPress={() => onLegal("/legal")}><Text style={[styles.supportLink, { color: palette.primary }]}>{t("利用条件", "Terms")}</Text></TouchableOpacity><TouchableOpacity onPress={() => onLegal("/policy")}><Text style={[styles.supportLink, { color: palette.primary }]}>{t("ポリシー", "Policy")}</Text></TouchableOpacity><TouchableOpacity onPress={() => onLegal("/help")}><Text style={[styles.supportLink, { color: palette.primary }]}>{t("使い方", "Help")}</Text></TouchableOpacity></View>
+    <SettingsEntry icon="backup" tint="#E5F3EE" color="#1E6C53" title={t("データのバックアップと共有", "Backup & export data")} detail={t("現在のタスク・習慣・メモをJSONで保存・共有します", "Export your tasks, habits, and notes as JSON")} onPress={onExportData} />
+    <SectionTitle title={t("ヘルプとサポート", "Help & support")} />
+    <SettingsEntry icon="rate-review" tint="#FDF3E5" color="#B87A10" title={t("ご意見・不具合報告", "Support & feedback")} detail={t("開発チームへ直接メールで意見やバグを送信", "Send feedback or bug reports directly to developers")} onPress={onFeedback} />
+    <SettingsEntry icon="support-agent" tint="#F2F3F6" color="#596778" title={t("よくある質問・動作確認", "FAQ & diagnostics")} detail={t("よくある質問、診断レポート、動作確認の方法です。", "Find answers, diagnostic report, and check app status.")} onPress={() => onLegal("/support")} />
+    <View style={styles.supportLinks}><TouchableOpacity onPress={() => onLegal("/terms")}><Text style={[styles.supportLink, { color: palette.primary }]}>{t("利用規約", "Terms of Service")}</Text></TouchableOpacity><TouchableOpacity onPress={() => onLegal("/policy")}><Text style={[styles.supportLink, { color: palette.primary }]}>{t("プライバシーポリシー", "Privacy Policy")}</Text></TouchableOpacity><TouchableOpacity onPress={() => onLegal("/help")}><Text style={[styles.supportLink, { color: palette.primary }]}>{t("使い方", "Help")}</Text></TouchableOpacity></View>
   </ScrollView>;
 }
 
