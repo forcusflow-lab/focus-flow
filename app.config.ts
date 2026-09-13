@@ -67,7 +67,7 @@ const config: ExpoConfig = {
     package: env.androidPackage,
     // Google Playでは同一パッケージ内でバージョンコードを重複登録できない。
     // 本人専用APKは別パッケージなので、通常版の内部テスト版と競合しない。
-    versionCode: isPersonalUnlimitedBuild ? 25 : 36,
+    versionCode: isPersonalUnlimitedBuild ? 25 : 37,
     permissions: ["POST_NOTIFICATIONS"],
     blockedPermissions: ["android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE"],
     intentFilters: [
